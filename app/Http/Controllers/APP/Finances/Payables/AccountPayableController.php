@@ -1,0 +1,338 @@
+<?php
+
+namespace App\Http\Controllers\APP\Finances\Payables;
+
+use App\Http\Controllers\Controller;
+use App\Models\Finances\Payables\AccountPayable;
+use App\Models\Finances\Payables\AccountPayablePayment;
+use App\Models\Finances\Payables\AccountPayableRecurrence;
+use App\Traits\RoleCheckTrait;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class AccountPayableController extends Controller
+{
+    use RoleCheckTrait;
+
+    public function view()
+    {
+        return view('app.finances.payables.payable_index');
+    }
+
+    /**
+     * Lista parcelas (recorrências) com filtros, KPIs e shape esperado pelo JS.
+     */
+    public function index(Request $r)
+    {
+        $tenantId = $this->customerSistappID();
+
+        $status = $r->get('status', 'all');
+        $term   = $r->get('q');
+        $start  = $r->get('start');
+        $end    = $r->get('end');
+
+        // Lista de parcelas
+        $q = AccountPayableRecurrence::query()
+            ->where('customer_sistapp_id', $tenantId)
+            ->with(['accountPayable', 'payments'])
+            ->when($status !== 'all', function ($qq) use ($status) {
+                if ($status === 'overdue') {
+                    $qq->where('status', 'pending')
+                        ->where('due_date', '<', now()->toDateString());
+                } else {
+                    $qq->where('status', $status); // pending / paid / canceled
+                }
+            })
+            ->when($term, function ($qq) use ($term) {
+                $qq->whereHas('accountPayable', fn($aq) =>
+                $aq->where('description', 'like', "%{$term}%")
+                );
+            })
+            ->when($start && $end, fn($qq) =>
+            $qq->whereBetween('due_date', [$start, $end])
+            )
+            ->orderBy('due_date');
+
+        $rows = $q->paginate(100);
+
+        // Base para KPIs (somente pendentes, ignorando cancelados)
+        $base = AccountPayableRecurrence::query()
+            ->where('customer_sistapp_id', $tenantId)
+            ->where('status', 'pending')
+            ->when($start && $end, fn($qq) => $qq->whereBetween('due_date', [$start, $end]))
+            ->with('payments');
+
+        // Total pendente (restante = valor - pagos daquela parcela)
+        $pendente = $base->get()->reduce(function ($s, AccountPayableRecurrence $rec) {
+            $paid = $rec->payments->sum('amount');
+            return $s + max(0, (float)$rec->amount - $paid);
+        }, 0.0);
+
+        // Total pago no período (independente de status da parcela)
+        $pagosPeriodo = AccountPayablePayment::query()
+            ->where('customer_sistapp_id', $tenantId)
+            ->when($start && $end, fn($qq) => $qq->whereBetween('paid_at', [$start, $end]))
+            ->sum('amount');
+
+        // Shape para o JS
+        $data = collect($rows->items())->map(function (AccountPayableRecurrence $rec) {
+            $ap        = $rec->accountPayable;
+            $paidTotal = (float)$rec->payments->sum('amount');
+            $lastPay   = $rec->payments->sortByDesc('paid_at')->first();
+            $lastPaidAt = $lastPay?->paid_at?->toDateString();
+
+            $overdue = $rec->status === 'pending'
+                && $rec->due_date->toDateString() < now()->toDateString();
+
+            return [
+                'id'           => $rec->id,
+                'date'         => $rec->due_date->toDateString(),
+                'price'        => (float)$rec->amount,
+                'status'       => $rec->status,           // pending / paid / canceled
+                'amount_paid'  => $paidTotal,
+                'paid_total'   => $paidTotal,             // usado no texto "Pago R$ X"
+                'last_paid_at' => $lastPaidAt,
+                'overdue'      => $overdue,
+                'origin'       => [
+                    'description'       => $ap->description,
+                    'type'              => $ap->recurrence,        // yearly / monthly / variable
+                    'recurrence'        => $rec->recurrence_number,
+                    'total_recurrences' => $ap->times,
+                ],
+            ];
+        })->values();
+
+        return response()->json([
+            'data' => $data,
+            'kpis' => [
+                'pending_sum' => round($pendente, 2),
+                'paid_sum'    => round($pagosPeriodo, 2),
+                'net_outflow' => round(0 - $pagosPeriodo, 2),
+            ],
+        ]);
+    }
+
+    /**
+     * Cria uma conta a pagar (única / variável / mensal / anual) + gera recorrências.
+     */
+    public function store(Request $r)
+    {
+        $data = $r->validate([
+            'description'    => ['required', 'string', 'max:255'],
+            'first_payment'  => ['required', 'date'],
+            'recurrence'     => ['required', 'in:yearly,monthly,variable'],
+            'default_amount' => ['required', 'numeric', 'min:0.01'],
+            'times'          => ['nullable', 'integer', 'min:1'],
+            'end_recurrence' => ['nullable', 'date', 'after_or_equal:first_payment'],
+        ]);
+
+        $tenantId = auth()->user()->customerLogin->customer_sistapp_id
+            ?? auth()->user()->customer_sistapp_id;
+        $userId   = auth()->id();
+
+        return DB::transaction(function () use ($data, $tenantId, $userId) {
+            $ap = AccountPayable::create([
+                'customer_sistapp_id' => $tenantId,
+                'user_id'             => $userId,
+                'description'         => $data['description'],
+                'default_amount'      => $data['default_amount'],
+                'first_payment'       => $data['first_payment'],
+                'recurrence'          => $data['recurrence'],
+                'end_recurrence'      => $data['end_recurrence'] ?? null,
+                'times'               => $data['times'] ?? null,
+                'status'              => 'open',
+            ]);
+
+            $first = Carbon::parse($data['first_payment']);
+
+            $addRecurrence = function (Carbon $d, int $i, float $amount) use ($ap, $tenantId, $userId) {
+                AccountPayableRecurrence::create([
+                    'customer_sistapp_id' => $tenantId,
+                    'user_id'             => $userId,
+                    'account_payable_id'  => $ap->id,
+                    'recurrence_number'   => $i + 1,
+                    'due_date'            => $d->toDateString(),
+                    'amount'              => $amount,
+                    'status'              => 'pending',
+                ]);
+            };
+
+            // variável = parcelado ou único
+            if ($data['recurrence'] === 'variable') {
+                $n = (int) ($data['times'] ?? 1);
+
+                if ($n <= 1) {
+                    $addRecurrence($first->copy(), 0, (float) $data['default_amount']);
+                } else {
+                    // divide em centavos, distribuindo resto
+                    $totalCents = (int) round($data['default_amount'] * 100);
+                    $base = intdiv($totalCents, $n);
+                    $rem  = $totalCents % $n;
+
+                    for ($i = 0; $i < $n; $i++) {
+                        $amtCents = $base + ($i < $rem ? 1 : 0);
+                        $amount   = $amtCents / 100;
+                        $dueDate  = $first->copy()->addMonths($i);
+
+                        $addRecurrence($dueDate, $i, $amount);
+                    }
+                }
+            }
+            // mensal
+            elseif ($data['recurrence'] === 'monthly') {
+                $end = !empty($data['end_recurrence'])
+                    ? Carbon::parse($data['end_recurrence'])
+                    : $first->copy(); // se não tiver fim, gera só a primeira (energia/internet/etc)
+
+                $i = 0;
+                for ($d = $first->copy(); $d->lte($end); $d->addMonth(), $i++) {
+                    $addRecurrence($d, $i, (float) $data['default_amount']);
+                }
+            }
+            // anual
+            else {
+                $end = !empty($data['end_recurrence'])
+                    ? Carbon::parse($data['end_recurrence'])
+                    : $first->copy();
+
+                $i = 0;
+                for ($d = $first->copy(); $d->lte($end); $d->addYear(), $i++) {
+                    $addRecurrence($d, $i, (float) $data['default_amount']);
+                }
+            }
+
+            return response()->json(['ok' => true, 'id' => $ap->id]);
+        });
+    }
+
+    /**
+     * Baixa de uma parcela (recorrência) + geração da próxima mensal/anual infinita.
+     */
+    public function pay(Request $r, $recurrenceId)
+    {
+        $data = $r->validate([
+            'paid_at' => ['required', 'date'],
+            'amount'  => ['required', 'numeric', 'min:0.01'],
+            'notes'   => ['nullable', 'string'],
+        ]);
+
+        return DB::transaction(function () use ($recurrenceId, $data) {
+            /** @var AccountPayableRecurrence $rec */
+            $rec = AccountPayableRecurrence::lockForUpdate()
+                ->with(['accountPayable', 'payments'])
+                ->findOrFail($recurrenceId);
+
+            // 👉 NÃO TEM PAGAMENTO PARCIAL:
+            // apaga qualquer pagamento antigo dessa parcela
+            $rec->payments()->delete();
+
+            // cria UM pagamento novo para ESTA recorrência
+            AccountPayablePayment::create([
+                'customer_sistapp_id'   => $rec->customer_sistapp_id,
+                'user_id'               => auth()->id(),
+                'payable_recurrence_id' => $rec->id,
+                'paid_at'               => $data['paid_at'],
+                'amount'                => (float)$data['amount'],
+                'notes'                 => $data['notes'] ?? null,
+            ]);
+
+            // atualiza a própria recorrência
+            $rec->amount_paid = (float)$data['amount'];
+
+            if ($rec->amount_paid + 0.0001 >= (float)$rec->amount) {
+                $rec->status  = 'paid';
+                $rec->paid_at = $data['paid_at'];
+            } else {
+                // se algum dia você pagar menos que o valor da parcela, mantém como pendente
+                $rec->status  = 'pending';
+                $rec->paid_at = null;
+            }
+
+            $rec->save();
+
+            // Conta-mãe
+            $ap = $rec->accountPayable()->lockForUpdate()->first();
+
+            // recorrência infinita (mensal/anual sem data de término)
+            $isInfiniteRecurring = in_array($ap->recurrence, ['monthly', 'yearly'], true)
+                && is_null($ap->end_recurrence);
+
+            // 1) Se for mensal/anual INFINITO e essa parcela ficou paga, gera a próxima
+            if ($isInfiniteRecurring && $rec->status === 'paid') {
+                $hasFuture = $ap->recurrences()
+                    ->where('due_date', '>', $rec->due_date)
+                    ->exists();
+
+                if (! $hasFuture) {
+                    $lastNumber = (int)$ap->recurrences()->max('recurrence_number');
+                    $nextNumber = $lastNumber + 1;
+
+                    $nextDate = Carbon::parse($rec->due_date);
+                    $ap->recurrence === 'monthly'
+                        ? $nextDate->addMonth()
+                        : $nextDate->addYear();
+
+                    AccountPayableRecurrence::create([
+                        'customer_sistapp_id' => $ap->customer_sistapp_id,
+                        'user_id'             => auth()->id(),
+                        'account_payable_id'  => $ap->id,
+                        'recurrence_number'   => $nextNumber,
+                        'due_date'            => $nextDate->toDateString(),
+                        'amount'              => (float)$ap->default_amount,
+                        'status'              => 'pending',
+                        'amount_paid'         => 0,
+                    ]);
+                }
+            }
+
+            // 2) Se NÃO for infinita (única/parcelada ou com fim definido),
+            // fecha a conta-mãe quando não houver mais parcelas pendentes
+            if (! $isInfiniteRecurring) {
+                $hasOpen = $ap->recurrences()->where('status', 'pending')->exists();
+                if (! $hasOpen) {
+                    $ap->update(['status' => 'closed']);
+                }
+            }
+
+            return response()->json(['ok' => true]);
+        });
+    }
+
+    public function payments($recurrenceId)
+    {
+        $rec = AccountPayableRecurrence::with('payments')->findOrFail($recurrenceId);
+
+        $payments = $rec->payments()
+            ->orderByDesc('paid_at')
+            ->get()
+            ->map(function (AccountPayablePayment $p) {
+                return [
+                    'id'      => $p->id,
+                    'paid_at' => $p->paid_at->toDateString(),
+                    'amount'  => (float) $p->amount,
+                    'notes'   => $p->notes,
+                ];
+            })->values();
+
+        return response()->json($payments);
+    }
+
+    public function updateParcelAmount(Request $r, $recurrenceId)
+    {
+        $data = $r->validate(['amount' => ['required', 'numeric', 'min:0.01']]);
+
+        $rec = AccountPayableRecurrence::findOrFail($recurrenceId);
+        $rec->update(['amount' => $data['amount']]);
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function cancelParcel($recurrenceId)
+    {
+        $rec = AccountPayableRecurrence::findOrFail($recurrenceId);
+        $rec->update(['status' => 'canceled']);
+
+        return response()->json(['ok' => true]);
+    }
+}

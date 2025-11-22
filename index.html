@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Venda Direta</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #e4ecf5;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      background: #ffffff;
+      border: 2px solid #1a4a8c;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      background-color: #1a4a8c;
+      color: white;
+      padding: 10px;
+      text-align: center;
+      font-size: 28px;
+      margin-top: 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 20px;
+    }
+
+    .form-section {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      font-weight: bold;
+      color: #1a4a8c;
+      margin-bottom: 5px;
+    }
+
+    .form-group select,
+    .form-group input {
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    .products-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    .products-table th,
+    .products-table td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+
+    .products-table th {
+      background-color: #1a4a8c;
+      color: white;
+    }
+
+    .actions {
+      margin-top: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      color: white;
+      cursor: pointer;
+    }
+
+    .btn-add {
+      background-color: #1a4a8c;
+    }
+
+    .btn-finalize {
+      background-color: #298f2c;
+    }
+
+    .total-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .total-section span {
+      color: #1a4a8c;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>VENDA DIRETA</h1>
+    <div class="grid">
+      <div class="form-section">
+        <div class="form-group">
+          <label>CLIENTE</label>
+          <select>
+            <option>Consumidor final</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>FILIAL</label>
+          <select>
+            <option>Selecione filial</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>FORMA DE PAGAMENTO</label>
+          <select>
+            <option>Dinheiro</option>
+            <option>Cartão</option>
+            <option>PIX</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label style="font-weight:bold; color:#1a4a8c;">LISTA DE PRODUTOS</label>
+        <table class="products-table">
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>Qtd</th>
+              <th>Preço</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Arroz 5kg</td>
+              <td>1</td>
+              <td>25.00</td>
+              <td>25.00</td>
+            </tr>
+            <tr>
+              <td>Feijão 1kg</td>
+              <td>2</td>
+              <td>7.00</td>
+              <td>14.00</td>
+            </tr>
+            <tr>
+              <td>Macarrão</td>
+              <td>3</td>
+              <td>5.00</td>
+              <td>15.00</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="actions">
+          <button class="btn btn-add">+ PRODUTO</button>
+          <button class="btn btn-finalize">FINALIZAR VENDA</button>
+        </div>
+        <div class="total-section">
+          <div>TOTAL RECEBIDO: <span>R$ 0,00</span></div>
+          <div>TOTAL: <span>R$ 54,00</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
