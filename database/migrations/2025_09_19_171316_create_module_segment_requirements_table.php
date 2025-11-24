@@ -23,8 +23,8 @@ return new class extends Migration
             $table->boolean('is_required')->default(true);  // hoje sempre true, mas já deixa pronto
             $table->timestamps();
 
-            $table->unique(['module_id', 'segment']);
-            $table->index(['segment', 'is_required']);
+            //$table->unique(['module_id', 'segment']);
+            //$table->index(['segment', 'is_required']);
         });
     }
 
