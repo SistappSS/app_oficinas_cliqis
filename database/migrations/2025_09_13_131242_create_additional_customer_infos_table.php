@@ -16,7 +16,10 @@ return new class extends Migration
 
             $table->string('customer_sistapp_id', 11)->index();
 
-            //$table->foreignUuid('user_id')->constrained('users')->index();
+            $table->uuid('user_id');
+            $table->foreign('user_id', 'fk_additional_customer_infos_user')
+                ->references('id')
+                ->on('users');
 
             $table->string('website_url')->nullable();
             $table->string('segment')->nullable();
