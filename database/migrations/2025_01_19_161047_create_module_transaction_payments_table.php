@@ -31,8 +31,8 @@ return new class extends Migration
 
             $table->index(['customer_sistapp_id', 'user_id']);
 
-            $table->unique('transaction_id', 'uniq_mtp_tx');
-            $table->index(['user_id','expires_at'], 'idx_mtp_user_expires');
+            //$table->unique('transaction_id', 'uniq_mtp_tx');
+            //$table->index(['user_id','expires_at'], 'idx_mtp_user_expires');
 
             $table->timestamps();
         });
