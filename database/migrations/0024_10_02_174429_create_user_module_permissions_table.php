@@ -16,10 +16,7 @@ return new class extends Migration
 
             $table->string('customer_sistapp_id', 11)->index();
 
-            //$table->foreignUuid('user_id')->constrained('users')->index();
-
-            $table->unsignedBigInteger('module_id');
-            $table->foreignUuid('module_id')->references('id')->on('modules')->onDelete('cascade');
+            $table->foreignUuid('module_id')->constrained('modules')->index();
 
             $table->dateTime('expires_at')->nullable();
 
