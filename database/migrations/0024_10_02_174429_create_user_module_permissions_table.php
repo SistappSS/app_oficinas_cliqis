@@ -20,7 +20,7 @@ return new class extends Migration
 
             $table->dateTime('expires_at')->nullable();
 
-            $table->unique(['user_id','module_id','customer_sistapp_id'], 'ump_user_module_tenant_unique');
+            //$table->unique(['user_id','module_id','customer_sistapp_id'], 'ump_user_module_tenant_unique');
 
             $table->timestamps();
         });
