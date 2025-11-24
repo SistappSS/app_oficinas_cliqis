@@ -17,7 +17,10 @@ return new class extends Migration {
 
             //$table->foreignUuid('user_id')->constrained('users')->index();
 
-            $table->foreignUuid('customer_id')->constrained('customers')->index();
+            $table->uuid('customer_id');
+            $table->foreign('customer_id', 'fk_module_transactions_customer')
+                ->references('id')
+                ->on('customers');
 
             $table->json('module_ids')->nullable(false);
 
