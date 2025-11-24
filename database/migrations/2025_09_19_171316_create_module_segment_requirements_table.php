@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
 
             $table->uuid('module_id');
-            $table->foreign('module_id', 'fk_module_segment_requirements_module')
+            $table->foreign('module_id', 'fk_module_segment_module')
                 ->references('id')
                 ->on('modules');
 
