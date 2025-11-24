@@ -19,7 +19,7 @@ return new class extends Migration
             //$table->foreignUuid('user_id')->constrained('users')->index();
 
             $table->unsignedBigInteger('module_id');
-            $table->foreign('module_id')->references('id')->on('modules')->onDelete('cascade');
+            $table->foreignUuid('module_id')->references('id')->on('modules')->onDelete('cascade');
 
             $table->dateTime('expires_at')->nullable();
 

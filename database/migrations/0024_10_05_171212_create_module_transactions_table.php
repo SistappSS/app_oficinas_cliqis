@@ -18,7 +18,7 @@ return new class extends Migration {
             //$table->foreignUuid('user_id')->constrained('users')->index();
 
             $table->unsignedBigInteger('customer_id');
-            $table->foreign('customer_id')->references('id')->on('customers')->onDelete('cascade');
+            $table->foreignUuid('customer_id')->references('id')->on('customers')->onDelete('cascade');
 
             $table->json('module_ids')->nullable(false);
 

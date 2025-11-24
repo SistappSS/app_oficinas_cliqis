@@ -19,7 +19,7 @@ return new class extends Migration
             //$table->foreignUuid('user_id')->constrained('users')->index();
 
             $table->unsignedBigInteger('transaction_id');
-            $table->foreign('transaction_id')->references('id')->on('module_transactions')->onDelete('cascade');
+            $table->foreignUuid('transaction_id')->references('id')->on('module_transactions')->onDelete('cascade');
 
             $table->enum('cycle', ['monthly', 'annual'])->default('monthly');
 
