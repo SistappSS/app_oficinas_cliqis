@@ -14,8 +14,10 @@ return new class extends Migration
         Schema::create('features', function (Blueprint $table) {
             $table->uuid('id')->primary();
 
-            $table->unsignedBigInteger('module_id'); // ainda pertence a um módulo/pacote
-            $table->foreign('module_id')->references('id')->on('modules')->onDelete('cascade');
+            $table->uuid('module_id');
+            $table->foreign('module_id', 'fk_module_segment_requirements_module')
+                ->references('id')
+                ->on('modules');
 
             $table->string('name');
             $table->decimal('price', 8, 2);
