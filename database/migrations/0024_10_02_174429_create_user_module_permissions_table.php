@@ -16,7 +16,10 @@ return new class extends Migration
 
             $table->string('customer_sistapp_id', 11)->index();
 
-            $table->foreignUuid('module_id')->constrained('modules')->index();
+            $table->uuid('module_id');
+            $table->foreign('module_id', 'fk_user_module_permissions_module')
+                ->references('id')
+                ->on('modules');
 
             $table->dateTime('expires_at')->nullable();
 
