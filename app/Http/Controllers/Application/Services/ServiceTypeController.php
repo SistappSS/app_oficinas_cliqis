@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Application\Services;
 
 use App\Http\Controllers\Controller;
-use App\Models\ServiceType;
+use App\Models\Catalogs\Services\ServiceTypes\ServiceType;
 use App\Traits\CrudResponse;
 use App\Traits\RoleCheckTrait;
 use App\Traits\WebIndex;
@@ -22,7 +22,7 @@ class ServiceTypeController extends Controller
 
     public function view()
     {
-        return $this->webRoute('app.catalog.service_type.service_type_index', 'service-type');
+        return $this->webRoute('app.catalogs.service_type.service_type_index', 'service-type');
     }
 
     public function index(Request $request)

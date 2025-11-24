@@ -19,7 +19,7 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete();
 
-            $table->string('image_path')->nullable();
+            $table->json('image_path')->nullable();
             $table->text('iframe_url')->nullable();
             $table->text('notes')->nullable();
 

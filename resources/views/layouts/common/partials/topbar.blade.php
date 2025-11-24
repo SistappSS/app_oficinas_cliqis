@@ -11,15 +11,43 @@
             <span class="text-lg font-semibold">Cliqis</span>
         </div>
 
+        {{-- atalhos principais --}}
         <nav id="mini-shortcuts"
              class="hidden md:flex items-center gap-6 ml-8 opacity-0 pointer-events-none transition-opacity duration-200">
 
-            <a href="{{route('dashboard')}}" class="text-sm text-slate-600 hover:text-slate-900">Dashboard</a>
-
+            {{-- Clientes --}}
             @can('entitie_customer_view')
-                <a href="{{route('customer.view')}}" class="text-sm text-slate-600 hover:text-slate-900">Clientes</a>
+                <a href="{{ route('customer.view') }}"
+                   class="text-sm text-slate-600 hover:text-slate-900">
+                    Clientes
+                </a>
             @endcan
 
+            {{-- Funcionários --}}
+            <a href="{{ route('employee.view') }}"
+               class="text-sm text-slate-600 hover:text-slate-900">
+                Funcionários
+            </a>
+
+            {{-- Dashboard --}}
+            <a href="{{ route('dashboard') }}"
+               class="text-sm text-slate-600 hover:text-slate-900">
+                Dashboard
+            </a>
+
+            {{-- Ordens de Serviço --}}
+            <a href="{{ route('service-order.view') }}"
+               class="text-sm text-slate-600 hover:text-slate-900">
+                Ordens serviço
+            </a>
+
+            {{-- Equipamentos --}}
+            <a href="{{ route('equipment.view') }}"
+               class="text-sm text-slate-600 hover:text-slate-900">
+                Equipamentos
+            </a>
+
+            {{-- Mais --}}
             <div class="relative">
                 <button id="mini-more" type="button"
                         class="flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900"
@@ -31,13 +59,94 @@
                 </button>
 
                 <div id="mini-menu" role="menu"
-                     class="hidden absolute left-0 top-full mt-2 min-w-[220px] rounded-xl border border-slate-200 bg-white p-2 shadow-lg z-50">
+                     class="hidden absolute left-0 top-full mt-2 min-w-[240px] rounded-xl border border-slate-200 bg-white p-2 shadow-lg z-50">
+
+                    {{-- Admin --}}
                     @role('admin')
-                    <a href="{{route('roles.index')}}"
-                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Permissões</a>
-                    <a href="{{route('module.index')}}"
-                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Módulos</a>
+                    <div class="px-3 pt-1 pb-0">
+                        <p class="text-[11px] font-semibold tracking-wide uppercase text-slate-400">Administração</p>
+                    </div>
+                    <a href="{{ route('roles.index') }}"
+                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        Permissões
+                    </a>
+                    <a href="{{ route('module.index') }}"
+                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        Módulos
+                    </a>
                     @endrole
+
+                    {{-- Entidades --}}
+                    <div class="px-3 pt-3 pb-0">
+                        <p class="text-[11px] font-semibold tracking-wide uppercase text-slate-400">Entidades</p>
+                    </div>
+                    <a href="{{ route('user.view') }}"
+                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        Usuários
+                    </a>
+
+                    {{-- Recursos Humanos --}}
+                    <div class="px-3 pt-3 pb-0">
+                        <p class="text-[11px] font-semibold tracking-wide uppercase text-slate-400">Recursos Humanos</p>
+                    </div>
+                    <a href="{{ route('department.view') }}"
+                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        Departamentos
+                    </a>
+                    <a href="{{ route('benefit.view') }}"
+                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        Benefícios
+                    </a>
+                    <a href="{{ route('employee-benefit.view') }}"
+                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        Benefícios x Funcionários
+                    </a>
+
+                    {{-- Catálogo --}}
+                    <div class="px-3 pt-3 pb-0">
+                        <p class="text-[11px] font-semibold tracking-wide uppercase text-slate-400">Catálogo</p>
+                    </div>
+                    <a href="{{ route('service-type.view') }}"
+                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        Tipos de serviço
+                    </a>
+                    <a href="{{ route('service-item.view') }}"
+                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        Serviços
+                    </a>
+                    <a href="{{ route('part.view') }}"
+                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        Peças
+                    </a>
+                    <a href="{{ route('equipment-part.view') }}"
+                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        Peças x Equipamentos
+                    </a>
+
+                    {{-- Fluxo da OS --}}
+                    <div class="px-3 pt-3 pb-0">
+                        <p class="text-[11px] font-semibold tracking-wide uppercase text-slate-400">Fluxo da OS</p>
+                    </div>
+                    <a href="{{ route('service-order-equipment.view') }}"
+                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        Equipamentos da OS
+                    </a>
+                    <a href="{{ route('service-order-service-item.view') }}"
+                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        Serviços da OS
+                    </a>
+                    <a href="{{ route('service-order-part-item.view') }}"
+                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        Peças da OS
+                    </a>
+                    <a href="{{ route('service-order-labor-entry.view') }}"
+                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        Horas de mão de obra
+                    </a>
+                    <a href="{{ route('completed-service-order.view') }}"
+                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        OS concluídas
+                    </a>
                 </div>
             </div>
         </nav>
@@ -47,7 +156,6 @@
                href="https://wa.me/5511988313151?text=Ajuda%20no%20Cliqis" target="_blank" rel="noopener">Ajuda</a>
             <a class="text-sm text-slate-600 hover:text-slate-900"
                href="https://wa.me/5511988313151?text=Contato%20Cliqis" target="_blank" rel="noopener">Contato</a>
-
 
             <div class="relative">
                 <button id="user-btn"

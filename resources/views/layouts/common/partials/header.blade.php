@@ -80,10 +80,10 @@
 
             {{-- Equipamentos --}}
             <li>
-                <a href="{{ route('equipament.view') }}"
+                <a href="{{ route('equipment.view') }}"
                    class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105">
                     <div
-                        class="icon grid h-12 w-12 place-items-center rounded-xl border border-slate-200 text-blue-500 {{ isActive('equipament.view') }}">
+                        class="icon grid h-12 w-12 place-items-center rounded-xl border border-slate-200 text-blue-500 {{ isActive('equipment.view') }}">
                         <i class="fa-solid fa-screwdriver-wrench"></i>
                     </div>
                     <span class="text-xs font-medium text-slate-600 group-hover:text-blue-700">Equipamentos</span>
@@ -239,7 +239,7 @@
                 </div>
             </a>
 
-            <a href="{{ route('equipament-part.view') }}" role="menuitem"
+            <a href="{{ route('equipment-part.view') }}" role="menuitem"
                class="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-blue-50">
                 <div
                     class="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-blue-500 group-hover:bg-blue-700 group-hover:text-white">

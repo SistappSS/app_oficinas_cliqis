@@ -5,6 +5,7 @@ namespace App\Models\Catalogs\Parts;
 use App\Models\Catalogs\EquipmentParts\EquipmentPart;
 use App\Models\Catalogs\Equipments\Equipment;
 use App\Models\Catalogs\ServiceOrders\ServiceOrderPartItems\ServiceOrderPartItem;
+use App\Models\Entities\Suppliers\Supplier;
 use App\Traits\HasCustomerScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -28,14 +29,20 @@ class Part extends Model
         return $this->hasMany(EquipmentPart::class);
     }
 
-    public function Equipments()
+    public function equipments()
     {
-        // ajuste o nome da tabela pivot se for diferente
         return $this->belongsToMany(
             Equipment::class,
-            'equipment_part',
+            'equipment_parts',
             'part_id',
             'equipment_id'
-        );
+        )
+            ->using(EquipmentPart::class)   // <- usa o pivot customizado
+            ->withTimestamps();
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class, 'supplier_id');
     }
 }

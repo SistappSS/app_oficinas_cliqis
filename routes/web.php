@@ -136,6 +136,10 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         // SecondaryCustomers
         Route::get('/customer', [SecondaryCustomerController::class, 'view'])->name('customer.view');
         Route::resource('/customer-api', SecondaryCustomerController::class);
+
+        // SecondaryCustomers
+        Route::get('/supplier', [SecondaryCustomerController::class, 'view'])->name('customer.view');
+        Route::resource('/supplier-api', SecondaryCustomerController::class);
     });
 
     /* --->| Human Resource |<--- */
@@ -159,7 +163,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
 
 
     /* --->| Catalog |<--- */
-    Route::group(['prefix' => 'catalog'], function () {
+    Route::group(['prefix' => 'catalogs'], function () {
         // Service Types
         Route::get('/service-type', [ServiceTypeController::class, 'view'])->name('service-type.view');
         Route::resource('/service-type-api', ServiceTypeController::class);
@@ -173,12 +177,12 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::resource('/part-api', PartController::class);
 
         // Equipments
-        Route::get('/equipament', [EquipamentController::class, 'view'])->name('equipament.view');
-        Route::resource('/equipament-api', EquipamentController::class);
+        Route::get('/equipment', [EquipmentController::class, 'view'])->name('equipment.view');
+        Route::resource('/equipment-api', EquipmentController::class);
 
         // Equipment-Part (relação peças x equipamentos)
-        Route::get('/equipament-part', [EquipamentPartController::class, 'view'])->name('equipament-part.view');
-        Route::resource('/equipament-part-api', EquipamentPartController::class);
+        Route::get('/equipment-part', [EquipmentPartController::class, 'view'])->name('equipment-part.view');
+        Route::resource('/equipment-part-api', EquipmentPartController::class);
     });
 
 
@@ -189,8 +193,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::resource('/service-order-api', ServiceOrderController::class);
 
         // Equipments da OS
-        Route::get('/service-order-equipament', [ServiceOrderEquipmentController::class, 'view'])->name('service-order-equipament.view');
-        Route::resource('/service-order-equipament-api', ServiceOrderEquipmentController::class);
+        Route::get('/service-order-equipment', [ServiceOrderEquipmentController::class, 'view'])->name('service-order-equipment.view');
+        Route::resource('/service-order-equipment-api', ServiceOrderEquipmentController::class);
 
         // Serviços da OS
         Route::get('/service-order-service-item', [ServiceOrderServiceItemController::class, 'view'])->name('service-order-service-item.view');

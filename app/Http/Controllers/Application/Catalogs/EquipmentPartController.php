@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Application\Catalogs;
 
 use App\Http\Controllers\Controller;
-use App\Models\EquipmentPart;
+use App\Models\Catalogs\EquipmentParts\EquipmentPart;
 use App\Traits\CrudResponse;
 use App\Traits\RoleCheckTrait;
 use App\Traits\WebIndex;

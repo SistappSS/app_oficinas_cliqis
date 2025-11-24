@@ -6,19 +6,22 @@ use App\Models\Catalogs\Equipments\Equipment;
 use App\Models\Catalogs\Parts\Part;
 use App\Traits\HasCustomerScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 
-class EquipmentPart extends Model
+class EquipmentPart extends Pivot
 {
-    use HasUuids;
-    use HasCustomerScope;
+    use HasUuids, HasCustomerScope;
+
+    protected $table = 'equipment_parts';
 
     public $incrementing = false;
     protected $keyType = 'string';
-    protected $guarded = [];
 
-    // ajuste se o nome da tabela for algo como 'equipment_part'
-    // protected $table = 'equipment_part';
+    protected $fillable = [
+        'customer_sistapp_id',
+        'equipment_id',
+        'part_id',
+    ];
 
     public function equipment()
     {

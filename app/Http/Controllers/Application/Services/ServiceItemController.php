@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Application\Services;
 
 use App\Http\Controllers\Controller;
-use App\Models\ServiceItem;
+use App\Models\Catalogs\Services\ServiceItems\ServiceItem;
 use App\Traits\CrudResponse;
 use App\Traits\RoleCheckTrait;
 use App\Traits\WebIndex;
@@ -22,7 +22,7 @@ class ServiceItemController extends Controller
 
     public function view()
     {
-        return $this->webRoute('app.catalog.service_item.service_item_index', 'service-item');
+        return $this->webRoute('app.catalogs.service_item.service_item_index', 'service-item');
     }
 
     public function index(Request $request)

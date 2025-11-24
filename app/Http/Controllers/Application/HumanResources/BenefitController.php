@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Application\HumanResources;
 
 use App\Http\Controllers\Controller;
-use App\Models\Benefit;
+use App\Models\HumanResources\Benefits\Benefit;
 use App\Traits\CrudResponse;
 use App\Traits\RoleCheckTrait;
 use App\Traits\WebIndex;
