@@ -16,7 +16,10 @@ return new class extends Migration
 
             $table->string('customer_sistapp_id', 36)->index();
 
-            $table->foreignUuid('user_id')->constrained('users')->index();
+            $table->uuid('user_id');
+            $table->foreign('user_id', 'fk_employees_user')
+                ->references('id')
+                ->on('users');
 
             $table->foreignUuid('department_id')
                 ->nullable()
