@@ -16,6 +16,11 @@ return new class extends Migration
 
             $table->string('customer_sistapp_id', 11)->index();
 
+            $table->uuid('user_id');
+            $table->foreign('user_id', 'fk_module_transactions_user')
+                ->references('id')
+                ->on('users');
+
             $table->uuid('module_id');
             $table->foreign('module_id', 'fk_user_module_permissions_module')
                 ->references('id')
@@ -23,7 +28,7 @@ return new class extends Migration
 
             $table->dateTime('expires_at')->nullable();
 
-            //$table->unique(['user_id','module_id','customer_sistapp_id'], 'ump_user_module_tenant_unique');
+            $table->unique(['user_id','module_id','customer_sistapp_id'], 'ump_user_module_tenant_unique');
 
             $table->timestamps();
         });
