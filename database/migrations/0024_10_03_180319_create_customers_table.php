@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('customers', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
 
-            $table->string('customer_sistapp_id', 25)->index();
+            $table->string('customer_sistapp_id', 11)->index();
 
             $table->string('customerId')->index()->nullable();
 

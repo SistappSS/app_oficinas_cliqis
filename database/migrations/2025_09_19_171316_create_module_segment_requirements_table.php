@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('module_segment_requirements', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
+
             $table->foreignId('module_id')->constrained('modules')->cascadeOnDelete();
             $table->string('segment', 32);                  // 'agencia' | 'empresa' | 'freelancer'
             $table->boolean('is_required')->default(true);  // hoje sempre true, mas já deixa pronto

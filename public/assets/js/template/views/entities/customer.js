@@ -65,7 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
             document.querySelector("#name").value = c.name;
             document.querySelector("#cpfCnpj").value = c.cpfCnpj;
             document.querySelector("#mobilePhone").value = c.mobilePhone;
-            document.querySelector("#company_email").value = c.company_email;
+            document.querySelector("#email").value = c.company;
             document.querySelector("#postalCode").value = c.postalCode;
             document.querySelector("#address").value = c.address;
             document.querySelector("#addressNumber").value = c.addressNumber;
@@ -79,7 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
             name: document.querySelector("#name").value,
             cpfCnpj: document.querySelector("#cpfCnpj").value,
             mobilePhone: document.querySelector("#mobilePhone").value,
-            company_email: document.querySelector("#company_email").value,
+            email: document.querySelector("#email").value,
             postalCode: document.querySelector("#postalCode").value,
             address: document.querySelector("#address").value,
             addressNumber: document.querySelector("#addressNumber").value,

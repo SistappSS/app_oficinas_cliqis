@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('user_features', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
+
             $table->unsignedBigInteger('user_module_permission_id');
             $table->foreign('user_module_permission_id')->references('id')->on('user_module_permissions')->onDelete('cascade');
 

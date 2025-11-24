@@ -12,12 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('module_transaction_payments', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
 
-            $table->unsignedBigInteger('user_id');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->string('customer_sistapp_id', 11)->index();
 
-            $table->string('customer_sistapp_id');
+            $table->foreignUuid('user_id')->constrained('customers')->index();
 
             $table->unsignedBigInteger('transaction_id');
             $table->foreign('transaction_id')->references('id')->on('module_transactions')->onDelete('cascade');

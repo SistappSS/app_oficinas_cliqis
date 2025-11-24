@@ -12,14 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('customer_user_logins', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
 
-            $table->string('customer_sistapp_id', 25)->index();
+            $table->string('customer_sistapp_id', 11)->index();
 
-            $table->unsignedBigInteger('user_id');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreignUuid('user_id')->constrained('customers')->index();
 
-            $table->unsignedBigInteger('customer_id')->nullable();
+            $table->foreignUuid('customer_id')->nullable();
 
             $table->boolean('is_master_customer')->default(false);
 

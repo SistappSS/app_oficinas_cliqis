@@ -11,15 +11,8 @@
             <span class="text-lg font-semibold">Cliqis</span>
         </div>
 
-        <nav id="mini-shortcuts" class="hidden md:flex items-center gap-6 ml-8 opacity-0 pointer-events-none transition-opacity duration-200">
-
-            @can('sales_invoice_view')
-                <a href="{{route('invoice.index')}}" class="text-sm text-slate-600 hover:text-slate-900">Cobranças</a>
-            @endcan
-
-            @can('sales_budget_view')
-                <a href="{{route('budget.view')}}" class="text-sm text-slate-600 hover:text-slate-900">Orçamentos</a>
-            @endcan
+        <nav id="mini-shortcuts"
+             class="hidden md:flex items-center gap-6 ml-8 opacity-0 pointer-events-none transition-opacity duration-200">
 
             <a href="{{route('dashboard')}}" class="text-sm text-slate-600 hover:text-slate-900">Dashboard</a>
 
@@ -27,37 +20,26 @@
                 <a href="{{route('customer.view')}}" class="text-sm text-slate-600 hover:text-slate-900">Clientes</a>
             @endcan
 
-            @can('sales_service_view')
-                <a href="{{route('service.view')}}" class="text-sm text-slate-600 hover:text-slate-900">Serviços</a>
-            @endcan
+            <div class="relative">
+                <button id="mini-more" type="button"
+                        class="flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900"
+                        aria-expanded="false" aria-haspopup="menu">
+                    Mais
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m6 9 6 6 6-6"/>
+                    </svg>
+                </button>
 
-            @canany(['finance_payable_view', 'finance_receivable_view'])
-                <div class="relative">
-                    <button id="mini-more" type="button"
-                            class="flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900"
-                            aria-expanded="false" aria-haspopup="menu">
-                        Mais
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="m6 9 6 6 6-6"/>
-                        </svg>
-                    </button>
-
-                    <div id="mini-menu" role="menu"
-                         class="hidden absolute left-0 top-full mt-2 min-w-[220px] rounded-xl border border-slate-200 bg-white p-2 shadow-lg z-50">
-                        <a href="{{route('account-payable-view')}}"
-                           class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">A pagar</a>
-                        <a href="{{route('account-receivable-view')}}"
-                           class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">A receber</a>
-
-                        @role('admin')
-                        <a href="{{route('roles.index')}}"
-                           class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Permissões</a>
-                        <a href="{{route('module.index')}}"
-                           class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Módulos</a>
-                        @endrole
-                    </div>
+                <div id="mini-menu" role="menu"
+                     class="hidden absolute left-0 top-full mt-2 min-w-[220px] rounded-xl border border-slate-200 bg-white p-2 shadow-lg z-50">
+                    @role('admin')
+                    <a href="{{route('roles.index')}}"
+                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Permissões</a>
+                    <a href="{{route('module.index')}}"
+                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Módulos</a>
+                    @endrole
                 </div>
-            @endcanany
+            </div>
         </nav>
 
         <nav class="hidden md:flex items-center gap-6 flex-none">

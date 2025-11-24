@@ -69,7 +69,7 @@
 
         <div class="grid gap-4 sm:grid-cols-2">
             <x-input col="12 col-sm-8" set="" id="mobilePhone" name="mobilePhone" type="text" label="Telefone" placeholder="(11) 99999-9999"></x-input>
-            <x-input col="12 col-sm-8" set="" id="company_email" name="company_email" type="email" label="E-mail" placeholder="john-doe@email.com"></x-input>
+            <x-input col="12 col-sm-8" set="" id="email" name="email" type="email" label="E-mail" placeholder="john-doe@email.com"></x-input>
         </div>
 
         <!-- Card do status -->

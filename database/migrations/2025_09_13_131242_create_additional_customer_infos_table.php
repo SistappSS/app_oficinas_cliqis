@@ -12,15 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('additional_customer_infos', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
 
-            $table->string('customer_sistapp_id', 25)->index();
+            $table->string('customer_sistapp_id', 11)->index();
 
-            $table->unsignedBigInteger('user_id');
-            $table->foreign('user_id')->references('id')->on('users');
+            $table->foreignUuid('user_id')->constrained('customers')->index();
 
             $table->string('website_url')->nullable();
-            $table->string('segment')->nullable(false);
+            $table->string('segment')->nullable();
 
             $table->unique('user_id', 'aci_user_unique');
 

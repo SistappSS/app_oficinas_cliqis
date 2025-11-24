@@ -1,33 +1,52 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Middleware\CheckSubscription;
 
+use App\Http\Controllers\Application\Auth\Authenticate\AuthController;
+use App\Http\Controllers\Application\Auth\Authenticate\GoogleAuthController;
+use App\Http\Controllers\Application\Auth\Permissions\Modules\BuyModuleController;
+use App\Http\Controllers\Application\Auth\Permissions\Modules\ModuleController;
+use App\Http\Controllers\Application\Auth\Permissions\PermissionController;
+use App\Http\Controllers\Application\Auth\RegisterCustomer\AdditionalCustomerInfoController;
+use App\Http\Controllers\Application\Auth\User\MyAccountController;
 
-use App\Http\Controllers\APP\Admin\AdminCenterController;
-use App\Http\Controllers\APP\Admin\Modules\BuyModuleController;
-use App\Http\Controllers\APP\Admin\Modules\ModuleController;
+use App\Http\Controllers\Application\DashboardController;
 
-use App\Http\Controllers\APP\Authenticate\AdditionalCustomerInfoController;
-use App\Http\Controllers\APP\Authenticate\AuthController;
-use App\Http\Controllers\APP\Authenticate\GoogleAuthController;
+use App\Http\Controllers\Application\Entities\Customers\Customer\CustomerController;
+use App\Http\Controllers\Application\Entities\Customers\SecondaryCustomer\SecondaryCustomerController;
+use App\Http\Controllers\Application\Entities\Users\UserController;
 
-use App\Http\Controllers\APP\DashboardController;
+// HUMAN RESOURCES
+use App\Http\Controllers\Application\HumanResources\DepartmentController;
+use App\Http\Controllers\Application\HumanResources\EmployeeController;
+use App\Http\Controllers\Application\HumanResources\BenefitController;
+use App\Http\Controllers\Application\HumanResources\EmployeeBenefitController;
 
-use App\Http\Controllers\APP\Entities\Customers\CustomerArea\CustomerAreaController;
-use App\Http\Controllers\APP\Entities\Customers\CustomerController;
+// CATALOGS
+use App\Http\Controllers\Application\Catalogs\PartController;
+use App\Http\Controllers\Application\Catalogs\EquipmentController;
+use App\Http\Controllers\Application\Catalogs\EquipmentPartController;
 
-use App\Http\Controllers\APP\Finances\Payables\AccountPayableController;
-use App\Http\Controllers\APP\Finances\Receivables\AccountReceivableController;
+// SERVICES
+use App\Http\Controllers\Application\Services\ServiceTypeController;
+use App\Http\Controllers\Application\Services\ServiceItemController;
 
-use App\Http\Controllers\APP\Sales\Budgets\BudgetConfigController;
-use App\Http\Controllers\APP\Sales\Budgets\BudgetController;
-use App\Http\Controllers\APP\Sales\Invoices\Billing\BillingController;
-use App\Http\Controllers\APP\Sales\Invoices\Reminder\ReminderInvoiceConfigController;
-use App\Http\Controllers\APP\Sales\Services\ServiceController;
+// SERVICE ORDERS
+use App\Http\Controllers\Application\ServiceOrders\ServiceOrderController;
+use App\Http\Controllers\Application\ServiceOrders\ServiceOrderEquipmentController;
+use App\Http\Controllers\Application\ServiceOrders\ServiceOrderServiceItemController;
+use App\Http\Controllers\Application\ServiceOrders\ServiceOrderPartItemController;
+use App\Http\Controllers\Application\ServiceOrders\ServiceOrderLaborEntryController;
+use App\Http\Controllers\Application\ServiceOrders\CompletedServiceOrderController;
+
 
 use App\Http\Controllers\General\Notifications\NotificationController;
-use App\Models\Sales\Budgets\Subscriptions\Subscription;
+use App\Http\Middleware\CheckSubscription;
+use Illuminate\Support\Facades\Route;
+
+
+// ****** --------- Entities --------- ******
+// Secondary Customers
+
 
 /*
 |--------------------------------------------------------------------------
@@ -110,186 +129,96 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
 
     /* --->| Entities |<--- */
     Route::group(['prefix' => 'entities'], function () {
-        Route::get('/customer', [CustomerController::class, 'view'])->name('customer.view')->middleware('can:entitie_customer_view');
-
-        Route::resource('/customer-api', CustomerController::class)->middleware([
-            'can:entitie_customer_create',
-            'can:entitie_customer_view',
-            'can:entitie_customer_edit',
-            'can:entitie_customer_delete',
-        ]);
-
-        Route::get('customer/customer-area/{customer}', [CustomerAreaController::class, 'customerArea'])->name('customer-area')->middleware('can:sales_budget_view');
-
-        Route::patch('customer/customer-area/subscriptions/{subscription}', [CustomerAreaController::class, 'updateSubscription'])->name('subscriptions.update')->middleware('can:sales_budget_edit');
-
-        Route::delete('customer/customer-area/subscriptions/{subscription}', [CustomerAreaController::class, 'cancelSubscription'])->name('subscriptions.cancel')->middleware('can:sales_budget_delete');
-
         // Users
-        Route::resource('/user-api', \App\Http\Controllers\Endpoint\Entities\Users\UserController::class)->middleware([
-                    'can:entitie_user_create',
-                    'can:entitie_user_view',
-                    'can:entitie_user_edit',
-                    'can:entitie_user_delete',
-                ]);
+        Route::get('/user', [UserController::class, 'view'])->name('user.view');
+        Route::resource('/user-api', UserController::class);
+
+        // SecondaryCustomers
+        Route::get('/customer', [SecondaryCustomerController::class, 'view'])->name('customer.view');
+        Route::resource('/customer-api', SecondaryCustomerController::class);
     });
 
-    /* --->| Sales |<--- */
-    Route::group(['prefix' => 'sales'], function () {
-        // Services
-        Route::get('/service', [ServiceController::class, 'view'])->name('service.view')->middleware('can:sales_service_view');
+    /* --->| Human Resource |<--- */
+    Route::group(['prefix' => 'human-resources'], function () {
+        // Departments
+        Route::get('/department', [DepartmentController::class, 'view'])->name('department.view');
+        Route::resource('/department-api', DepartmentController::class);
 
-        Route::resource('/service-api', ServiceController::class)->middleware([
-            'can:sales_service_create',
-            'can:sales_service_view',
-            'can:sales_service_edit',
-            'can:sales_service_delete',
-        ]);
+        // Employees
+        Route::get('/employee', [EmployeeController::class, 'view'])->name('employee.view');
+        Route::resource('/employee-api', EmployeeController::class);
 
-        Route::get('/budgets', [BudgetController::class, 'view'])
-            ->name('budget.view')
-            ->middleware('can:sales_budget_view');
+        // Benefits
+        Route::get('/benefit', [BenefitController::class, 'view'])->name('benefit.view');
+        Route::resource('/benefit-api', BenefitController::class);
 
-        Route::get('/budgets/create', [BudgetController::class, 'create'])
-            ->name('budget.create')
-            ->middleware('can:sales_budget_create');
-
-        Route::post('/budgets/store', [BudgetController::class, 'store'])
-            ->middleware('can:sales_budget_create');
-
-        // Budget Config
-        Route::get('/budgets/config', [BudgetConfigController::class, 'index'])
-            ->name('budget-config.index')
-            ->middleware('can:sales_budget_view');
-
-        Route::post('/budgets/config/store', [BudgetConfigController::class, 'store'])
-            ->name('budget-config.store')
-            ->middleware('can:sales_budget_create');
+        // EmployeeBenefits (pivot/relacionamento)
+        Route::get('/employee-benefit', [EmployeeBenefitController::class, 'view'])->name('employee-benefit.view');
+        Route::resource('/employee-benefit-api', EmployeeBenefitController::class);
     });
 
-    // Orçamentos (raiz /budgets)
-    Route::get('/budgets', [BudgetController::class, 'index'])
-        ->name('budget.index')
-        ->middleware('can:sales_budget_view');
 
-    Route::post('/budgets/{id}/approve', [BudgetController::class, 'approve'])
-        ->middleware('can:sales_budget_edit');
+    /* --->| Catalog |<--- */
+    Route::group(['prefix' => 'catalog'], function () {
+        // Service Types
+        Route::get('/service-type', [ServiceTypeController::class, 'view'])->name('service-type.view');
+        Route::resource('/service-type-api', ServiceTypeController::class);
 
-    Route::post('/budgets/{id}/reject', [BudgetController::class, 'reject'])
-        ->middleware('can:sales_budget_edit');
+        // Service Items
+        Route::get('/service-item', [ServiceItemController::class, 'view'])->name('service-item.view');
+        Route::resource('/service-item-api', ServiceItemController::class);
 
-    Route::post('/sales/budget/{id}/view-budget', [BudgetController::class, 'viewPdf'])
-        ->name('budget.view.pdf')
-        ->middleware('can:sales_budget_view');
+        // Parts
+        Route::get('/part', [PartController::class, 'view'])->name('part.view');
+        Route::resource('/part-api', PartController::class);
 
-    Route::post('/sales/budget/{id}/send-email', [BudgetController::class, 'sendEmail'])
-        ->name('budget.sendEmail')
-        ->middleware('can:sales_budget_edit');
+        // Equipments
+        Route::get('/equipament', [EquipamentController::class, 'view'])->name('equipament.view');
+        Route::resource('/equipament-api', EquipamentController::class);
 
-    Route::delete('/budgets/{id}', [BudgetController::class, 'destroy'])
-        ->middleware('can:sales_budget_delete');
+        // Equipment-Part (relação peças x equipamentos)
+        Route::get('/equipament-part', [EquipamentPartController::class, 'view'])->name('equipament-part.view');
+        Route::resource('/equipament-part-api', EquipamentPartController::class);
+    });
 
-    Route::get('/budgets/{id}/json', [BudgetController::class, 'json'])
-        ->name('budget.json')
-        ->middleware('can:sales_budget_view');
 
-    // Cobranças (sem permissão específica no seeder -> sem can)
-    Route::get('/invoice', [BillingController::class, 'view'])->name('invoice.index');
-    Route::get('/invoices', [BillingController::class, 'index']);
-    Route::post('/invoices', [BillingController::class, 'store']);
-    Route::patch('/invoices/{id}', [BillingController::class, 'update']);
-    Route::delete('/invoices/{id}', [BillingController::class, 'destroy']);
+    /* --->| Service Orders |<--- */
+    Route::group(['prefix' => 'service-orders'], function () {
+        // Service Orders
+        Route::get('/service-order', [ServiceOrderController::class, 'view'])->name('service-order.view');
+        Route::resource('/service-order-api', ServiceOrderController::class);
 
-    Route::get('/invoices/reminder-config', [ReminderInvoiceConfigController::class, 'index'])
-        ->name('invoices.reminder-config.index');
+        // Equipments da OS
+        Route::get('/service-order-equipament', [ServiceOrderEquipmentController::class, 'view'])->name('service-order-equipament.view');
+        Route::resource('/service-order-equipament-api', ServiceOrderEquipmentController::class);
 
-    Route::post('/invoices/reminder-config', [ReminderInvoiceConfigController::class, 'store'])
-        ->name('invoices.reminder-config.store');
+        // Serviços da OS
+        Route::get('/service-order-service-item', [ServiceOrderServiceItemController::class, 'view'])->name('service-order-service-item.view');
+        Route::resource('/service-order-service-item-api', ServiceOrderServiceItemController::class);
 
-    Route::post('/invoices/{invoice}/send-reminder', [BillingController::class, 'sendReminder'])
-        ->name('invoices.send-reminder');
+        // Peças da OS
+        Route::get('/service-order-part-item', [ServiceOrderPartItemController::class, 'view'])->name('service-order-part-item.view');
+        Route::resource('/service-order-part-item-api', ServiceOrderPartItemController::class);
 
-    Route::get('/invoices/{id}/send-reminder-preview', [BillingController::class, 'previewReminder'])
-        ->name('invoices.send-reminder.preview');
+        // Horas de mão de obra
+        Route::get('/service-order-labor-entry', [ServiceOrderLaborEntryController::class, 'view'])->name('service-order-labor-entry.view');
+        Route::resource('/service-order-labor-entry-api', ServiceOrderLaborEntryController::class);
 
-    Route::get('/subscriptions', fn() => Subscription::query()->with('customer')->latest()->paginate(50))->middleware('can:sales_budget_view');
-
-    /* --->| Finances |<--- */
-    Route::group(['prefix' => 'finances'], function () {
-        // Payables
-        Route::get('/payables', [AccountPayableController::class, 'view'])
-            ->name('account-payable-view')
-            ->middleware('can:finance_payable_view');
-
-        Route::get('/payable-api', [AccountPayableController::class, 'index'])
-            ->middleware('can:finance_payable_view');
-
-        Route::post('/payable-api', [AccountPayableController::class, 'store'])
-            ->middleware('can:finance_payable_create');
-
-        Route::post('/payable-api/{id}/pay', [AccountPayableController::class, 'pay'])
-            ->middleware('can:finance_payable_edit');
-
-        Route::get('/payable-api/{id}/payments', [AccountPayableController::class, 'payments'])
-            ->middleware('can:finance_payable_view');
-
-        Route::patch('/payable-api/{id}/amount', [AccountPayableController::class, 'updateParcelAmount'])
-            ->middleware('can:finance_payable_edit');
-
-        Route::post('/payable-api/{id}/cancel', [AccountPayableController::class, 'cancelParcel'])
-            ->middleware('can:finance_payable_delete');
-
-        Route::get('/supplier-api', [AccountPayableController::class, 'suppliers'])
-            ->middleware('can:finance_payable_view');
-
-        // Receivables
-        Route::get('/account/receivables/monthDue', [AccountReceivableController::class, 'monthDue'])
-            ->name('account-receivable-monthDue')
-            ->middleware('can:finance_receivable_view');
-
-        Route::get('/account/receivables/forecast', [AccountReceivableController::class, 'forecast'])
-            ->name('account-receivable-forecast')
-            ->middleware('can:finance_receivable_view');
-
-        Route::get('/account/receivables', [AccountReceivableController::class, 'view'])
-            ->name('account-receivable-view')
-            ->middleware('can:finance_receivable_view');
-
-        Route::get('/account/account_receivable', [AccountReceivableController::class, 'index'])
-            ->name('account_receivable.index')
-            ->middleware('can:finance_receivable_view');
-
-        Route::post('/account/account_receivable/store', [AccountReceivableController::class, 'store'])
-            ->name('account_receivable.store')
-            ->middleware('can:finance_receivable_create');
-
-        Route::post('/account/account_receivable/status-update/{id}', [AccountReceivableController::class, 'setPaid'])
-            ->name('account_receivable_status_update.update')
-            ->middleware('can:finance_receivable_edit');
-
-        Route::post('/subscriptions/{id}/pay', [AccountReceivableController::class, 'paySubscription'])
-            ->middleware('can:finance_receivable_edit');
+        // OS concluídas / assinaturas
+        Route::get('/completed-service-order', [CompletedServiceOrderController::class, 'view'])->name('completed-service-order.view');
+        Route::resource('/completed-service-order-api', CompletedServiceOrderController::class);
     });
 
     /* --->| Config |<--- */
     Route::group(['prefix' => 'config'], function () {
-        Route::get('/my-account', [AuthController::class, 'myAccount'])->name('my-account.index');
-        Route::post('/my-account/change-information/{userId}', [AuthController::class, 'changeInformation'])->name('change-information.update');
-        Route::post('/my-account/change-password/{userId}', [AuthController::class, 'changePassword'])->name('change-password.update');
-        Route::post('/my-account/change-image', [AuthController::class, 'changeImage'])->name('change-image.update');
+        Route::get('/my-account', [MyAccountController::class, 'myAccount'])->name('my-account.index');
+        Route::post('/my-account/change-information/{userId}', [MyAccountController::class, 'changeInformation'])->name('change-information.update');
+        Route::post('/my-account/change-password/{userId}', [MyAccountController::class, 'changePassword'])->name('change-password.update');
+        Route::post('/my-account/change-image', [MyAccountController::class, 'changeImage'])->name('change-image.update');
     });
-
-    /* --->| Modules |<--- */
-    Route::resource('/module-api', \App\Http\Controllers\Endpoint\Modules\ModuleController::class);
 
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
 });
-
-/*
-|--------------------------------------------------------------------------
-| ADMIN ROUTES (auth + verified)
-|--------------------------------------------------------------------------
-*/
 
 Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])
     ->group(function () {
@@ -297,18 +226,18 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::group(['prefix' => 'admin'], function () {
             /* --->| Roles |<--- */
             Route::prefix('roles')->group(function () {
-                Route::get('/', [AdminCenterController::class, 'roleIndex'])->name('roles.index');
-                Route::get('/create', [AdminCenterController::class, 'roleCreate'])->name('roles.create');
-                Route::post('/store', [AdminCenterController::class, 'roleStore'])->name('roles.store');
+                Route::get('/', [PermissionController::class, 'roleIndex'])->name('roles.index');
+                Route::get('/create', [PermissionController::class, 'roleCreate'])->name('roles.create');
+                Route::post('/store', [PermissionController::class, 'roleStore'])->name('roles.store');
             });
 
             /* --->| Permissions |<--- */
             Route::prefix('permissions')->group(function () {
-                Route::get('/', [AdminCenterController::class, 'permissionIndex'])->name('permissions.index');
-                Route::get('/create', [AdminCenterController::class, 'roleCreate'])->name('permissions.create');
-                Route::post('/store', [AdminCenterController::class, 'permissionStore'])->name('permissions.store');
+                Route::get('/', [PermissionController::class, 'permissionIndex'])->name('permissions.index');
+                Route::get('/create', [PermissionController::class, 'roleCreate'])->name('permissions.create');
+                Route::post('/store', [PermissionController::class, 'permissionStore'])->name('permissions.store');
             });
 
-            Route::get('/permissions/list', [AdminCenterController::class, 'getPermissions'])->name('permissions.list');
+            Route::get('/permissions/list', [PermissionController::class, 'getPermissions'])->name('permissions.list');
         });
     });

@@ -2,9 +2,9 @@
 
 namespace Database\Seeders\Users;
 
+use App\Models\Authenticate\Permissions\Permission;
+use App\Models\Authenticate\Permissions\Role;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 class RolePerGroupSeeder extends Seeder
 {

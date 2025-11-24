@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('features', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
+
             $table->unsignedBigInteger('module_id'); // ainda pertence a um módulo/pacote
             $table->foreign('module_id')->references('id')->on('modules')->onDelete('cascade');
 

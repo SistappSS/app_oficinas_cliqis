@@ -14,6 +14,7 @@ use App\Models\Supports\SupportChat\SupportChat;
 use App\Traits\HasSubscriptionCheck;
 use App\Traits\RoleCheckTrait;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -25,6 +26,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
+    use HasUuids;
     use HasApiTokens;
     use HasFactory;
     use HasProfilePhoto;
@@ -33,6 +35,9 @@ class User extends Authenticatable
     use TwoFactorAuthenticatable;
     use RoleCheckTrait;
     use HasSubscriptionCheck;
+
+    public $incrementing = false;
+    protected $keyType = 'string';
 
     protected $fillable = [
         'name',

@@ -11,13 +11,11 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('module_transactions', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
 
+            $table->string('customer_sistapp_id', 11)->index();
 
-            $table->string('customer_sistapp_id', 25)->index();
-
-            $table->unsignedBigInteger('user_id');
-            $table->foreign('user_id')->references('id')->on('users');
+            $table->foreignUuid('user_id')->constrained('customers')->index();
 
             $table->unsignedBigInteger('customer_id');
             $table->foreign('customer_id')->references('id')->on('customers')->onDelete('cascade');
