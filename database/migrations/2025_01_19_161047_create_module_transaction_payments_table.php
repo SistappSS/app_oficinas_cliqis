@@ -16,7 +16,7 @@ return new class extends Migration
 
             $table->string('customer_sistapp_id', 11)->index();
 
-            $table->foreignUuid('user_id')->constrained('users')->index();
+            //$table->foreignUuid('user_id')->constrained('users')->index();
 
             $table->unsignedBigInteger('transaction_id');
             $table->foreign('transaction_id')->references('id')->on('module_transactions')->onDelete('cascade');

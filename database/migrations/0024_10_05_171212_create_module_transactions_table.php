@@ -15,7 +15,7 @@ return new class extends Migration {
 
             $table->string('customer_sistapp_id', 11)->index();
 
-            $table->foreignUuid('user_id')->constrained('users')->index();
+            //$table->foreignUuid('user_id')->constrained('users')->index();
 
             $table->unsignedBigInteger('customer_id');
             $table->foreign('customer_id')->references('id')->on('customers')->onDelete('cascade');
