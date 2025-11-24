@@ -21,15 +21,17 @@ return new class extends Migration
                 ->references('id')
                 ->on('users');
 
-            $table->unsignedBigInteger('transaction_id');
-            $table->foreignUuid('transaction_id')->references('id')->on('module_transactions')->onDelete('cascade');
+            $table->uuid('transaction_id');
+            $table->foreign('transaction_id', 'fk_module_transaction_payments_transaction')
+                ->references('id')
+                ->on('module_transactions');
 
             $table->enum('cycle', ['monthly', 'annual'])->default('monthly');
 
             $table->date('paid_at');
             $table->date('expires_at');
 
-            $table->index(['customer_sistapp_id', 'user_id']);
+            //$table->index(['customer_sistapp_id', 'user_id']);
 
             //$table->unique('transaction_id', 'uniq_mtp_tx');
             //$table->index(['user_id','expires_at'], 'idx_mtp_user_expires');
