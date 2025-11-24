@@ -16,7 +16,10 @@ return new class extends Migration
 
             $table->string('customer_sistapp_id', 11)->index();
 
-            //$table->foreignUuid('user_id')->constrained('users')->index();
+            $table->uuid('user_id');
+            $table->foreign('user_id', 'fk_module_transaction_payments_user')
+                ->references('id')
+                ->on('users');
 
             $table->unsignedBigInteger('transaction_id');
             $table->foreignUuid('transaction_id')->references('id')->on('module_transactions')->onDelete('cascade');
