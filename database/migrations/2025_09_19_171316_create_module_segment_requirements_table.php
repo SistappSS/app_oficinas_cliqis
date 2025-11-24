@@ -14,7 +14,11 @@ return new class extends Migration
         Schema::create('module_segment_requirements', function (Blueprint $table) {
             $table->uuid('id')->primary();
 
-            $table->foreignId('module_id')->constrained('modules')->cascadeOnDelete();
+            $table->uuid('module_id');
+            $table->foreign('module_id', 'fk_module_segment_requirements_module')
+                ->references('id')
+                ->on('modules');
+
             $table->string('segment', 32);                  // 'agencia' | 'empresa' | 'freelancer'
             $table->boolean('is_required')->default(true);  // hoje sempre true, mas já deixa pronto
             $table->timestamps();

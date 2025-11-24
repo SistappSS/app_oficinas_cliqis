@@ -14,11 +14,15 @@ return new class extends Migration
         Schema::create('user_features', function (Blueprint $table) {
             $table->uuid('id')->primary();
 
-            $table->unsignedBigInteger('user_module_permission_id');
-            $table->foreign('user_module_permission_id')->references('id')->on('user_module_permissions')->onDelete('cascade');
+            $table->uuid('user_module_permission_id');
+            $table->foreign('user_module_permission_id', 'fk_user_features_user')
+                ->references('id')
+                ->on('user_module_permissions');
 
-            $table->unsignedBigInteger('feature_id');
-            $table->foreign('feature_id')->references('id')->on('features')->onDelete('cascade');
+            $table->uuid('feature_id');
+            $table->foreign('feature_id', 'fk_user_features_feature')
+                ->references('id')
+                ->on('features');
 
             $table->boolean('is_active')->default(true);
 

@@ -14,8 +14,10 @@ return new class extends Migration
         Schema::create('user_module_controls', function (Blueprint $table) {
             $table->uuid('id')->primary();
 
-            $table->unsignedBigInteger('user_module_permission_id');
-            $table->foreign('user_module_permission_id')->references('id')->on('user_module_permissions');
+            $table->uuid('user_module_permission_id');
+            $table->foreign('user_module_permission_id', 'fk_user_module_controls_user')
+                ->references('id')
+                ->on('user_module_permissions');
 
             $table->string('cycle');
             $table->decimal('total');
