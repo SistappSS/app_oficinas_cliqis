@@ -15,10 +15,10 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('customer_sistapp_id', 36)->index();
 
-            $table->foreignUuid('supplier_id')
-                ->nullable()
-                ->constrained('suppliers')
-                ->nullOnDelete();
+            $table->uuid('supplier_id');
+            $table->foreign('supplier_id', 'fk_parts_supplier')
+                ->references('id')
+                ->on('suppliers');
 
             $table->string('code')->nullable();
             $table->string('name');
