@@ -15,9 +15,10 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('customer_sistapp_id', 36)->index();
 
-            $table->foreignUuid('equipment_id')
-                ->constrained()
-                ->cascadeOnDelete();
+            $table->uuid('equipment_id');
+            $table->foreign('equipment_id', 'fk_equipment_extra_infos_equipment')
+                ->references('id')
+                ->on('equipments');
 
             $table->json('image_path')->nullable();
             $table->text('iframe_url')->nullable();

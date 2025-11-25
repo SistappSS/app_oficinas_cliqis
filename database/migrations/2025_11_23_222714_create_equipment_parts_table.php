@@ -15,13 +15,15 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('customer_sistapp_id', 36)->index();
 
-            $table->foreignUuid('equipment_id')
-                ->constrained('equipments')
-                ->cascadeOnDelete();
+            $table->uuid('equipment_id');
+            $table->foreign('equipment_id', 'fk_equipment_parts_equipment')
+                ->references('id')
+                ->on('equipments');
 
-            $table->foreignUuid('part_id')
-                ->constrained('parts')
-                ->cascadeOnDelete();
+            $table->uuid('part_id');
+            $table->foreign('part_id', 'fk_equipment_parts_part')
+                ->references('id')
+                ->on('parts');
 
             $table->timestamps();
         });
