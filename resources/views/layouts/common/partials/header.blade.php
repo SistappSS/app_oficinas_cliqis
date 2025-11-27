@@ -157,6 +157,19 @@
                 </div>
             </a>
 
+            <a href="{{ route('supplier.view') }}" role="menuitem"
+               class="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-blue-50">
+                <div
+                    class="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-blue-500 group-hover:bg-blue-700 group-hover:text-white">
+                    <i class="fa-solid fa-user-gear"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-sm font-medium text-slate-800">Fornecedores</p>
+                    <p class="text-xs text-slate-500">Gestão de fornecedores</p>
+                </div>
+            </a>
+
+
             {{-- Human Resources --}}
             <div class="px-3 pt-3 pb-0">
                 <p class="text-[11px] font-semibold tracking-wide uppercase text-slate-400">Recursos Humanos</p>

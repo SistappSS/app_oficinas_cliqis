@@ -4,8 +4,8 @@ namespace App\Models\Catalogs\Parts;
 
 use App\Models\Catalogs\EquipmentParts\EquipmentPart;
 use App\Models\Catalogs\Equipments\Equipment;
-use App\Models\Catalogs\ServiceOrders\ServiceOrderPartItems\ServiceOrderPartItem;
 use App\Models\Entities\Suppliers\Supplier;
+use App\Models\ServiceOrders\ServiceOrderPartItems\ServiceOrderPartItem;
 use App\Traits\HasCustomerScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;

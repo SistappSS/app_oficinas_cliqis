@@ -5,7 +5,7 @@ namespace App\Models\Catalogs\Equipments;
 use App\Models\Catalogs\EquipmentParts\EquipmentPart;
 use App\Models\Catalogs\Equipments\EquipmentExtraInfos\EquipmentExtraInfo;
 use App\Models\Catalogs\Parts\Part;
-use App\Models\Catalogs\ServiceOrders\ServiceOrderEquipments\ServiceOrderEquipment;
+use App\Models\ServiceOrders\ServiceOrderEquipments\ServiceOrderEquipment;
 use App\Traits\HasCustomerScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;

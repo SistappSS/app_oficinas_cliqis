@@ -2,12 +2,12 @@
 
 namespace App\Models\HumanResources\Employees;
 
-use App\Models\Catalogs\ServiceOrders\CompletedServiceOrders\CompletedServiceOrder;
-use App\Models\Catalogs\ServiceOrders\ServiceOrder;
-use App\Models\Catalogs\ServiceOrders\ServiceOrderLaborEntries\ServiceOrderLaborEntry;
 use App\Models\Entities\Users\User;
 use App\Models\HumanResources\Benefits\EmployeeBenefit;
 use App\Models\HumanResources\Departments\Department;
+use App\Models\ServiceOrders\CompletedServiceOrders\CompletedServiceOrder;
+use App\Models\ServiceOrders\ServiceOrder;
+use App\Models\ServiceOrders\ServiceOrderLaborEntries\ServiceOrderLaborEntry;
 use App\Traits\HasCustomerScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;

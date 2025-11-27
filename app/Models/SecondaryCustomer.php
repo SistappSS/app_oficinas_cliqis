@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Catalogs\ServiceOrders\ServiceOrder;
+use App\Models\ServiceOrders\ServiceOrder;
 use App\Traits\HasCustomerScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
