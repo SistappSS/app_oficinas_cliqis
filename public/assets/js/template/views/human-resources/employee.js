@@ -1,6 +1,35 @@
 import { ModelCrud } from "../../partials/modelCrud.js";
 
-document.addEventListener("DOMContentLoaded", () => {
+async function loadSelectOptions() {
+    await Promise.all([
+        loadDepartments(),
+    ]);
+}
+
+async function loadDepartments() {
+    const sel = document.querySelector("#department_id");
+    if (!sel) return;
+
+    try {
+        const res = await fetch("/human-resources/department-api");
+        if (!res.ok) throw new Error("Erro ao buscar funcionários");
+
+        const json = await res.json();
+        const list = json.data || json || [];
+
+        sel.innerHTML = '<option value="">Selecione...</option>' +
+            list
+                .map(e => `<option value="${e.id}">${e.name || "(sem nome)"}</option>`)
+                .join("");
+    } catch (e) {
+        console.error(e);
+        sel.innerHTML = '<option value="">Erro ao carregar departamentos</option>';
+    }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+    await loadSelectOptions();
+
     new ModelCrud({
         name: "funcionarios",
         label: "funcionário",
@@ -111,9 +140,9 @@ document.addEventListener("DOMContentLoaded", () => {
             document.querySelector("#position").value = e.position || "";
             document.querySelector("#hourly_rate").value = e.hourly_rate ?? "";
 
-            // department_id pode vir como e.department_id
-            const dept = document.querySelector("#department_id");
-            if (dept) dept.value = e.department_id || "";
+            const departmentSelect = document.querySelector("#department_id");
+            if (departmentSelect) departmentSelect.value = e.department_id || "";
+
 
             document.querySelector("#is_active").checked = !!e.is_active;
             document.querySelector("#is_technician").checked = !!e.is_technician;

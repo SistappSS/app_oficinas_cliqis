@@ -14,21 +14,14 @@ class UpdateCustomerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required'],
-            'cpfCnpj' => ['required'],
-            'mobilePhone' => ['required'],
-            'address' => ['required'],
-            'addressNumber' => ['required'],
-            'postalCode' => ['required']
+            'name' => ['required']
         ];
     }
 
     public function messages()
     {
         return [
-            'name.required' => 'O campo de nome é obrigatório.',
-            'address.required' => 'O campo de Endereço é obrigatório.',
-            'postalCode.required' => 'O campo de CEP é obrigatório.',
+            'name.required' => 'O campo de nome é obrigatório.'
         ];
     }
 }

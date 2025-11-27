@@ -13,6 +13,7 @@ use App\Http\Controllers\Application\DashboardController;
 
 use App\Http\Controllers\Application\Entities\Customers\Customer\CustomerController;
 use App\Http\Controllers\Application\Entities\Customers\SecondaryCustomer\SecondaryCustomerController;
+use App\Http\Controllers\Application\Entities\Suppliers\Supplier\SupplierController;
 use App\Http\Controllers\Application\Entities\Users\UserController;
 
 // HUMAN RESOURCES
@@ -133,13 +134,13 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::get('/user', [UserController::class, 'view'])->name('user.view');
         Route::resource('/user-api', UserController::class);
 
-        // SecondaryCustomers
+        // Secondary Customers
         Route::get('/customer', [SecondaryCustomerController::class, 'view'])->name('customer.view');
         Route::resource('/customer-api', SecondaryCustomerController::class);
 
-        // SecondaryCustomers
-        Route::get('/supplier', [SecondaryCustomerController::class, 'view'])->name('customer.view');
-        Route::resource('/supplier-api', SecondaryCustomerController::class);
+        // Supplier
+        Route::get('/supplier', [SupplierController::class, 'view'])->name('supplier.view');
+        Route::resource('/supplier-api', SupplierController::class);
     });
 
     /* --->| Human Resource |<--- */
