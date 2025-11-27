@@ -5,9 +5,7 @@
 
         {{-- HERO --}}
         <section>
-            <div
-                class="relative overflow-hidden rounded-[28px] px-6 py-5 md:px-8 md:py-6 text-white shadow-[0_24px_70px_rgba(37,99,235,0.25)] bg-gradient-to-tr from-sky-400 via-blue-600 to-indigo-800"
-            >
+            <div class="relative overflow-hidden rounded-[28px] px-6 py-5 md:px-8 md:py-6 text-white shadow-[0_24px_70px_rgba(37,99,235,0.25)] bg-gradient-to-tr from-sky-400 via-blue-600 to-indigo-800">
                 <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
                         <div class="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium tracking-wide">
@@ -42,53 +40,45 @@
                     Ordem de serviço
                 </h2>
 
+                <!-- hidden com ID da OS (edição) -->
+                <input type="hidden" id="service_order_id" value="{{ $serviceOrder->id ?? '' }}">
+
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-sm text-slate-600 mb-1">Nº</label>
                         <input
-                            id="so_number"
-                            name="number"
-                            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
+                            id="order_number_display"
+                            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900"
                             placeholder="000001"
-                            value="{{ old('number', $serviceOrder->number ?? '') }}"
                             disabled
                         />
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-sm text-slate-600 mb-1">Data</label>
                         <input
+                            id="order_date"
                             type="date"
-                            id="so_date"
-                            name="date"
-                            class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
-                            value="{{ old('date', optional($serviceOrder->date ?? null)->format('Y-m-d')) }}"
+                            class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900"
+                            value="{{ now()->format('Y-m-d') }}"
                         />
                     </div>
                 </div>
 
                 <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm text-slate-600 mb-1">
-                            Solicitante
-                        </label>
+                        <label class="block text-sm text-slate-600 mb-1">Solicitante</label>
                         <input
                             id="requester_name"
-                            name="requester_name"
-                            class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
+                            class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm"
                             placeholder="Nome do solicitante"
-                            value="{{ old('requester_name', $serviceOrder->requester_name ?? '') }}"
                         />
                     </div>
                     <div>
-                        <label class="block text-sm text-slate-600 mb-1">
-                            Responsável pelo serviço
-                        </label>
+                        <label class="block text-sm text-slate-600 mb-1">Responsável pelo serviço</label>
                         <input
-                            id="responsible_name"
-                            name="responsible_name"
-                            class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
+                            id="service_responsible"
+                            class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm"
                             placeholder="Nome do responsável"
-                            value="{{ old('responsible_name', $serviceOrder->responsible_name ?? '') }}"
                         />
                     </div>
                 </div>
@@ -104,7 +94,7 @@
                             Cliente / Razão Social *
                         </label>
                         <input
-                            id="customer_name"
+                            id="client_name"
                             name="customer_name"
                             class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
                             placeholder="Ex.: BAR DO SANTO"
@@ -117,7 +107,7 @@
                             CNPJ / CPF
                         </label>
                         <input
-                            id="customer_document"
+                            id="client_document"
                             name="customer_document"
                             class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
                             placeholder="00.000.000/0000-00"
@@ -129,7 +119,7 @@
                             Contato
                         </label>
                         <input
-                            id="customer_contact"
+                            id="client_contact"
                             name="customer_contact"
                             class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
                             placeholder="Nome do contato"
@@ -144,7 +134,7 @@
                             Telefone
                         </label>
                         <input
-                            id="customer_phone"
+                            id="client_phone"
                             name="customer_phone"
                             class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
                             placeholder="(11) 99999-9999"
@@ -169,7 +159,7 @@
                             Endereço
                         </label>
                         <input
-                            id="address"
+                            id="client_address"
                             name="address"
                             class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
                             placeholder="Rua / nº / complemento"
@@ -183,7 +173,7 @@
                                 Município
                             </label>
                             <input
-                                id="city"
+                                id="client_city"
                                 name="city"
                                 class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
                                 placeholder="Cidade"
@@ -193,7 +183,7 @@
                         <div>
                             <label class="block text-sm text-slate-600 mb-1">UF</label>
                             <input
-                                id="state"
+                                id="client_state"
                                 name="state"
                                 class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
                                 placeholder="SP"
@@ -206,7 +196,7 @@
                                 CEP
                             </label>
                             <input
-                                id="postal_code"
+                                id="client_zip"
                                 name="postal_code"
                                 class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
                                 placeholder="00000-000"
@@ -223,12 +213,10 @@
                 class="bg-white rounded-[24px] border border-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.04)] p-5 md:p-7"
             >
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="font-semibold text-slate-900 text-lg">
-                        Equipamentos atendidos
-                    </h2>
+                    <h2 class="font-semibold text-slate-900 text-lg">Equipamentos atendidos</h2>
                     <button
                         type="button"
-                        id="btn-add-equipment-row"
+                        id="btn-add-equipment"
                         class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-sky-300 hover:bg-sky-50/70 transition"
                     >
                         <span class="text-base leading-none">+</span>
@@ -236,9 +224,7 @@
                     </button>
                 </div>
 
-                <div id="equipment-rows" class="space-y-4">
-                    {{-- linhas de equipamento serão geradas via JS --}}
-                </div>
+                <div id="equipment-list" class="space-y-4"></div>
             </section>
 
             {{-- SERVIÇOS (itens) --}}
@@ -250,7 +236,7 @@
                     <h2 class="font-semibold text-slate-900 text-lg">Serviços</h2>
                     <button
                         type="button"
-                        id="btn-add-service-row"
+                        id="btn-add-service"
                         class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-sky-300 hover:bg-sky-50/70 transition"
                     >
                         <span class="text-base leading-none">+</span>
@@ -258,11 +244,11 @@
                     </button>
                 </div>
 
-                <div id="service-rows" class="space-y-3"></div>
+                <div id="service-list" class="space-y-3"></div>
 
                 <div class="mt-5 flex items-center justify-end gap-4">
                     <div class="text-sm text-slate-600">Subtotal serviços</div>
-                    <div id="subtotal-services" class="text-base font-semibold">
+                    <div id="services-subtotal-display" class="text-base font-semibold">
                         R$ 0,00
                     </div>
                 </div>
@@ -277,7 +263,7 @@
                     <h2 class="font-semibold text-slate-900 text-lg">Peças</h2>
                     <button
                         type="button"
-                        id="btn-add-part-row"
+                        id="btn-add-part"
                         class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-sky-300 hover:bg-sky-50/70 transition"
                     >
                         <span class="text-base leading-none">+</span>
@@ -285,11 +271,11 @@
                     </button>
                 </div>
 
-                <div id="part-rows" class="space-y-3"></div>
+                <div id="part-list" class="space-y-3"></div>
 
                 <div class="mt-5 flex items-center justify-end gap-4">
                     <div class="text-sm text-slate-600">Subtotal peças</div>
-                    <div id="subtotal-parts" class="text-base font-semibold">
+                    <div id="parts-subtotal-display" class="text-base font-semibold">
                         R$ 0,00
                     </div>
                 </div>
@@ -301,12 +287,10 @@
                 class="bg-white rounded-[24px] border border-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.04)] p-5 md:p-7"
             >
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="font-semibold text-slate-900 text-lg">
-                        Atendimento / Pagamento
-                    </h2>
+                    <h2 class="font-semibold text-slate-900 text-lg">Atendimento / Pagamento</h2>
                     <button
                         type="button"
-                        id="btn-add-labor-row"
+                        id="btn-add-labor"
                         class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-sky-300 hover:bg-sky-50/70 transition"
                     >
                         <span class="text-base leading-none">+</span>
@@ -322,7 +306,7 @@
                         <input
                             type="number"
                             step="0.01"
-                            id="hourly_rate"
+                            id="labor_hour_value"
                             name="hourly_rate"
                             class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-right text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
                             placeholder="0,00"
@@ -330,16 +314,14 @@
                         />
                     </div>
                     <div class="md:col-span-9 flex flex-wrap gap-4 md:justify-end">
-                        <div class="text-sm text-slate-600 self-center">
-                            Total mão de obra:
-                        </div>
-                        <div id="subtotal-labor" class="text-base font-semibold self-center">
+                        <div class="text-sm text-slate-600 self-center">Total mão de obra:</div>
+                        <div id="labor-total-amount-display" class="text-base font-semibold self-center">
                             R$ 0,00
                         </div>
                     </div>
                 </div>
 
-                <div id="labor-rows" class="space-y-3"></div>
+                <div id="labor-list" class="space-y-3"></div>
 
                 <div class="border-t border-slate-100 my-5"></div>
 
@@ -349,7 +331,7 @@
                             Condição de pagamento
                         </label>
                         <select
-                            id="payment_terms"
+                            id="payment_condition"
                             name="payment_terms"
                             class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
                         >
@@ -365,7 +347,7 @@
                             Observações
                         </label>
                         <textarea
-                            id="notes"
+                            id="payment_notes"
                             name="notes"
                             class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition min-h-[80px] resize-none"
                             placeholder="Pagamento combinado, observações gerais de atendimento, etc."
@@ -385,19 +367,19 @@
                     <div class="rounded-2xl bg-slate-50/80 border border-slate-100 px-4 py-3">
                         <div class="flex items-center justify-between">
                             <span class="text-slate-600 text-sm">Serviços</span>
-                            <span id="total-services" class="font-semibold">R$ 0,00</span>
+                            <span id="box-services-value" class="font-semibold">R$ 0,00</span>
                         </div>
                     </div>
                     <div class="rounded-2xl bg-slate-50/80 border border-slate-100 px-4 py-3">
                         <div class="flex items-center justify-between">
                             <span class="text-slate-600 text-sm">Peças</span>
-                            <span id="total-parts" class="font-semibold">R$ 0,00</span>
+                            <span id="box-parts-value" class="font-semibold">R$ 0,00</span>
                         </div>
                     </div>
                     <div class="rounded-2xl bg-slate-50/80 border border-slate-100 px-4 py-3">
                         <div class="flex items-center justify-between">
                             <span class="text-slate-600 text-sm">Mão de obra</span>
-                            <span id="total-labor" class="font-semibold">R$ 0,00</span>
+                            <span id="box-parts-value" class="font-semibold">R$ 0,00</span>
                         </div>
                     </div>
                 </div>
@@ -435,7 +417,7 @@
                         <span class="text-sm font-medium text-sky-100">
                             Total geral
                         </span>
-                        <span id="total-general" class="text-lg font-bold">
+                        <span id="grand_total_display" class="text-lg font-bold">
                             R$ 0,00
                         </span>
                     </div>
@@ -451,25 +433,25 @@
                 <div class="flex-1 flex flex-wrap gap-6 text-xs text-slate-600">
                     <div class="flex flex-col leading-4">
                         <span>Serviços</span>
-                        <span id="bar-services" class="font-semibold text-slate-900 text-sm">
+                        <span id="footer-services-value" class="font-semibold text-slate-900 text-sm">
                             R$ 0,00
                         </span>
                     </div>
                     <div class="flex flex-col leading-4">
                         <span>Peças</span>
-                        <span id="bar-parts" class="font-semibold text-slate-900 text-sm">
+                        <span id="footer-parts-value" class="font-semibold text-slate-900 text-sm">
                             R$ 0,00
                         </span>
                     </div>
                     <div class="flex flex-col leading-4">
                         <span>Mão de obra</span>
-                        <span id="bar-labor" class="font-semibold text-slate-900 text-sm">
+                        <span id="footer-labor-value" class="font-semibold text-slate-900 text-sm">
                             R$ 0,00
                         </span>
                     </div>
                     <div class="flex flex-col leading-4">
                         <span>Total</span>
-                        <span id="bar-total" class="font-semibold text-indigo-600 text-sm">
+                        <span id="footer-grand-value" class="font-semibold text-indigo-600 text-sm">
                             R$ 0,00
                         </span>
                     </div>
@@ -478,7 +460,7 @@
                 <div class="flex gap-2">
                     <button
                         type="button"
-                        id="btn-save-draft"
+                        id="btn-save-os"
                         class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100"
                     >
                         💾
@@ -486,7 +468,7 @@
                     </button>
                     <button
                         type="button"
-                        id="btn-finish"
+                        id="btn-finish-os"
                         class="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
                     >
                         ✉️
