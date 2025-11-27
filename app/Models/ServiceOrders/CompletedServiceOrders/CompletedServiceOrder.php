@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Models\Catalogs\ServiceOrders\CompletedServiceOrders;
+namespace App\Models\ServiceOrders\CompletedServiceOrders;
 
-use App\Models\Catalogs\ServiceOrders\ServiceOrder;
 use App\Models\HumanResources\Employees\Employee;
+use App\Models\ServiceOrders\ServiceOrder;
 use App\Traits\HasCustomerScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -16,6 +16,14 @@ class CompletedServiceOrder extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $guarded = [];
+
+    protected $table = 'completed_service_orders';
+
+    protected $casts = [
+        'client_signed_at'     => 'datetime',
+        'technician_signed_at' => 'datetime',
+        'completed_at'         => 'datetime',
+    ];
 
     public function serviceOrder()
     {

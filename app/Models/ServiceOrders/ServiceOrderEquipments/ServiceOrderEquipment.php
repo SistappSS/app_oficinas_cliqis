@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Models\Catalogs\ServiceOrders\ServiceOrderEquipments;
+namespace App\Models\ServiceOrders\ServiceOrderEquipments;
 
 use App\Models\Catalogs\Equipments\Equipment;
-use App\Models\Catalogs\ServiceOrders\ServiceOrder;
+use App\Models\ServiceOrders\ServiceOrder;
 use App\Traits\HasCustomerScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -16,6 +16,8 @@ class ServiceOrderEquipment extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $guarded = [];
+
+    protected $table = 'service_order_equipments';
 
     public function serviceOrder()
     {

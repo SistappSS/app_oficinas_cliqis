@@ -3,7 +3,7 @@
 namespace App\Models\Catalogs\Services\ServiceTypes;
 
 use App\Models\Catalogs\Services\ServiceItems\ServiceItem;
-use App\Models\Catalogs\ServiceOrders\ServiceOrderServiceItems\ServiceOrderServiceItem;
+use App\Models\ServiceOrders\ServiceOrderServiceItems\ServiceOrderServiceItem;
 use App\Traits\HasCustomerScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
