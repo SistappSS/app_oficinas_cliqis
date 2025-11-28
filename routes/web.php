@@ -209,7 +209,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
 
         // OS concluídas / assinaturas
         Route::get('/completed-service-order', [CompletedServiceOrderController::class, 'view'])->name('completed-service-order.view');
-        Route::resource('/completed-service-order-api', CompletedServiceOrderController::class);
+        Route::resource('/completed-service-order-api', CompletedServiceOrderController::class)->except('store');
+        Route::post('/{serviceOrder}/client-signature', [CompletedServiceOrderController::class, 'store'])->name('service-orders.client-signature');
     });
 
     /* --->| Chat IA |<--- */

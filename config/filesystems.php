@@ -57,6 +57,11 @@ return [
             'throw' => false,
         ],
 
+        'signatures' => [
+            'driver' => 'local',
+            'root'   => storage_path('app/private/service-orders'),
+            'throw'  => true,
+        ],
     ],
 
     /*
