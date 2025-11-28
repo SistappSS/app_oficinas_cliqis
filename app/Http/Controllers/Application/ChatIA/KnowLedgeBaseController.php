@@ -102,7 +102,7 @@ class KnowLedgeBaseController extends Controller
         ]);
 
         return redirect()
-            ->route('knowledge.index')
+            ->route('knowledge.view')
             ->with('success', 'Documento adicionado à base de conhecimento.');
     }
 
@@ -118,7 +118,7 @@ class KnowLedgeBaseController extends Controller
         $document->delete();
 
         return redirect()
-            ->route('knowledge.index')
+            ->route('knowledge.view')
             ->with('success', 'Documento removido da base de conhecimento.');
     }
 

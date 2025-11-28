@@ -7,6 +7,8 @@
                 <a href="{{route('knowledge.view')}}" class="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-800">
                     Base de conhecimento
                 </a>
+
+
                 <button id="toggle-header"
                         class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow hover:bg-slate-50"
                         aria-expanded="true" aria-controls="header-collapsible" type="button"
