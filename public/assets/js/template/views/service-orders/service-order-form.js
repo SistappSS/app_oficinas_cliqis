@@ -174,66 +174,137 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ====== CLIENTE (search + auto preencher) ======
-    function setupCustomerLookup() {
-        if (!clientNameInput) return;
+    // ====== CLIENTE (secondary_customer) ======
+    const clientInput   = document.querySelector("#os_client_name");
+    const clientResults = document.querySelector("#os_client_results");
+    const clientHidden  = document.querySelector("#os_secondary_customer_id");
 
-        setupTypeahead({
-            input: clientNameInput,
-            hiddenIdInput: clientIdInput,
-            searchUrl: '/entities/customer-api',
-            mapItem: (c) => ({
-                id: c.id,
-                label: c.name,
-                sublabel: c.cpfCnpj || c.email || ''
-            }),
-            onSelect: (c) => {
-                if (clientDocInput)     clientDocInput.value     = c.cpfCnpj || '';
-                if (clientPhoneInput)   clientPhoneInput.value   = c.mobilePhone || '';
-                if (clientContactInput) clientContactInput.value = c.name || '';
-                if (clientAddressInput) clientAddressInput.value = [c.address, c.addressNumber, c.complement].filter(Boolean).join(', ');
-                if (clientCityInput)    clientCityInput.value    = c.cityName || '';
-                if (clientStateInput)   clientStateInput.value   = c.state || '';
-                if (clientZipInput)     clientZipInput.value     = c.postalCode || '';
-            }
-        });
+    let lastCustomerResults = [];
+
+    function debounce(fn, delay = 300) {
+        let t;
+        return (...args) => {
+            clearTimeout(t);
+            t = setTimeout(() => fn(...args), delay);
+        };
     }
 
-    async function ensureCustomerExists() {
-        if (!clientNameInput) return null;
-        const existingId = clientIdInput?.value || null;
-        if (existingId) return existingId;
+    async function searchCustomers(term) {
+        const url = new URL("/entities/customer-api", window.location.origin);
+        url.searchParams.set("q", term);
 
-        const name = clientNameInput.value.trim();
-        if (!name) return null;
-
-        const payload = {
-            name,
-            cpfCnpj: clientDocInput?.value || null,
-            mobilePhone: clientPhoneInput?.value || null,
-            email: null,
-            address: clientAddressInput?.value || null,
-            addressNumber: null,
-            postalCode: clientZipInput?.value || null,
-            cityName: clientCityInput?.value || null,
-            state: clientStateInput?.value || null,
-            province: null,
-            complement: null
-        };
-
-        const res = await fetch('/entities/customer-api', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrf
-            },
-            body: JSON.stringify(payload)
+        const resp = await fetch(url.toString(), {
+            headers: { "Accept": "application/json" },
         });
-        if (!res.ok) throw new Error('Erro ao criar cliente');
 
-        const json = await res.json();
-        const newId = json.id || (json.data && json.data.id) || null;
-        if (clientIdInput && newId) clientIdInput.value = newId;
-        return newId;
+        if (!resp.ok) {
+            console.error("Erro ao buscar clientes:", await resp.text());
+            return [];
+        }
+
+        const json = await resp.json();
+        return json.data || [];
+    }
+
+    function renderCustomerResults(items) {
+        if (!clientResults) return;
+
+        if (!items.length) {
+            clientResults.classList.add("hidden");
+            clientResults.innerHTML = "";
+            return;
+        }
+
+        lastCustomerResults = items;
+
+        clientResults.innerHTML = items
+            .map((c, idx) => `
+        <button type="button"
+                class="block w-full px-3 py-2 text-left hover:bg-slate-50"
+                data-index="${idx}">
+            <div class="text-xs font-medium text-slate-900">${c.name}</div>
+            <div class="text-[11px] text-slate-500">
+                ${(c.cpfCnpj || "")} ${(c.cityName || "")}/${(c.state || "")}
+            </div>
+        </button>
+    `)
+            .join("");
+
+        clientResults.classList.remove("hidden");
+
+        clientResults
+            .querySelectorAll("button[data-index]")
+            .forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const idx = parseInt(btn.dataset.index, 10);
+                    const c   = lastCustomerResults[idx];
+                    applyCustomerToForm(c);
+                    clientResults.classList.add("hidden");
+                    clientResults.innerHTML = "";
+                });
+            });
+    }
+
+    function applyCustomerToForm(c) {
+        if (!c) return;
+
+        // guarda ID
+        if (clientHidden) {
+            clientHidden.value = c.id;
+        }
+
+        if (clientInput) clientInput.value = c.name || "";
+
+        const docInput   = document.querySelector("#os_client_document");
+        const contactInp = document.querySelector("#os_client_contact");
+        const phoneInput = document.querySelector("#os_client_phone");
+        const emailInput = document.querySelector("#os_client_email");
+        const addrInput  = document.querySelector("#os_client_address");
+        const cityInput  = document.querySelector("#os_client_city");
+        const stateInput = document.querySelector("#os_client_state");
+        const zipInput   = document.querySelector("#os_client_zip");
+
+        if (docInput)   docInput.value   = c.cpfCnpj || "";
+        if (contactInp) contactInp.value = c.name || "";
+        if (phoneInput) phoneInput.value = c.mobilePhone || "";
+        if (emailInput) emailInput.value = c.email || "";
+
+        // monta endereço linha única
+        if (addrInput) {
+            const parts = [];
+            if (c.address)       parts.push(c.address);
+            if (c.addressNumber) parts.push(c.addressNumber);
+            if (c.province)      parts.push(c.province);
+            if (c.complement)    parts.push(c.complement);
+            addrInput.value = parts.join(", ");
+        }
+
+        if (cityInput)  cityInput.value  = c.cityName || "";
+        if (stateInput) stateInput.value = c.state || "";
+        if (zipInput)   zipInput.value   = c.postalCode || "";
+    }
+
+    if (clientInput && clientResults) {
+        const handleClientInput = debounce(async () => {
+            const term = clientInput.value.trim();
+            if (term.length < 2) {
+                clientResults.classList.add("hidden");
+                clientResults.innerHTML = "";
+                return;
+            }
+
+            const items = await searchCustomers(term);
+            renderCustomerResults(items);
+        }, 300);
+
+        clientInput.addEventListener("input", handleClientInput);
+
+        // fecha dropdown ao clicar fora
+        document.addEventListener("click", (e) => {
+            if (!clientResults.contains(e.target) && e.target !== clientInput) {
+                clientResults.classList.add("hidden");
+            }
+        });
     }
 
     // ====== TÉCNICO (search + valor hora) ======
@@ -838,6 +909,352 @@ document.addEventListener("DOMContentLoaded", () => {
     if (discountInput)      discountInput.addEventListener('input', recalcTotals);
     if (additionInput)      additionInput.addEventListener('input', recalcTotals);
     if (laborHourValueInput) laborHourValueInput.addEventListener('input', recalcTotals);
+
+
+    const ROUTES = {
+        serviceOrder: "/service-orders-api",
+        secondaryCustomer: "/entities/secondary-customer-api",
+        employee: "/human-resources/employee-api",
+        serviceItem: "/catalogs/service-item-api",
+        part: "/catalogs/part-api",
+        equipment: "/catalogs/equipment-api",
+    };
+
+    function getCsrf() {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.content : "";
+    }
+
+    async function postJson(url, body) {
+        const res = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": getCsrf(),
+                "Accept": "application/json",
+            },
+            body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+            console.error("Erro ao salvar em", url, await res.text());
+            throw new Error("Falha no POST " + url);
+        }
+        return await res.json();
+    }
+
+    async function submitServiceOrder(status = "draft") {
+        const payload = buildOsPayload(status); // você já tem isso
+        const method  = payload.id ? "PUT" : "POST";
+        const url     = payload.id
+            ? `${ROUTES.serviceOrder}/${payload.id}`
+            : ROUTES.serviceOrder;
+
+        const res = await fetch(url, {
+            method,
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": getCsrf(),
+                "Accept": "application/json",
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+            console.error("Erro ao salvar OS:", await res.text());
+            alert("Erro ao salvar ordem de serviço.");
+            throw new Error("erro salvar OS");
+        }
+
+        const data = await res.json();
+        console.log("OS salva:", data);
+        return {payload, data};
+    }
+
+    async function saveCatalogsFromOs(payload, opts) {
+        const tasks = [];
+
+        // CLIENTE (SecondaryCustomer)
+        if (opts.saveCustomer) {
+            const name = payload.client_name || payload.secondary_customer_name;
+            if (name && !payload.secondary_customer_id) {
+                tasks.push(postJson(ROUTES.secondaryCustomer, {
+                    name,
+                    cpfCnpj: payload.client_document || null,
+                    email: payload.client_email || null,
+                    mobilePhone: payload.client_phone || null,
+                    address: payload.address_line1 || null,
+                    addressNumber: null,
+                    postalCode: payload.zip_code || null,
+                    cityName: payload.city || null,
+                    state: payload.state || null,
+                    province: null,
+                    complement: payload.address_line2 || null,
+                }));
+            }
+        }
+
+        // TÉCNICO (Employee)
+        if (opts.saveTechnician) {
+            if (!payload.technician_id && payload.technician_name) {
+                tasks.push(postJson(ROUTES.employee, {
+                    full_name: payload.technician_name,
+                    email: payload.technician_email || null,
+                    phone: payload.technician_phone || null,
+                    document_number: null,
+                    position: "Técnico",
+                    hourly_rate: payload.labor_hour_value || 0,
+                    is_technician: true,
+                    is_active: true,
+                    user_id: payload.technician_user_id || null, // se tiver
+                    department_id: payload.technician_department_id || null,
+                }));
+            }
+        }
+
+        // SERVIÇOS
+        if (opts.saveServices && Array.isArray(payload.services)) {
+            payload.services.forEach(srv => {
+                if (!srv.service_item_id && srv.description) {
+                    tasks.push(postJson(ROUTES.serviceItem, {
+                        name: srv.description,
+                        description: srv.description,
+                        unit_price: srv.unit_price || 0,
+                        service_type_id: srv.service_type_id || null,
+                        is_active: true,
+                    }));
+                }
+            });
+        }
+
+        // PEÇAS
+        if (opts.saveParts && Array.isArray(payload.parts)) {
+            payload.parts.forEach(p => {
+                if (!p.part_id && (p.code || p.description)) {
+                    tasks.push(postJson(ROUTES.part, {
+                        code: p.code || null,
+                        name: p.description || p.code || "Peça",
+                        description: p.description || null,
+                        ncm_code: null,
+                        unit_price: p.unit_price || 0,
+                        supplier_id: null,
+                        is_active: true,
+                    }));
+                }
+            });
+        }
+
+        // EQUIPAMENTOS
+        if (opts.saveEquipments && Array.isArray(payload.equipments)) {
+            payload.equipments.forEach(e => {
+                if (!e.equipment_id && (e.equipment_description || e.serial_number)) {
+                    tasks.push(postJson(ROUTES.equipment, {
+                        code: e.serial_number || null,
+                        name: e.equipment_description || "Equipamento",
+                        description: e.notes || null,
+                        serial_number: e.serial_number || null,
+                        notes: e.location || null,
+                    }));
+                }
+            });
+        }
+
+        if (!tasks.length) return;
+        try {
+            await Promise.all(tasks);
+            console.log("Cadastros auxiliares salvos.");
+        } catch (e) {
+            console.error(e);
+            alert("Alguns cadastros auxiliares não puderam ser salvos. Veja o console.");
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const saveBtn      = document.querySelector("#btn-save-os");
+        const finalizeBtn  = document.querySelector("#btn-finalize-os");
+
+        const saveModal    = document.querySelector("#os-save-modal");
+        const finalizeModal= document.querySelector("#os-finalize-modal");
+        const signModal    = document.querySelector("#os-signature-modal");
+
+        // abrir modal salvar
+        if (saveBtn && saveModal) {
+            saveBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                saveModal.classList.remove("hidden");
+                saveModal.classList.add("flex");
+            });
+
+            document.querySelectorAll("[data-os-save-cancel]").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    saveModal.classList.add("hidden");
+                    saveModal.classList.remove("flex");
+                });
+            });
+
+            document.querySelector("#os-save-confirm").addEventListener("click", async () => {
+                const opts = {
+                    saveCustomer:  document.querySelector("#save_customer").checked,
+                    saveTechnician:document.querySelector("#save_technician").checked,
+                    saveServices:  document.querySelector("#save_services").checked,
+                    saveParts:     document.querySelector("#save_parts").checked,
+                    saveEquipments:document.querySelector("#save_equipments").checked,
+                };
+
+                const {payload, data} = await submitServiceOrder("draft");
+                await saveCatalogsFromOs(payload, opts);
+
+                saveModal.classList.add("hidden");
+                saveModal.classList.remove("flex");
+                alert("OS salva com sucesso.");
+                // se quiser redirecionar:
+                // window.location.href = `/service-orders/${data.id}/edit`;
+            });
+        }
+
+        // abrir modal finalizar
+        if (finalizeBtn && finalizeModal) {
+            finalizeBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                // habilita/desabilita botão de e-mail de acordo com cliente
+                const clientEmailInput = document.querySelector("#client_email");
+                const hasEmail = clientEmailInput && clientEmailInput.value.trim() !== "";
+                const emailBtn = document.querySelector("#os-finalize-email");
+                if (emailBtn) emailBtn.disabled = !hasEmail;
+
+                finalizeModal.classList.remove("hidden");
+                finalizeModal.classList.add("flex");
+            });
+
+            document.querySelectorAll("[data-os-finalize-cancel]").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    finalizeModal.classList.add("hidden");
+                    finalizeModal.classList.remove("flex");
+                });
+            });
+
+            async function handleFinalize(action) {
+                const opts = {
+                    saveCustomer:  document.querySelector("#final_save_customer").checked,
+                    saveTechnician:document.querySelector("#final_save_technician").checked,
+                    saveServices:  document.querySelector("#final_save_services").checked,
+                    saveParts:     document.querySelector("#final_save_parts").checked,
+                    saveEquipments:document.querySelector("#final_save_equipments").checked,
+                };
+
+                // aqui você decide qual status quer usar ao finalizar
+                const {payload, data} = await submitServiceOrder("pending");
+
+                await saveCatalogsFromOs(payload, opts);
+
+                if (action === "tablet") {
+                    // abre modal de assinatura
+                    finalizeModal.classList.add("hidden");
+                    finalizeModal.classList.remove("flex");
+                    openSignatureModal();
+                } else if (action === "email") {
+                    finalizeModal.classList.add("hidden");
+                    finalizeModal.classList.remove("flex");
+                    alert("OS enviada para fluxo de assinatura por e-mail (integração virá depois).");
+                } else if (action === "new") {
+                    finalizeModal.classList.add("hidden");
+                    finalizeModal.classList.remove("flex");
+                    window.location.href = "/service-orders/create";
+                }
+            }
+
+            document.querySelector("#os-finalize-email")
+                .addEventListener("click", () => handleFinalize("email"));
+            document.querySelector("#os-finalize-tablet")
+                .addEventListener("click", () => handleFinalize("tablet"));
+            document.querySelector("#os-finalize-new")
+                .addEventListener("click", () => handleFinalize("new"));
+        }
+
+        // assinatura
+        function openSignatureModal() {
+            if (!signModal) return;
+            signModal.classList.remove("hidden");
+            signModal.classList.add("flex");
+        }
+
+        if (signModal) {
+            const canvas = document.querySelector("#signature-pad");
+            const ctx    = canvas.getContext("2d");
+            let drawing  = false;
+            let lastX = 0, lastY = 0;
+
+            function resizeCanvas() {
+                const rect = canvas.getBoundingClientRect();
+                canvas.width  = rect.width;
+                canvas.height = rect.height;
+            }
+            resizeCanvas();
+            window.addEventListener("resize", resizeCanvas);
+
+            function startDraw(x, y) {
+                drawing = true;
+                lastX = x;
+                lastY = y;
+            }
+            function drawTo(x, y) {
+                if (!drawing) return;
+                ctx.lineWidth = 2;
+                ctx.lineCap = "round";
+                ctx.strokeStyle = "#111827";
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                lastX = x;
+                lastY = y;
+            }
+            function stopDraw() {
+                drawing = false;
+            }
+
+            canvas.addEventListener("mousedown", (e) => {
+                const rect = canvas.getBoundingClientRect();
+                startDraw(e.clientX - rect.left, e.clientY - rect.top);
+            });
+            canvas.addEventListener("mousemove", (e) => {
+                const rect = canvas.getBoundingClientRect();
+                drawTo(e.clientX - rect.left, e.clientY - rect.top);
+            });
+            window.addEventListener("mouseup", stopDraw);
+
+            canvas.addEventListener("touchstart", (e) => {
+                e.preventDefault();
+                const t = e.touches[0];
+                const rect = canvas.getBoundingClientRect();
+                startDraw(t.clientX - rect.left, t.clientY - rect.top);
+            }, {passive: false});
+            canvas.addEventListener("touchmove", (e) => {
+                e.preventDefault();
+                const t = e.touches[0];
+                const rect = canvas.getBoundingClientRect();
+                drawTo(t.clientX - rect.left, t.clientY - rect.top);
+            }, {passive: false});
+            canvas.addEventListener("touchend", stopDraw);
+
+            document.querySelector("#signature-clear").addEventListener("click", () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            });
+
+            document.querySelector("#signature-close").addEventListener("click", () => {
+                signModal.classList.add("hidden");
+                signModal.classList.remove("flex");
+            });
+
+            document.querySelector("#signature-save").addEventListener("click", () => {
+                const dataUrl = canvas.toDataURL("image/png");
+                console.log("Assinatura base64:", dataUrl);
+                // depois você manda isso pro backend e grava em completed_service_orders
+                alert("Assinatura capturada (ver console). Integração com backend vem depois.");
+                signModal.classList.add("hidden");
+                signModal.classList.remove("flex");
+            });
+        }
+    });
 
     // ====== PAYLOAD / SAVE ======
     async function buildPayload(status) {

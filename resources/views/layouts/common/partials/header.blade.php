@@ -26,6 +26,17 @@
     <nav aria-label="Guia rápido" class="rounded-3xl bg-gradient-to-b from-slate-50 to-blue-50 p-3">
         <ul class="no-scrollbar flex items-center justify-center gap-3 overflow-x-auto rounded-3xl p-2">
 
+            {{-- ChatIA --}}
+            <li>
+                <a href="{{ route('chat.view') }}"
+                   class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105">
+                    <div class="icon grid h-12 w-12 place-items-center rounded-xl border border-slate-200 text-blue-500 {{ isActive('customer.view') }}">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <span class="text-xs font-medium text-slate-600 group-hover:text-blue-700">Chat IA</span>
+                </a>
+            </li>
+
             {{-- Clientes --}}
             @can('entitie_customer_view')
                 <li>
@@ -39,18 +50,6 @@
                     </a>
                 </li>
             @endcan
-
-            {{-- Funcionários --}}
-            <li>
-                <a href="{{ route('employee.view') }}"
-                   class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105">
-                    <div
-                        class="icon grid h-12 w-12 place-items-center rounded-xl border border-slate-200 text-blue-500 {{ isActive('employee.view') }}">
-                        <i class="fa-solid fa-users"></i>
-                    </div>
-                    <span class="text-xs font-medium text-slate-600 group-hover:text-blue-700">Funcionários</span>
-                </a>
-            </li>
 
             {{-- Dashboard --}}
             <li>
@@ -184,6 +183,16 @@
                 <div class="min-w-0">
                     <p class="text-sm font-medium text-slate-800">Departamentos</p>
                     <p class="text-xs text-slate-500">Setores internos</p>
+                </div>
+            </a>
+
+            <a href="{{ route('employee.view') }}" role="menuitem" class="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-blue-50">
+                <div class="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-blue-500 group-hover:bg-blue-700 group-hover:text-white">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-sm font-medium text-slate-800">Funcionários</p>
+                    <p class="text-xs text-slate-500">Gestão de funcionários</p>
                 </div>
             </a>
 

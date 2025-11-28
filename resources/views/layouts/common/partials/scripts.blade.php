@@ -12,6 +12,7 @@
         request()->routeIs('my-account*')
         || request()->routeIs('buy-module*')
         || request()->is('module/buy-module/*')
+        || request()->routeIs('service-order.create')
     );
 
         const html  = document.documentElement;

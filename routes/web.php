@@ -8,41 +8,38 @@ use App\Http\Controllers\Application\Auth\Permissions\Modules\ModuleController;
 use App\Http\Controllers\Application\Auth\Permissions\PermissionController;
 use App\Http\Controllers\Application\Auth\RegisterCustomer\AdditionalCustomerInfoController;
 use App\Http\Controllers\Application\Auth\User\MyAccountController;
-
+use App\Http\Controllers\Application\Catalogs\EquipmentController;
+use App\Http\Controllers\Application\Catalogs\EquipmentPartController;
+use App\Http\Controllers\Application\Catalogs\PartController;
+use App\Http\Controllers\Application\ChatIA\ChatIAController;
+use App\Http\Controllers\Application\ChatIA\KnowLedgeBaseController;
 use App\Http\Controllers\Application\DashboardController;
-
-use App\Http\Controllers\Application\Entities\Customers\Customer\CustomerController;
 use App\Http\Controllers\Application\Entities\Customers\SecondaryCustomer\SecondaryCustomerController;
 use App\Http\Controllers\Application\Entities\Suppliers\Supplier\SupplierController;
 use App\Http\Controllers\Application\Entities\Users\UserController;
-
-// HUMAN RESOURCES
-use App\Http\Controllers\Application\HumanResources\DepartmentController;
-use App\Http\Controllers\Application\HumanResources\EmployeeController;
 use App\Http\Controllers\Application\HumanResources\BenefitController;
+use App\Http\Controllers\Application\HumanResources\DepartmentController;
 use App\Http\Controllers\Application\HumanResources\EmployeeBenefitController;
-
-// CATALOGS
-use App\Http\Controllers\Application\Catalogs\PartController;
-use App\Http\Controllers\Application\Catalogs\EquipmentController;
-use App\Http\Controllers\Application\Catalogs\EquipmentPartController;
-
-// SERVICES
-use App\Http\Controllers\Application\Services\ServiceTypeController;
-use App\Http\Controllers\Application\Services\ServiceItemController;
-
-// SERVICE ORDERS
+use App\Http\Controllers\Application\HumanResources\EmployeeController;
+use App\Http\Controllers\Application\ServiceOrders\CompletedServiceOrderController;
 use App\Http\Controllers\Application\ServiceOrders\ServiceOrderController;
 use App\Http\Controllers\Application\ServiceOrders\ServiceOrderEquipmentController;
-use App\Http\Controllers\Application\ServiceOrders\ServiceOrderServiceItemController;
-use App\Http\Controllers\Application\ServiceOrders\ServiceOrderPartItemController;
 use App\Http\Controllers\Application\ServiceOrders\ServiceOrderLaborEntryController;
-use App\Http\Controllers\Application\ServiceOrders\CompletedServiceOrderController;
-
-
+use App\Http\Controllers\Application\ServiceOrders\ServiceOrderPartItemController;
+use App\Http\Controllers\Application\ServiceOrders\ServiceOrderServiceItemController;
+use App\Http\Controllers\Application\Services\ServiceItemController;
+use App\Http\Controllers\Application\Services\ServiceTypeController;
 use App\Http\Controllers\General\Notifications\NotificationController;
 use App\Http\Middleware\CheckSubscription;
 use Illuminate\Support\Facades\Route;
+
+// HUMAN RESOURCES
+
+// CATALOGS
+
+// SERVICES
+
+// SERVICE ORDERS
 
 
 // ****** --------- Entities --------- ******
@@ -191,6 +188,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
     Route::group(['prefix' => 'service-orders'], function () {
         // Service Orders
         Route::get('/service-order', [ServiceOrderController::class, 'view'])->name('service-order.view');
+        Route::get('/service-order/create', [ServiceOrderController::class, 'create'])->name('service-order.create');
         Route::resource('/service-order-api', ServiceOrderController::class);
 
         // Equipments da OS
@@ -213,6 +211,19 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::get('/completed-service-order', [CompletedServiceOrderController::class, 'view'])->name('completed-service-order.view');
         Route::resource('/completed-service-order-api', CompletedServiceOrderController::class);
     });
+
+    /* --->| Chat IA |<--- */
+    Route::group(['prefix' => 'chat'], function () {
+        // Chat
+        Route::get('/', [ChatIAController::class, 'view'])->name('chat.view');
+        Route::post('/message', [ChatIAController::class, 'message'])->name('chat.message');
+
+        // KnowLedge
+        Route::get('/knowledge', [KnowLedgeBaseController::class, 'view'])->name('knowledge.view');
+        Route::post('/knowledge', [KnowLedgeBaseController::class, 'store'])->name('knowledge.store');
+        Route::delete('/knowledge/{document}', [KnowLedgeBaseController::class, 'destroy'])->name('knowledge.destroy');
+    });
+
 
     /* --->| Config |<--- */
     Route::group(['prefix' => 'config'], function () {

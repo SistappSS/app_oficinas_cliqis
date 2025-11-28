@@ -94,12 +94,17 @@
                             Cliente / Razão Social *
                         </label>
                         <input
-                            id="client_name"
+                            id="os_client_name"
                             name="customer_name"
                             class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
                             placeholder="Ex.: BAR DO SANTO"
                             value="{{ old('customer_name', $serviceOrder->customer_name ?? '') }}"
                         />
+                        <!-- dropdown de resultados -->
+                        <div id="os_client_results"
+                             class="absolute z-30 mt-1 w-full rounded-2xl border border-slate-200 bg-white shadow-lg hidden max-h-64 overflow-auto text-xs">
+                            <!-- preenchido via JS -->
+                        </div>
                     </div>
 
                     <div>
@@ -107,7 +112,7 @@
                             CNPJ / CPF
                         </label>
                         <input
-                            id="client_document"
+                            id="os_client_document"
                             name="customer_document"
                             class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
                             placeholder="00.000.000/0000-00"
@@ -116,14 +121,14 @@
                     </div>
                     <div>
                         <label class="block text-sm text-slate-600 mb-1">
-                            Contato
+                            E-mail
                         </label>
                         <input
-                            id="client_contact"
-                            name="customer_contact"
+                            id="os_client_email"
+                            name="email"
                             class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
-                            placeholder="Nome do contato"
-                            value="{{ old('customer_contact', $serviceOrder->customer_contact ?? '') }}"
+                            placeholder="Endereço de e-mail"
+                            value="{{ old('email', $serviceOrder->email ?? '') }}"
                         />
                     </div>
                 </div>
@@ -134,13 +139,14 @@
                             Telefone
                         </label>
                         <input
-                            id="client_phone"
+                            id="os_client_phone"
                             name="customer_phone"
                             class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
                             placeholder="(11) 99999-9999"
                             value="{{ old('customer_phone', $serviceOrder->customer_phone ?? '') }}"
                         />
                     </div>
+
                     <div>
                         <label class="block text-sm text-slate-600 mb-1">
                             Chamado / Ticket
@@ -159,7 +165,7 @@
                             Endereço
                         </label>
                         <input
-                            id="client_address"
+                            id="os_client_address"
                             name="address"
                             class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
                             placeholder="Rua / nº / complemento"
@@ -173,7 +179,7 @@
                                 Município
                             </label>
                             <input
-                                id="client_city"
+                                id="os_client_city"
                                 name="city"
                                 class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
                                 placeholder="Cidade"
@@ -183,7 +189,7 @@
                         <div>
                             <label class="block text-sm text-slate-600 mb-1">UF</label>
                             <input
-                                id="client_state"
+                                id="os_client_state"
                                 name="state"
                                 class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
                                 placeholder="SP"
@@ -196,7 +202,7 @@
                                 CEP
                             </label>
                             <input
-                                id="client_zip"
+                                id="os_client_zip"
                                 name="postal_code"
                                 class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
                                 placeholder="00000-000"
@@ -426,9 +432,7 @@
         </form>
 
         {{-- BARRA INFERIOR FIXA --}}
-        <div
-            class="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-18px_40px_rgba(15,23,42,0.12)]"
-        >
+        <div class="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-18px_40px_rgba(15,23,42,0.12)]">
             <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div class="flex-1 flex flex-wrap gap-6 text-xs text-slate-600">
                     <div class="flex flex-col leading-4">
@@ -474,6 +478,179 @@
                         ✉️
                         <span>Finalizar</span>
                     </button>
+                </div>
+            </div>
+        </div>
+
+        {{-- Modal salvar cadastros --}}
+        <div id="os-save-modal"
+             class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+            <div class="w-full max-w-md rounded-2xl bg-white shadow-xl">
+                <div class="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
+                    <h2 class="text-sm font-semibold text-slate-900">
+                        Salvar dados nos cadastros?
+                    </h2>
+                    <button type="button" data-os-save-cancel
+                            class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+                        ✕
+                    </button>
+                </div>
+
+                <div class="px-5 py-4 space-y-4 text-sm">
+                    <p class="text-slate-600">
+                        Além de salvar a OS, você deseja aproveitar as informações digitadas
+                        para criar/atualizar cadastros?
+                    </p>
+
+                    <div class="space-y-2">
+                        <label class="flex items-start gap-2 text-sm text-slate-700">
+                            <input type="checkbox" class="mt-1" id="save_customer">
+                            <span>Cliente (cliente / razão social, contato, endereço)</span>
+                        </label>
+
+                        <label class="flex items-start gap-2 text-sm text-slate-700">
+                            <input type="checkbox" class="mt-1" id="save_technician">
+                            <span>Técnico (funcionário responsável)</span>
+                        </label>
+
+                        <label class="flex items-start gap-2 text-sm text-slate-700">
+                            <input type="checkbox" class="mt-1" id="save_services">
+                            <span>Serviços (descrição, valor unitário)</span>
+                        </label>
+
+                        <label class="flex items-start gap-2 text-sm text-slate-700">
+                            <input type="checkbox" class="mt-1" id="save_parts">
+                            <span>Peças (código, descrição, valor unitário)</span>
+                        </label>
+
+                        <label class="flex items-start gap-2 text-sm text-slate-700">
+                            <input type="checkbox" class="mt-1" id="save_equipments">
+                            <span>Equipamentos atendidos</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 border-t border-slate-100 px-5 py-3">
+                    <button type="button" data-os-save-cancel
+                            class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                        Cancelar
+                    </button>
+                    <button type="button" id="os-save-confirm"
+                            class="inline-flex items-center rounded-xl bg-brand-600 px-4 py-2 text-xs font-semibold text-white hover:bg-brand-700">
+                        Salvar OS
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {{-- Modal finalizar OS --}}
+        <div id="os-finalize-modal"
+             class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+            <div class="w-full max-w-lg rounded-2xl bg-white shadow-xl">
+                <div class="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
+                    <h2 class="text-sm font-semibold text-slate-900">
+                        Finalizar OS
+                    </h2>
+                    <button type="button" data-os-finalize-cancel
+                            class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+                        ✕
+                    </button>
+                </div>
+
+                <div class="px-5 py-4 space-y-4 text-sm">
+                    <p class="text-slate-600">
+                        Escolha como deseja finalizar esta ordem de serviço.
+                    </p>
+
+                    <div class="grid gap-3 sm:grid-cols-3">
+                        <button type="button" id="os-finalize-email"
+                                class="flex flex-col items-start gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs hover:border-brand-300 hover:bg-brand-50/60 disabled:opacity-60 disabled:cursor-not-allowed">
+                            <span class="font-semibold text-slate-800">Enviar para e-mail</span>
+                            <span class="text-[11px] text-slate-500">Link de assinatura por e-mail do cliente.</span>
+                        </button>
+
+                        <button type="button" id="os-finalize-tablet"
+                                class="flex flex-col items-start gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs hover:border-brand-300 hover:bg-brand-50/60">
+                            <span class="font-semibold text-slate-800">Assinar no tablet</span>
+                            <span class="text-[11px] text-slate-500">Abrir área de assinatura na tela.</span>
+                        </button>
+
+                        <button type="button" id="os-finalize-new"
+                                class="flex flex-col items-start gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs hover:border-brand-300 hover:bg-brand-50/60">
+                            <span class="font-semibold text-slate-800">Gerar nova OS</span>
+                            <span class="text-[11px] text-slate-500">Após finalizar, ir para nova OS em branco.</span>
+                        </button>
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-3 mt-3">
+                        <p class="text-xs font-semibold text-slate-700 mb-2">
+                            Aproveitar dados desta OS para cadastros:
+                        </p>
+                        <div class="grid gap-2 sm:grid-cols-2">
+                            <label class="flex items-start gap-2 text-sm text-slate-700">
+                                <input type="checkbox" class="mt-1" id="final_save_customer">
+                                <span>Cliente</span>
+                            </label>
+                            <label class="flex items-start gap-2 text-sm text-slate-700">
+                                <input type="checkbox" class="mt-1" id="final_save_technician">
+                                <span>Técnico</span>
+                            </label>
+                            <label class="flex items-start gap-2 text-sm text-slate-700">
+                                <input type="checkbox" class="mt-1" id="final_save_services">
+                                <span>Serviços</span>
+                            </label>
+                            <label class="flex items-start gap-2 text-sm text-slate-700">
+                                <input type="checkbox" class="mt-1" id="final_save_parts">
+                                <span>Peças</span>
+                            </label>
+                            <label class="flex items-start gap-2 text-sm text-slate-700">
+                                <input type="checkbox" class="mt-1" id="final_save_equipments">
+                                <span>Equipamentos</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 border-t border-slate-100 px-5 py-3">
+                    <button type="button" data-os-finalize-cancel
+                            class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {{-- Modal assinatura tablet --}}
+        <div id="os-signature-modal"
+             class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+            <div class="w-full max-w-xl rounded-2xl bg-white shadow-xl flex flex-col">
+                <div class="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
+                    <h2 class="text-sm font-semibold text-slate-900">
+                        Assinatura do cliente
+                    </h2>
+                    <button type="button" id="signature-close"
+                            class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+                        ✕
+                    </button>
+                </div>
+
+                <div class="px-5 py-4">
+                    <p class="text-xs text-slate-500 mb-2">
+                        Peça para o cliente assinar com o dedo ou caneta no tablet / celular.
+                    </p>
+                    <div class="border border-slate-300 rounded-2xl overflow-hidden bg-slate-50">
+                        <canvas id="signature-pad" class="w-full h-56 touch-none"></canvas>
+                    </div>
+                    <div class="mt-3 flex justify-between">
+                        <button type="button" id="signature-clear"
+                                class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                            Limpar
+                        </button>
+                        <button type="button" id="signature-save"
+                                class="inline-flex items-center rounded-xl bg-brand-600 px-4 py-2 text-xs font-semibold text-white hover:bg-brand-700">
+                            Salvar assinatura
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

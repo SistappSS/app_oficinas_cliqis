@@ -17,14 +17,18 @@ class ServiceOrderController extends Controller
 {
     use RoleCheckTrait, WebIndex;
 
-    public function __construct(\App\Models\ServiceOrders\ServiceOrder $serviceOrder)
+    public function __construct(ServiceOrder $serviceOrder)
     {
         $this->serviceOrder = $serviceOrder;
     }
 
     public function view()
     {
-        // tela de criação/edição (a view Blade que montamos)
+        return $this->webRoute('app.service_orders.service_order_index', 'service_order');
+    }
+
+    public function create()
+    {
         return $this->webRoute('app.service_orders.service_order_create', 'service_order');
     }
 
@@ -35,6 +39,7 @@ class ServiceOrderController extends Controller
             ->orderByDesc('order_date')
             ->orderByDesc('created_at');
 
+        // filtro texto
         if ($term = trim($request->input('q', ''))) {
             $q->where(function ($w) use ($term) {
                 $w->where('order_number', 'like', "%{$term}%")
@@ -44,6 +49,13 @@ class ServiceOrderController extends Controller
                         $q2->where('name', 'like', "%{$term}%");
                     });
             });
+        }
+
+        // filtro status (chips)
+        if ($status = $request->input('status')) {
+            if (in_array($status, ['draft', 'pending', 'approved', 'completed', 'rejected'])) {
+                $q->where('status', $status);
+            }
         }
 
         $data = $q->paginate(20);
