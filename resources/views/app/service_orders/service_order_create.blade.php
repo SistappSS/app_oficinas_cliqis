@@ -2,7 +2,6 @@
 
 @section('content')
     <main class="mx-auto max-w-6xl px-4 sm:px-6 pb-32 pt-6">
-
         {{-- HERO --}}
         <section>
             <div class="relative overflow-hidden rounded-[28px] px-6 py-5 md:px-8 md:py-6 text-white shadow-[0_24px_70px_rgba(37,99,235,0.25)] bg-gradient-to-tr from-sky-400 via-blue-600 to-indigo-800">
@@ -363,10 +362,7 @@
             </section>
 
             {{-- TOTAIS --}}
-            <section
-                id="so-totals-block"
-                class="bg-white rounded-[24px] border border-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.04)] p-5 md:p-7"
-            >
+            <section id="so-totals-block" class="bg-white rounded-[24px] border border-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.04)] p-5 md:p-7">
                 <h2 class="font-semibold text-slate-900 mb-4 text-lg">Totais</h2>
 
                 <div class="grid gap-3 md:grid-cols-3">
@@ -385,7 +381,7 @@
                     <div class="rounded-2xl bg-slate-50/80 border border-slate-100 px-4 py-3">
                         <div class="flex items-center justify-between">
                             <span class="text-slate-600 text-sm">Mão de obra</span>
-                            <span id="box-parts-value" class="font-semibold">R$ 0,00</span>
+                            <span id="box-labor-value" class="font-semibold">R$ 0,00</span>
                         </div>
                     </div>
                 </div>
