@@ -236,7 +236,8 @@ function bindRowActions() {
             e.preventDefault();
             const id = btn.dataset.id;
             if (!id) return;
-            window.location.href = `/service-orders/${id}/edit`;
+
+            window.location.href = `/service-orders/service-order/create?${id}`;
         });
     });
 

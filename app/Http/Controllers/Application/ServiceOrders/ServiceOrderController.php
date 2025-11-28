@@ -27,9 +27,20 @@ class ServiceOrderController extends Controller
         return $this->webRoute('app.service_orders.service_order_index', 'service_order');
     }
 
-    public function create()
+    public function create(?ServiceOrder $serviceOrder = null)
     {
-        return $this->webRoute('app.service_orders.service_order_create', 'service_order');
+        if ($serviceOrder) {
+            $serviceOrder->load([
+                'equipments',
+                'serviceItems',
+                'partItems',
+                'laborEntries',
+                'technician',
+                'secondaryCustomer',
+            ]);
+        }
+
+        return view('app.service_orders.service_order_create', ['serviceOrder' => $serviceOrder]);
     }
 
     public function index(Request $request)
