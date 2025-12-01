@@ -1,7 +1,5 @@
 <?php
 
 return [
-    'agencia',
-    'empresa',
-    'freelancer',
+    'authorized'
 ];

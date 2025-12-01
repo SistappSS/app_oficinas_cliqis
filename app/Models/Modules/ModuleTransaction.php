@@ -5,13 +5,16 @@ namespace App\Models\Modules;
 use App\Models\Entities\Customers\Customer;
 use App\Models\Entities\Users\User;
 use App\Traits\HasCustomerScope;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
 class ModuleTransaction extends Model
 {
-    use HasFactory;
-    use HasCustomerScope;
+    use HasUuids;
+    //use HasCustomerScope;
+
+    public $incrementing = false;
+    protected $keyType = 'string';
 
     protected $guarded = [];
 

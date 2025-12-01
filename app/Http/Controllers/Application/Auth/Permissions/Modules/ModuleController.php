@@ -25,7 +25,8 @@ class ModuleController extends Controller
     public function index()
     {
         $modules  = Module::with(['features','segmentRequirements'])->latest()->get();
-        $segments = config('segments', ['agencia','empresa','freelancer']);
+        $segments = config('segments', ['authorized']);
+
         return view('app.modules.module.module_index', compact('modules','segments'));
     }
 

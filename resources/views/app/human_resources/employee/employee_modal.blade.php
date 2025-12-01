@@ -3,16 +3,6 @@
     <input type="hidden" id="user_id" name="user_id"><!-- se quiser vincular com User depois -->
 
     <div class="space-y-6">
-        <div class="section-title">
-            <span class="dot">
-                <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none">
-                    <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm7 7a7 7 0 0 0-14 0"
-                          stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                </svg>
-            </span>
-            Dados do funcionário
-        </div>
-
         <div class="grid gap-4 sm:grid-cols-2">
             <x-input col="" set="" id="full_name" name="full_name" type="text"
                      label="Nome completo"
@@ -58,8 +48,9 @@
             </div>
 
             <div class="space-y-3">
+                {{-- Funcionário ativo? --}}
                 <div class="card">
-                    <div class="grid gap-4 sm:grid-cols-2 items-center">
+                    <label for="is_active" class="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer">
                         <div class="flex items-center gap-3">
                             <span class="inline-grid h-7 w-7 place-items-center rounded-full bg-white text-blue-600 ring-1 ring-blue-200">
                                 <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none">
@@ -74,14 +65,25 @@
                                 <p class="text-xs text-slate-500">Use para habilitar/desabilitar o colaborador.</p>
                             </div>
                         </div>
-                        <div>
-                            <x-check-input col="3" id="is_active" name="is_active" type="checkbox" label="Ativo" check="1"></x-check-input>
+
+                        <div class="flex items-center">
+                            <input
+                                id="is_active"
+                                name="is_active"
+                                type="checkbox"
+                                value="1"
+                                class="peer sr-only"
+                            >
+                            <div class="relative inline-flex h-5 w-9 items-center rounded-full bg-slate-300 transition-colors peer-checked:bg-blue-600">
+                                <span class="inline-block h-4 w-4 translate-x-0 rounded-full bg-white shadow transition-transform peer-checked:translate-x-4"></span>
+                            </div>
                         </div>
-                    </div>
+                    </label>
                 </div>
 
+                {{-- É técnico? --}}
                 <div class="card">
-                    <div class="grid gap-4 sm:grid-cols-2 items-center">
+                    <label for="is_technician" class="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer">
                         <div class="flex items-center gap-3">
                             <span class="inline-grid h-7 w-7 place-items-center rounded-full bg-white text-purple-600 ring-1 ring-purple-200">
                                 <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none">
@@ -96,10 +98,20 @@
                                 <p class="text-xs text-slate-500">Marque para técnicos que registram horas em OS.</p>
                             </div>
                         </div>
-                        <div>
-                            <x-check-input col="3" id="is_technician" name="is_technician" type="checkbox" label="Técnico" check="1"></x-check-input>
+
+                        <div class="flex items-center">
+                            <input
+                                id="is_technician"
+                                name="is_technician"
+                                type="checkbox"
+                                value="1"
+                                class="peer sr-only"
+                            >
+                            <div class="relative inline-flex h-5 w-9 items-center rounded-full bg-slate-300 transition-colors peer-checked:bg-purple-600">
+                                <span class="inline-block h-4 w-4 translate-x-0 rounded-full bg-white shadow transition-transform peer-checked:translate-x-4"></span>
+                            </div>
                         </div>
-                    </div>
+                    </label>
                 </div>
             </div>
         </div>

@@ -14,6 +14,7 @@ use App\Http\Controllers\Application\Catalogs\PartController;
 use App\Http\Controllers\Application\ChatIA\ChatIAController;
 use App\Http\Controllers\Application\ChatIA\KnowLedgeBaseController;
 use App\Http\Controllers\Application\DashboardController;
+use App\Http\Controllers\Application\Entities\Customers\Permisions\PermissionUserController;
 use App\Http\Controllers\Application\Entities\Customers\SecondaryCustomer\SecondaryCustomerController;
 use App\Http\Controllers\Application\Entities\Suppliers\Supplier\SupplierController;
 use App\Http\Controllers\Application\Entities\Users\UserController;
@@ -73,45 +74,42 @@ Route::any('/logout', [AuthController::class, 'destroy'])->name('logout');
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth:sanctum', config('jetstream.auth_session'), CheckSubscription::class])
-    ->group(function () {
+Route::middleware(['auth:sanctum', config('jetstream.auth_session'), CheckSubscription::class])->group(function () {
+    // Etapas de onboarding
+    Route::get('/company-information', [AdditionalCustomerInfoController::class, 'additionalInfoIndex'])->name('additional-customer-info.index');
+    Route::post('/company-information', [AdditionalCustomerInfoController::class, 'additionalInfoIndexStore'])->name('additional-customer-info.store');
 
-        // Etapas de onboarding
-        Route::get('/company-information', [AdditionalCustomerInfoController::class, 'additionalInfoIndex'])->name('additional-customer-info.index');
-        Route::post('/company-information', [AdditionalCustomerInfoController::class, 'additionalInfoIndexStore'])->name('additional-customer-info.store');
+    Route::get('/company-information/segment', [AdditionalCustomerInfoController::class, 'segmentCompanyIndex'])->name('company-segment.index');
+    Route::post('/company-information/segment', [AdditionalCustomerInfoController::class, 'segmentCompanyStore'])->name('company-segment.store');
 
-        Route::get('/company-information/segment', [AdditionalCustomerInfoController::class, 'segmentCompanyIndex'])->name('company-segment.index');
-        Route::post('/company-information/segment', [AdditionalCustomerInfoController::class, 'segmentCompanyStore'])->name('company-segment.store');
+    Route::get('/company-information/addons', [AdditionalCustomerInfoController::class, 'addonsIndex'])->name('addons.index');
+    Route::post('/company-information/addons', [AdditionalCustomerInfoController::class, 'addonsStore'])->name('addons.store');
 
-        Route::get('/company-information/addons', [AdditionalCustomerInfoController::class, 'addonsIndex'])->name('addons.index');
-        Route::post('/company-information/addons', [AdditionalCustomerInfoController::class, 'addonsStore'])->name('addons.store');
+    /*
+    |--------------------------------------------------------------------------
+    | SUBSCRIPTION FALSE ROUTES
+    |--------------------------------------------------------------------------
+    */
 
-        /*
-        |--------------------------------------------------------------------------
-        | SUBSCRIPTION FALSE ROUTES
-        |--------------------------------------------------------------------------
-        */
+    Route::get('/modules', [ModuleController::class, 'index'])->name('module.index');
+    Route::post('/modules', [ModuleController::class, 'store'])->name('module.store');
 
-        Route::get('/modules', [ModuleController::class, 'index'])->name('module.index');
-        Route::post('/modules', [ModuleController::class, 'store'])->name('module.store');
+    Route::post('/modules/feature', [ModuleController::class, 'storeFeature'])->name('feature.store');
 
-        Route::post('/modules/feature', [ModuleController::class, 'storeFeature'])->name('feature.store');
+    Route::get('/module/buy-module/billing/{userId}', [BuyModuleController::class, 'billing'])->name('billing.index');
 
-        Route::get('/module/buy-module/billing/{userId}', [BuyModuleController::class, 'billing'])->name('billing.index');
+    Route::post('/modules/upgrade-annual', [BuyModuleController::class, 'upgradeToAnnual'])->name('modules.upgrade-annual');
 
-        Route::post('/modules/upgrade-annual', [BuyModuleController::class, 'upgradeToAnnual'])
-            ->name('modules.upgrade-annual');
-
-        Route::group(['prefix' => 'modules/buy-module'], function () {
-            Route::get('/{id}', [BuyModuleController::class, 'buyView'])->name('buy-module.index');
-            Route::post('/', [BuyModuleController::class, 'buyModule'])->name('module.checkout');
-            Route::post('/verificar-pix-pendente', [BuyModuleController::class, 'checkPendingPix'])->name('verificar-pix-pendente');
-            Route::post('/gerar-qrcode-module', [BuyModuleController::class, 'qrCodeGenerate'])->name('gerar-qrcode.module');
-            Route::get('/checar-status-pagamento/{paymentId}', [BuyModuleController::class, 'checkPaymentStatus'])->name('checar-pagamento.module');
-            Route::post('/cancelar/{paymentId}', [BuyModuleController::class, 'cancel'])
-                ->name('module.cancel');
-        });
+    Route::group(['prefix' => 'modules/buy-module'], function () {
+        Route::get('/{id}', [BuyModuleController::class, 'buyView'])->name('buy-module.index');
+        Route::post('/', [BuyModuleController::class, 'buyModule'])->name('module.checkout');
+        Route::post('/verificar-pix-pendente', [BuyModuleController::class, 'checkPendingPix'])->name('verificar-pix-pendente');
+        Route::post('/gerar-qrcode-module', [BuyModuleController::class, 'qrCodeGenerate'])->name('gerar-qrcode.module');
+        Route::get('/checar-status-pagamento/{paymentId}', [BuyModuleController::class, 'checkPaymentStatus'])->name('checar-pagamento.module');
+        Route::post('/cancelar/{paymentId}', [BuyModuleController::class, 'cancel'])
+            ->name('module.cancel');
     });
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -125,10 +123,28 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::get('/', [DashboardController::class, 'dashboard'])->name('dashboard');
     });
 
+    /* --->| Roles/Permissions |<--- */
+    Route::group(['prefix' => 'permissions-user'], function () {
+        Route::get('/roles-permissions', [PermissionUserController::class, 'view'])
+            ->name('roles-permissions.view');
+
+        // ROLES (perfis)
+        Route::get('/roles-api', [PermissionUserController::class, 'rolesIndex']);
+        Route::post('/roles-api', [PermissionUserController::class, 'rolesStore']);
+        Route::put('/roles-api/{role}', [PermissionUserController::class, 'rolesUpdate']);
+        Route::delete('/roles-api/{role}', [PermissionUserController::class, 'rolesDestroy']);
+
+        Route::get('/permissions-api', [PermissionUserController::class, 'permissionsIndex']);
+
+        Route::get('/roles-api/{role}/permissions', [PermissionUserController::class, 'rolePermissions']);
+        Route::post('/roles-api/{role}/permissions', [PermissionUserController::class, 'syncRolePermissions']);
+    });
+
     /* --->| Entities |<--- */
     Route::group(['prefix' => 'entities'], function () {
         // Users
         Route::get('/user', [UserController::class, 'view'])->name('user.view');
+        Route::get('/user/permissions', [UserController::class, 'permissions'])->name('user.permissions');
         Route::resource('/user-api', UserController::class);
 
         // Secondary Customers
@@ -159,7 +175,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::resource('/employee-benefit-api', EmployeeBenefitController::class);
     });
 
-
     /* --->| Catalog |<--- */
     Route::group(['prefix' => 'catalogs'], function () {
         // Service Types
@@ -182,7 +197,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::get('/equipment-part', [EquipmentPartController::class, 'view'])->name('equipment-part.view');
         Route::resource('/equipment-part-api', EquipmentPartController::class);
     });
-
 
     /* --->| Service Orders |<--- */
     Route::group(['prefix' => 'service-orders'], function () {
@@ -225,7 +239,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::delete('/knowledge/{document}', [KnowLedgeBaseController::class, 'destroy'])->name('knowledge.destroy');
     });
 
-
     /* --->| Config |<--- */
     Route::group(['prefix' => 'config'], function () {
         Route::get('/my-account', [MyAccountController::class, 'myAccount'])->name('my-account.index');
@@ -237,24 +250,23 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
 });
 
-Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])
-    ->group(function () {
-        /* --->| Admin |<--- */
-        Route::group(['prefix' => 'admin'], function () {
-            /* --->| Roles |<--- */
-            Route::prefix('roles')->group(function () {
-                Route::get('/', [PermissionController::class, 'roleIndex'])->name('roles.index');
-                Route::get('/create', [PermissionController::class, 'roleCreate'])->name('roles.create');
-                Route::post('/store', [PermissionController::class, 'roleStore'])->name('roles.store');
-            });
-
-            /* --->| Permissions |<--- */
-            Route::prefix('permissions')->group(function () {
-                Route::get('/', [PermissionController::class, 'permissionIndex'])->name('permissions.index');
-                Route::get('/create', [PermissionController::class, 'roleCreate'])->name('permissions.create');
-                Route::post('/store', [PermissionController::class, 'permissionStore'])->name('permissions.store');
-            });
-
-            Route::get('/permissions/list', [PermissionController::class, 'getPermissions'])->name('permissions.list');
+Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])->group(function () {
+    /* --->| Admin |<--- */
+    Route::group(['prefix' => 'admin'], function () {
+        /* --->| Roles |<--- */
+        Route::prefix('roles')->group(function () {
+            Route::get('/', [PermissionController::class, 'roleIndex'])->name('roles.index');
+            Route::get('/create', [PermissionController::class, 'roleCreate'])->name('roles.create');
+            Route::post('/store', [PermissionController::class, 'roleStore'])->name('roles.store');
         });
+
+        /* --->| Permissions |<--- */
+        Route::prefix('permissions')->group(function () {
+            Route::get('/', [PermissionController::class, 'permissionIndex'])->name('permissions.index');
+            Route::get('/create', [PermissionController::class, 'roleCreate'])->name('permissions.create');
+            Route::post('/store', [PermissionController::class, 'permissionStore'])->name('permissions.store');
+        });
+
+        Route::get('/permissions/list', [PermissionController::class, 'getPermissions'])->name('permissions.list');
     });
+});

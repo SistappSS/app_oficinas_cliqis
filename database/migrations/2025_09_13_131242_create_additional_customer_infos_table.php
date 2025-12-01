@@ -24,7 +24,7 @@ return new class extends Migration
             $table->string('website_url')->nullable();
             $table->string('segment')->nullable();
 
-            $table->unique('user_id', 'aci_user_unique');
+            $table->unique(['user_id', 'customer_sistapp_id'], 'aci_user_customer_unique');
 
             $table->timestamps();
         });

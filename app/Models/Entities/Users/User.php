@@ -5,6 +5,7 @@ namespace App\Models\Entities\Users;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Authenticate\AdditionalCustomerInfo;
 use App\Models\Entities\Customers\Customer;
+use App\Models\Entities\Customers\CustomerEmployeeUser;
 use App\Models\Entities\Partners\Partner;
 use App\Models\Entities\Representatives\Representative;
 use App\Models\Inventories\Products\Product;
@@ -67,6 +68,11 @@ class User extends Authenticatable
     public function customerLogin()
     {
         return $this->hasOne(CustomerUserLogin::class, 'user_id');
+    }
+
+    public function employeeCustomerLogin()
+    {
+        return $this->hasOne(CustomerEmployeeUser::class, 'user_id');
     }
 
     public function hasCustomerLogin(): bool

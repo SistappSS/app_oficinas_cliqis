@@ -8,6 +8,7 @@ use App\Models\Retails\Branch;
 use App\Models\Retails\SaleRetail;
 use App\Models\Sales\Contracts\Contract;
 use App\Traits\HasCustomerScope;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
@@ -16,7 +17,11 @@ class Customer extends Model
 {
     use HasFactory;
     use Notifiable;
+    use HasUuids;
     use HasCustomerScope;
+
+    public $incrementing = false;
+    protected $keyType = 'string';
 
 //    public function customerLogin()
 //    {

@@ -3,12 +3,20 @@
 namespace App\Http\Controllers\Application\HumanResources;
 
 use App\Http\Controllers\Controller;
+use App\Models\Authenticate\Permissions\Role;
+use App\Models\Entities\Customers\CustomerEmployeeUser;
 use App\Models\HumanResources\Employees\Employee;
+use App\Models\HumanResources\Departments\Department;
+use App\Models\Entities\Users\User;
+use App\Support\CustomerContext;
 use App\Traits\CrudResponse;
 use App\Traits\RoleCheckTrait;
 use App\Traits\WebIndex;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class EmployeeController extends Controller
 {
@@ -48,24 +56,85 @@ class EmployeeController extends Controller
 
     public function store(Request $request)
     {
+        $ownerUserId = $this->userAuth();
+
         $validated = $request->validate([
-            'department_id' => ['nullable', 'uuid'],
-            'full_name' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:30'],
+            'department_id'   => ['required', 'uuid'],
+            'full_name'       => ['required', 'string', 'max:255'],
+            'email'           => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email'),
+            ],
+            'phone'           => ['nullable', 'string', 'max:30'],
             'document_number' => ['nullable', 'string', 'max:20'],
-            'position' => ['nullable', 'string', 'max:255'],
-            'hourly_rate' => ['nullable', 'numeric'],
-            'is_technician' => ['sometimes', 'boolean'],
-            'is_active' => ['sometimes', 'boolean'],
-            'user_id' => ['nullable', 'uuid'],
+            'position'        => ['nullable', 'string', 'max:255'],
+            'hourly_rate'     => ['nullable', 'numeric'],
+            'is_technician'   => ['sometimes', 'boolean'],
+            'is_active'       => ['sometimes', 'boolean'],
+            'user_id'         => ['nullable', 'uuid'],
+        ], [
+            'department_id.required' => 'Selecione um departamento para esse funcionário.',
+            'full_name.required' => 'Insira um nome para esse funcionário.',
+            'email.required' => 'Insira um e-mail de acesso para esse funcionário.'
         ]);
 
         $validated['is_technician'] = (bool)($validated['is_technician'] ?? false);
-        $validated['is_active'] = (bool)($validated['is_active'] ?? true);
-        $validated['user_id'] = $this->userAuth();
+        $validated['is_active']     = (bool)($validated['is_active'] ?? true);
 
-        return $this->storeMethod($this->employee, $validated);
+        return DB::transaction(function () use ($validated, $ownerUserId) {
+            $randomPassword = Str::random(12);
+
+            $employeeUser = User::create([
+                'name'     => $validated['full_name'],
+                'email'    => $validated['email'],
+                'password' => Hash::make($randomPassword),
+            ]);
+
+            $tenantId = CustomerContext::get();
+
+            if (!$tenantId) {
+                throw new \RuntimeException('CustomerContext não definido ao criar funcionário.');
+            }
+
+            $employeeRoleName = "{$tenantId}_employee_customer_cliqis";
+
+            $employeeCustomerRole = Role::firstOrCreate([
+                'name'       => $employeeRoleName,
+                'guard_name' => 'web',
+            ]);
+
+            $employeeUser->assignRole($employeeRoleName);
+
+            if (!empty($validated['department_id'])) {
+                $department = Department::find($validated['department_id']);
+
+                if ($department) {
+                    $slug               = Str::slug($department->name, '_');
+                    $departmentRoleName = "{$tenantId}_{$slug}";
+
+                    Role::firstOrCreate([
+                        'name'       => $departmentRoleName,
+                        'guard_name' => 'web',
+                    ]);
+
+                    $employeeUser->assignRole($departmentRoleName);
+                }
+            }
+
+            $employeeData            = $validated;
+            $employeeData['user_id'] = $ownerUserId;
+
+            $employee = $this->employee->create($employeeData);
+
+            CustomerEmployeeUser::create([
+                'employee_id' => $employee->id,
+                'user_id'     => $employeeUser->id,
+            ]);
+
+            return response()->json($employee->load('department'), 201);
+        });
     }
 
     public function show(string $id)
@@ -76,20 +145,20 @@ class EmployeeController extends Controller
     public function update(Request $request, string $id)
     {
         $validated = $request->validate([
-            'department_id' => ['nullable', 'uuid'],
-            'full_name' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:30'],
+            'department_id'   => ['nullable', 'uuid'],
+            'full_name'       => ['required', 'string', 'max:255'],
+            'email'           => ['nullable', 'email', 'max:255'],
+            'phone'           => ['nullable', 'string', 'max:30'],
             'document_number' => ['nullable', 'string', 'max:20'],
-            'position' => ['nullable', 'string', 'max:255'],
-            'hourly_rate' => ['nullable', 'numeric'],
-            'is_technician' => ['sometimes', 'boolean'],
-            'is_active' => ['sometimes', 'boolean'],
-            'user_id' => ['nullable', 'uuid'],
+            'position'        => ['nullable', 'string', 'max:255'],
+            'hourly_rate'     => ['nullable', 'numeric'],
+            'is_technician'   => ['sometimes', 'boolean'],
+            'is_active'       => ['sometimes', 'boolean'],
+            'user_id'         => ['nullable', 'uuid'],
         ]);
 
         $validated['is_technician'] = (bool)($validated['is_technician'] ?? false);
-        $validated['is_active'] = (bool)($validated['is_active'] ?? true);
+        $validated['is_active']     = (bool)($validated['is_active'] ?? true);
 
         return $this->updateMethod($this->employee->find($id), $validated);
     }

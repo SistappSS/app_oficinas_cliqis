@@ -2,8 +2,8 @@
 
 namespace App\Models\ServiceOrders;
 
+use App\Models\Entities\Customers\SecondaryCustomer;
 use App\Models\HumanResources\Employees\Employee;
-use App\Models\SecondaryCustomer;
 use App\Models\ServiceOrders\CompletedServiceOrders\CompletedServiceOrder;
 use App\Models\ServiceOrders\ServiceOrderEquipments\ServiceOrderEquipment;
 use App\Models\ServiceOrders\ServiceOrderLaborEntries\ServiceOrderLaborEntry;

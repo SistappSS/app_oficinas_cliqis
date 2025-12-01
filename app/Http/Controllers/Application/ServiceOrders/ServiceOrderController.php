@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Application\ServiceOrders;
 
 use App\Http\Controllers\Controller;
+use App\Models\HumanResources\Employees\Employee;
 use App\Models\ServiceOrders\ServiceOrder;
 use App\Models\ServiceOrders\ServiceOrderEquipments\ServiceOrderEquipment;
 use App\Models\ServiceOrders\ServiceOrderLaborEntries\ServiceOrderLaborEntry;
@@ -38,19 +39,31 @@ class ServiceOrderController extends Controller
                 'technician',
                 'secondaryCustomer',
             ]);
+
+            $displayOrderNumber = $serviceOrder->order_number;
+            $defaultTechnician  = $serviceOrder->technician;
+        } else {
+            $displayOrderNumber = $this->generateNextNumber();
+            $defaultTechnician = Employee::where('user_id', auth()->id())->first();
         }
 
-        return view('app.service_orders.service_order_create', ['serviceOrder' => $serviceOrder]);
+        return view('app.service_orders.service_order_create', [
+            'serviceOrder'        => $serviceOrder,
+            'displayOrderNumber'  => $displayOrderNumber,
+            'defaultTechnician'  => $defaultTechnician,
+        ]);
     }
 
     public function index(Request $request)
     {
+        $user = $request->user();
+
         $q = $this->serviceOrder->query()
             ->with('secondaryCustomer')
             ->orderByDesc('order_date')
             ->orderByDesc('created_at');
 
-        // filtro texto
+        // ----- BUSCA TEXTO -----
         if ($term = trim($request->input('q', ''))) {
             $q->where(function ($w) use ($term) {
                 $w->where('order_number', 'like', "%{$term}%")
@@ -62,10 +75,36 @@ class ServiceOrderController extends Controller
             });
         }
 
-        // filtro status (chips)
+        // ----- FILTRO STATUS (chips da tela) -----
         if ($status = $request->input('status')) {
-            if (in_array($status, ['draft', 'pending', 'approved', 'completed', 'rejected'])) {
+            $allowed = ['draft', 'pending', 'approved', 'completed', 'rejected'];
+            if (in_array($status, $allowed, true)) {
                 $q->where('status', $status);
+            }
+        }
+
+        // ----- VISIBILIDADE POR PERMISSÃO -----
+        $isMaster = false;
+
+        if ($user) {
+            // ajusta essa parte para o lugar onde você guarda o "master"
+            $login    = $user->customerLogin ?? null;
+            $isMaster = (bool) optional($login)->is_master_customer;
+        }
+
+        if (! $isMaster) {
+            if ($user && $user->can('finance view')) {
+                // financeiro: vê todas do tenant, mas só nessas situações
+                $q->whereIn('status', ['approved', 'completed', 'rejected']);
+
+            } elseif ($user && $user->can('technician view')) {
+                // técnico: só as OS criadas por ele
+                // troca 'user_id' se o campo for outro
+                $q->where('user_id', $user->id);
+
+            } else {
+                // sem permissão: não retorna nada
+                $q->whereRaw('1=0');
             }
         }
 
@@ -116,7 +155,6 @@ class ServiceOrderController extends Controller
     // =========================================================
     // MÉTODO CENTRAL DE SALVAR (CREATE + UPDATE)
     // =========================================================
-
     protected function saveOrder(Request $request, ?string $id = null)
     {
         $validated = $request->validate([
@@ -215,6 +253,8 @@ class ServiceOrderController extends Controller
                 $os = new ServiceOrder();
                 $os->order_number = $this->generateNextNumber();
             }
+
+            $os->customer_sistapp_id = auth()->user()->employeeCustomerLogin->customer_sistapp_id;
 
             $os->fill($validated);
             $os->status            = $status;

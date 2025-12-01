@@ -38,8 +38,7 @@
             </li>
 
             {{-- Clientes --}}
-            @can('entitie_customer_view')
-                <li>
+            <li>
                     <a href="{{ route('customer.view') }}"
                        class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105">
                         <div
@@ -49,7 +48,6 @@
                         <span class="text-xs font-medium text-slate-600 group-hover:text-blue-700">Clientes</span>
                     </a>
                 </li>
-            @endcan
 
             {{-- Dashboard --}}
             <li>
@@ -109,35 +107,51 @@
         <div class="p-2 grid grid-cols-1 gap-1">
 
             {{-- Admin --}}
-{{--            @role('admin')--}}
-{{--            <div class="px-3 pt-1 pb-0">--}}
-{{--                <p class="text-[11px] font-semibold tracking-wide uppercase text-slate-400">Administração</p>--}}
-{{--            </div>--}}
+            @role('admin')
+            <div class="px-3 pt-1 pb-0">
+                <p class="text-[11px] font-semibold tracking-wide uppercase text-slate-400">Administração</p>
+            </div>
 
-{{--            <a href="{{ route('roles.index') }}" role="menuitem"--}}
-{{--               class="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-blue-50">--}}
-{{--                <div--}}
-{{--                    class="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-blue-500 group-hover:bg-blue-700 group-hover:text-white">--}}
-{{--                    <i class="fa-solid fa-lock"></i>--}}
-{{--                </div>--}}
-{{--                <div class="min-w-0">--}}
-{{--                    <p class="text-sm font-medium text-slate-800">Permissões</p>--}}
-{{--                    <p class="text-xs text-slate-500">Roles &amp; access</p>--}}
-{{--                </div>--}}
-{{--            </a>--}}
+            <a href="{{ route('roles.index') }}" role="menuitem"
+               class="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-blue-50">
+                <div
+                    class="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-blue-500 group-hover:bg-blue-700 group-hover:text-white">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-sm font-medium text-slate-800">Permissões</p>
+                    <p class="text-xs text-slate-500">Roles &amp; access</p>
+                </div>
+            </a>
 
-{{--            <a href="{{ route('module.index') }}" role="menuitem"--}}
-{{--               class="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-blue-50">--}}
-{{--                <div--}}
-{{--                    class="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-blue-500 group-hover:bg-blue-700 group-hover:text-white">--}}
-{{--                    <i class="fa-solid fa-crown"></i>--}}
-{{--                </div>--}}
-{{--                <div class="min-w-0">--}}
-{{--                    <p class="text-sm font-medium text-slate-800">Módulos</p>--}}
-{{--                    <p class="text-xs text-slate-500">Gerenciar add-ons</p>--}}
-{{--                </div>--}}
-{{--            </a>--}}
-{{--            @endrole--}}
+            <a href="{{ route('module.index') }}" role="menuitem"
+               class="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-blue-50">
+                <div
+                    class="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-blue-500 group-hover:bg-blue-700 group-hover:text-white">
+                    <i class="fa-solid fa-crown"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-sm font-medium text-slate-800">Módulos</p>
+                    <p class="text-xs text-slate-500">Gerenciar add-ons</p>
+                </div>
+            </a>
+            @endrole
+
+            <div class="px-3 pt-1 pb-0">
+                <p class="text-[11px] font-semibold tracking-wide uppercase text-slate-400">Permissões</p>
+            </div>
+
+            <a href="{{ route('roles-permissions.view') }}" role="menuitem"
+               class="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-blue-50">
+                <div
+                    class="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-blue-500 group-hover:bg-blue-700 group-hover:text-white">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-sm font-medium text-slate-800">Permissões</p>
+                    <p class="text-xs text-slate-500">Perfis &amp; permissões</p>
+                </div>
+            </a>
 
             {{-- Entities --}}
             <div class="px-3 pt-3 pb-0">

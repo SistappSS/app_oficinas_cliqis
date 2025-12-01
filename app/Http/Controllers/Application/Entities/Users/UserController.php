@@ -2,23 +2,31 @@
 
 namespace App\Http\Controllers\Application\Entities\Users;
 
-use App\Enums\PermissionNameEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Entities\Users\StoreUserRequest;
-use App\Http\Requests\Entities\Users\UpdateUserRequest;
+use App\Models\Authenticate\Permissions\Permission;
+use App\Models\Authenticate\Permissions\Role;
+use App\Models\Entities\Customers\CustomerEmployeeUser;
 use App\Models\Entities\Users\CustomerUserLogin;
 use App\Models\Entities\Users\User;
+use App\Support\CustomerContext;
 use App\Traits\HttpResponse;
 use App\Traits\RoleCheckTrait;
 use App\Traits\WebIndex;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
     use HttpResponse, RoleCheckTrait, WebIndex;
+
+    protected $user;
+    protected $customerUserLogin;
 
     public function __construct(User $user, CustomerUserLogin $customerUserLogin)
     {
@@ -31,33 +39,44 @@ class UserController extends Controller
         return $this->webRoute('app.entities.user.user_index', 'user');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $auth = Auth::user();
-        $customerSistappId = $auth->customerLogin->customer_sistapp_id;
-
-        if ($auth->hasRole('admin')) {
-            $users = $this->user->with(['roles', 'permissions'])
-                ->latest()
-                ->get();
-        } else {
-            $users = $this->user->with(['roles', 'permissions', 'customerLogin'])
-                ->whereHas('customerLogin', function ($query) use ($customerSistappId) {
-                    $query->where('customer_sistapp_id', $customerSistappId);
-                })
-                ->latest()
-                ->get();
+        $tenantId = CustomerContext::get();
+        if (!$tenantId) {
+            abort(403, 'Tenant não definido.');
         }
 
-        $users->each(function ($user) {
-            $user->humansDate = humansDate($user->created_at);
+        $ids = $this->tenantUserIds();
 
-            $user->translatedPermissions = $user->getAllPermissions()->map(function ($permission) {
-                return PermissionNameEnum::getTranslatedPermission($permission->name) ?? $permission->name;
+        $query = User::query()
+            ->with(['roles', 'permissions'])
+            ->when($ids->isNotEmpty(), fn($q) => $q->whereIn('id', $ids))
+            ->orderBy('name');
+
+        if ($term = trim($request->input('q', ''))) {
+            $query->where(function ($w) use ($term) {
+                $w->where('name', 'like', "%{$term}%")
+                    ->orWhere('email', 'like', "%{$term}%");
             });
+        }
+
+        $data = $query->paginate(20);
+
+        $ownerIds    = CustomerUserLogin::where('customer_sistapp_id', $tenantId)->pluck('user_id');
+        $employeeIds = CustomerEmployeeUser::pluck('user_id'); // filtrado por HasCustomerScope
+
+        $data->getCollection()->transform(function (User $user) use ($ownerIds, $employeeIds) {
+            if ($ownerIds->contains($user->id)) {
+                $user->type = 'owner';
+            } elseif ($employeeIds->contains($user->id)) {
+                $user->type = 'employee';
+            } else {
+                $user->type = 'other';
+            }
+            return $user;
         });
 
-        return $this->trait("get", $users);
+        return response()->json($data);
     }
 
     public function store(StoreUserRequest $request)
@@ -134,89 +153,214 @@ class UserController extends Controller
     {
         $user = $this->user->with('permissions', 'roles')->find($id);
 
-        if ($user->roles[0]->name) {
-            $user->permissionUser = $user->roles[0]->name;
-        } else if ($user->permissions[0]->name) {
-            $user->permissionUser = $user->permissions[0]->name;
+        if (! $user) {
+            return $this->trait("error");
         }
 
-        $user = [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'image' => $user->image,
+        $permissionUser = null;
+
+        if ($user->roles->isNotEmpty()) {
+            $permissionUser = $user->roles->first()->name;
+        } elseif ($user->permissions->isNotEmpty()) {
+            $permissionUser = $user->permissions->first()->name;
+        }
+
+        $payload = [
+            'id'         => $user->id,
+            'name'       => $user->name,
+            'email'      => $user->email,
+            'image'      => $user->image,
             'humansDate' => humansDate($user->created_at),
-            'is_active' => (bool)$user->is_active,
-            'permission' => $user->permissionUser
+            'is_active'  => (bool) $user->is_active,
+            'permission' => $permissionUser,
         ];
 
-        if ($user === null) {
-            return $this->trait("error");
-        } else {
-            return $this->trait("get", $user);
-        }
+        return $this->trait("get", $payload);
     }
 
-    public function update(UpdateUserRequest $request, int $id)
+    public function update(Request $request, $id)
     {
-        $request->validated();
+        $auth = auth()->user();
 
-        $imagemBase64 = null;
-
-        $user = $this->user->with('permissions', 'roles')->find($id);
-
-        $permissionUser = $user->roles->isNotEmpty()
-            ? $user->roles[0]->name
-            : ($user->permissions->isNotEmpty() ? $user->permissions[0]->name : null);
-
-        $oldPermission = match ($permissionUser) {
-            'admin' => 'admin',
-            'web_design' => 'web_design',
-            'business' => 'business',
-            'authorized' => 'authorized',
-            'free' => 'free',
-            default => null,
-        };
-
-        $password = $request->password ? Hash::make($request->password) : $user->password;
-
-        if ($request->hasFile('image')) {
-            $novaImagem = generateImg('users', $user->image);
-            $imagemBase64 = $novaImagem['base64'];
-
-            $user->image = $novaImagem['path'];
+        $login = CustomerUserLogin::where('user_id', $auth->id)->first();
+        if (!$login) {
+            abort(403, 'Usuário sem vínculo de cliente.');
         }
 
-        $user->update([
-            'name' => ucwords($request->name),
-            'email' => $request->email,
-            'password' => $password,
-            'image' => $imagemBase64,
-            'is_active' => (bool) $request->is_active,
-            'updated_at' => Carbon::now(),
+        $tenantId = $login->customer_sistapp_id;
+        $isMaster = (bool) $login->is_master_customer;
+
+        if (!$isMaster && (string) $auth->id !== (string) $id) {
+            abort(403, 'Você só pode editar o seu próprio usuário.');
+        }
+
+        if ($isMaster) {
+            $allowedIds = $this->tenantUserIdsFor($tenantId);
+            if (!$allowedIds->contains($id)) {
+                abort(403, 'Usuário fora do seu tenant.');
+            }
+        }
+
+        $user = User::findOrFail($id);
+
+        $data = $request->validate([
+            'name'        => ['required', 'string', 'max:255'],
+            'email'       => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($user->id),
+            ],
+            'password'      => ['nullable', 'string', 'min:8', 'confirmed'],
+            'roles'         => ['array'],
+            'roles.*'       => ['string'],
+            'permissions'   => ['array'],
+            'permissions.*' => ['string'],
         ]);
 
-        if ($request->role && $request->role !== $oldPermission) {
-            $user->removeRole($oldPermission);
-            $user->assignRole($request->role);
-        } else {
-            $request->merge(['role' => $oldPermission]);
+        $update = [
+            'name'  => $data['name'],
+            'email' => $data['email'],
+        ];
+
+        if (!empty($data['password'])) {
+            $update['password'] = Hash::make($data['password']);
         }
 
-        return $this->trait("update", $user);
+        $user->update($update);
+
+        // se não for master, não mexe em roles/perms
+        if (!$isMaster) {
+            return response()->json($user->fresh(['roles', 'permissions']));
+        }
+
+        $tenantPrefix = "{$tenantId}_";
+
+        $tenantRoleNames = Role::where('guard_name', 'web')
+            ->where('name', 'like', $tenantPrefix . '%')
+            ->pluck('name');
+
+        $currentRoles       = $user->roles->pluck('name');
+        $currentTenantRoles = $currentRoles->filter(fn($name) => str_starts_with($name, $tenantPrefix));
+        $otherRoles         = $currentRoles->reject(fn($name) => str_starts_with($name, $tenantPrefix));
+
+        $newTenantRoles = collect($data['roles'] ?? [])->intersect($tenantRoleNames);
+
+        $finalRoles = $otherRoles->merge($newTenantRoles)->unique()->values();
+        $user->syncRoles($finalRoles);
+
+        $allPermNames = Permission::where('guard_name', 'web')->pluck('name');
+        $newPerms     = collect($data['permissions'] ?? [])->intersect($allPermNames);
+
+        $user->syncPermissions($newPerms);
+
+        $user->load(['roles', 'permissions']);
+
+        return response()->json($user);
     }
 
     public function destroy($id)
     {
-        $user = $this->user->with('customer')->find($id);
-
-        if ($user === null) {
-            return $this->trait("error");
-        } else {
-
-            $user->delete();
-
-            return $this->trait("delete", $user);
+        $tenantId = CustomerContext::get();
+        if (!$tenantId) {
+            abort(403, 'Tenant não definido.');
         }
+
+        $allowedIds = $this->tenantUserIds();
+        abort_unless($allowedIds->contains($id), 403, 'Usuário fora do tenant.');
+
+        $user = User::findOrFail($id);
+
+        $isOwner = CustomerUserLogin::where('customer_sistapp_id', $tenantId)
+            ->where('user_id', $user->id)
+            ->exists();
+
+        if ($isOwner) {
+            return response()->json([
+                'ok'      => false,
+                'message' => 'Não é possível excluir o usuário principal do cliente.',
+            ], 409);
+        }
+
+        CustomerEmployeeUser::where('user_id', $user->id)->delete();
+        $user->delete();
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function permissions()
+    {
+        $tenantId = CustomerContext::get();
+        if (!$tenantId) {
+            abort(403, 'Tenant não definido.');
+        }
+
+        $prefix = "{$tenantId}_";
+
+        $roles = Role::where('guard_name', 'web')
+            ->where('name', 'like', $prefix . '%')
+            ->orderBy('name')
+            ->get()
+            ->map(function (Role $role) use ($prefix) {
+                $short = preg_replace('/^' . preg_quote($prefix, '/') . '/', '', $role->name);
+                return [
+                    'name'  => $role->name,
+                    'short' => str_replace('_', ' ', $short),
+                ];
+            })
+            ->values();
+
+        $permissions = Permission::where('guard_name', 'web')
+            ->whereHas('roles', function ($q) use ($prefix) {
+                $q->where('name', 'like', $prefix . '%');
+            })
+            ->orderBy('name')
+            ->get();
+
+        $permissionsGrouped = $permissions
+            ->groupBy(function (Permission $p) {
+                return explode('_', $p->name)[0];
+            })
+            ->map(function ($group) {
+                return $group->map(function (Permission $p) {
+                    return [
+                        'name'  => $p->name,
+                        'label' => str_replace('_', ' ', $p->name),
+                    ];
+                })->values();
+            });
+
+        return response()->json([
+            'roles'               => $roles,
+            'permissions_grouped' => $permissionsGrouped,
+        ]);
+    }
+
+    protected function tenantUserIds(): Collection
+    {
+        $tenantId = CustomerContext::get();
+
+        if (!$tenantId) {
+            return collect();
+        }
+
+        $ownerIds = CustomerUserLogin::where('customer_sistapp_id', $tenantId)->pluck('user_id');
+
+        $employeeIds = CustomerEmployeeUser::pluck('user_id');
+
+        return $ownerIds->merge($employeeIds)->unique()->values();
+    }
+
+    protected function tenantUserIdsFor(string $tenantId): Collection
+    {
+        // donos (customer_user_logins)
+        $ownerIds = CustomerUserLogin::where('customer_sistapp_id', $tenantId)
+            ->pluck('user_id');
+
+        // funcionários (pivot), com coluna customer_sistapp_id
+        $employeeIds = CustomerEmployeeUser::where('customer_sistapp_id', $tenantId)
+            ->pluck('user_id');
+
+        return $ownerIds->merge($employeeIds)->unique()->values();
     }
 }

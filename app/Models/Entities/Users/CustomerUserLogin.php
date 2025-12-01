@@ -16,7 +16,7 @@ class CustomerUserLogin extends Model
     protected $keyType = 'string';
 
     protected $casts = [
-        'trial_ends_at' => 'datetime',   // <- vira Carbon automaticamente
+        'trial_ends_at' => 'datetime',
         'subscription'  => 'boolean',
         'created_at'    => 'datetime',
         'updated_at'    => 'datetime',

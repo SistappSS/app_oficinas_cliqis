@@ -237,7 +237,8 @@ function bindRowActions() {
             const id = btn.dataset.id;
             if (!id) return;
 
-            window.location.href = `/service-orders/service-order/create?${id}`;
+            // usa o parâmetro de rota {serviceOrder}
+            window.location.href = `/service-orders/service-order/create/${id}`;
         });
     });
 

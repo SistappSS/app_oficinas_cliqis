@@ -3,13 +3,23 @@
 namespace App\Http\Controllers\Application\Auth\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\Entities\Users\User;
 use App\Models\Modules\ModuleTransactionPayment;
 use App\Models\Modules\UserModulePermission;
+use App\Traits\RoleCheckTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class MyAccountController extends Controller
 {
+    use RoleCheckTrait;
+
+    protected $user;
+
+    public function __construct(User $user) {
+        $this->user = $user;
+    }
+
     public function myAccount()
     {
         $userId = auth()->id();

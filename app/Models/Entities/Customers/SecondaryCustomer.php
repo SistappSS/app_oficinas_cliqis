@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Entities\Customers;
 
 use App\Models\ServiceOrders\ServiceOrder;
 use App\Traits\HasCustomerScope;

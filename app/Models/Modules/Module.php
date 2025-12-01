@@ -3,12 +3,17 @@
 namespace App\Models\Modules;
 
 use App\Models\Authenticate\ModuleSegmentRequirement;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
 class Module extends Model
 {
-    use HasFactory;
+    use HasUuids;
+
+    public $incrementing = false;
+    protected $keyType = 'string';
+
+    protected $guarded = [];
 
     protected $casts = [
         'required_for_segments' => 'array',

@@ -29,11 +29,6 @@ class UserSeeder extends Seeder
             'sales_service_edit',
             'sales_service_delete',
 
-            'sales_budget_create',
-            'sales_budget_view',
-            'sales_budget_edit',
-            'sales_budget_delete',
-
             'sales_contract_create',
             'sales_contract_view',
             'sales_contract_edit',
@@ -67,11 +62,9 @@ class UserSeeder extends Seeder
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
         $adminRole->givePermissionTo($permissions);
 
-        Role::firstOrCreate(['name' => 'segment_empresa']);
-        Role::firstOrCreate(['name' => 'segment_freelancer']);
-        Role::firstOrCreate(['name' => 'segment_agencia']);
+        Role::firstOrCreate(['name' => 'segment_authorized']);
 
-        Role::firstOrCreate(['name' => 'customer_customer_cliqis']);
+        Role::firstOrCreate(['name' => 'employee_authorized']);
 
         $user = User::firstOrCreate([
             'name' => 'Teste admin',

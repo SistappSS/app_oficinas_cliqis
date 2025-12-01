@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Application\HumanResources;
 
 use App\Http\Controllers\Controller;
+use App\Models\Authenticate\Permissions\Role;
 use App\Models\HumanResources\Departments\Department;
+use App\Support\CustomerContext;
 use App\Traits\CrudResponse;
 use App\Traits\RoleCheckTrait;
 use App\Traits\WebIndex;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class DepartmentController extends Controller
 {
@@ -48,7 +51,27 @@ class DepartmentController extends Controller
             'description' => ['nullable', 'string'],
         ]);
 
-        return $this->storeMethod($this->department, $validated);
+        $department = $this->department->create($validated);
+
+        $tenantId = CustomerContext::get();
+
+        if (!$tenantId) {
+            throw new \RuntimeException('CustomerContext não definido ao criar departamento.');
+        }
+
+        $slug     = Str::slug($department->name, '_');
+        $roleName = "{$tenantId}_{$slug}";
+
+        Role::firstOrCreate([
+            'name'       => $roleName,
+            'guard_name' => 'web',
+        ]);
+
+        return response()->json([
+            'status' => 'sucesso',
+            'message' => '<i class="fa-solid fa-check"></i> Inserção de dados efetuada com sucesso!',
+            'data' => $department
+        ], 200);
     }
 
     public function show(string $id)

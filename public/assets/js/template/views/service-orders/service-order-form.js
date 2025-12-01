@@ -1240,7 +1240,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 saveModal.classList.add("hidden");
                 saveModal.classList.remove("flex");
-                alert("OS salva com sucesso.");
+
+                window.location.href = "/service-orders/service-order";
             });
         }
     }

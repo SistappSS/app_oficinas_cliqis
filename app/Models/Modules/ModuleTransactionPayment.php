@@ -3,12 +3,19 @@
 namespace App\Models\Modules;
 
 use App\Models\Entities\Users\User;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Traits\HasCustomerScope;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
 class ModuleTransactionPayment extends Model
 {
-    use HasFactory;
+    use HasUuids;
+    //use HasCustomerScope;
+
+    public $incrementing = false;
+    protected $keyType = 'string';
+
+    protected $guarded = [];
 
     protected $casts = [
         'paid_at'    => 'date',

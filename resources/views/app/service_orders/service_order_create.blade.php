@@ -2,16 +2,29 @@
 
 @section('content')
     <main class="mx-auto max-w-6xl px-4 sm:px-6 pb-32 pt-6">
+        @php
+            $technician     = $serviceOrder->technician ?? $defaultTechnician ?? null;
+            $technicianName = $technician->full_name ?? auth()->user()->name;
+            $technicianId   = $technician->id ?? null;
+
+            $laborHourDefault = old(
+                'hourly_rate',
+                $serviceOrder->labor_hour_value
+                    ?? ($technician->hourly_rate ?? null)
+            );
+        @endphp
+
         {{-- HERO --}}
         <section>
-            <div class="relative overflow-hidden rounded-[28px] px-6 py-5 md:px-8 md:py-6 text-white shadow-[0_24px_70px_rgba(37,99,235,0.25)] bg-gradient-to-tr from-sky-400 via-blue-600 to-indigo-800">
+            <div
+                class="relative overflow-hidden rounded-[28px] px-6 py-5 md:px-8 md:py-6 text-white shadow-[0_24px_70px_rgba(37,99,235,0.25)] bg-gradient-to-tr from-sky-400 via-blue-600 to-indigo-800">
                 <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
                         <div class="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium tracking-wide">
                             <span class="opacity-90">OS</span>
                             <span class="mx-1 opacity-60">•</span>
                             <span class="opacity-90">
-                                #{{ $serviceOrder->code ?? '000001' }}
+                                #{{ $serviceOrder->code ?? ($nextOrderNumber ?? '000001') }}
                             </span>
                         </div>
                         <h1 class="mt-3 text-2xl md:text-3xl font-extrabold tracking-tight">
@@ -23,7 +36,8 @@
                     </div>
 
                     <div class="flex flex-col items-end gap-2">
-                        <span class="inline-flex items-center rounded-full bg-white/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide">
+                        <span
+                            class="inline-flex items-center rounded-full bg-white/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide">
                             {{ $serviceOrder->status_label ?? 'rascunho' }}
                         </span>
                     </div>
@@ -34,7 +48,8 @@
         {{-- FORM OS --}}
         <form id="service-order-form" class="mt-6 space-y-6">
             {{-- ORDEM DE SERVIÇO --}}
-            <section class="bg-white rounded-[24px] border border-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.04)] p-5 md:p-7">
+            <section
+                class="bg-white rounded-[24px] border border-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.04)] p-5 md:p-7">
                 <h2 class="font-semibold text-slate-900 mb-5 text-lg">
                     Ordem de serviço
                 </h2>
@@ -48,7 +63,7 @@
                         <input
                             id="order_number_display"
                             class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900"
-                            placeholder="000001"
+                            value="{{ $serviceOrder->order_number ?? $displayOrderNumber ?? '' }}"
                             disabled
                         />
                     </div>
@@ -77,14 +92,17 @@
                         <input
                             id="service_responsible"
                             class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm"
-                            placeholder="Nome do responsável"
+                            value="{{ $technicianName }}"
+                            disabled
                         />
+                        <input type="hidden" id="technician_id" value="{{ $technicianId }}">
                     </div>
                 </div>
             </section>
 
             {{-- CLIENTE --}}
-            <section class="bg-white rounded-[24px] border border-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.04)] p-5 md:p-7">
+            <section
+                class="bg-white rounded-[24px] border border-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.04)] p-5 md:p-7">
                 <h2 class="font-semibold text-slate-900 mb-5 text-lg">Cliente</h2>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -315,7 +333,7 @@
                             name="hourly_rate"
                             class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-right text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
                             placeholder="0,00"
-                            value="{{ old('hourly_rate', $serviceOrder->hourly_rate ?? '') }}"
+                            value="{{ $laborHourDefault }}"
                         />
                     </div>
                     <div class="md:col-span-9 flex flex-wrap gap-4 md:justify-end">
@@ -362,7 +380,8 @@
             </section>
 
             {{-- TOTAIS --}}
-            <section id="so-totals-block" class="bg-white rounded-[24px] border border-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.04)] p-5 md:p-7">
+            <section id="so-totals-block"
+                     class="bg-white rounded-[24px] border border-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.04)] p-5 md:p-7">
                 <h2 class="font-semibold text-slate-900 mb-4 text-lg">Totais</h2>
 
                 <div class="grid gap-3 md:grid-cols-3">
@@ -428,7 +447,8 @@
         </form>
 
         {{-- BARRA INFERIOR FIXA --}}
-        <div class="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-18px_40px_rgba(15,23,42,0.12)]">
+        <div
+            class="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-18px_40px_rgba(15,23,42,0.12)]">
             <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div class="flex-1 flex flex-wrap gap-6 text-xs text-slate-600">
                     <div class="flex flex-col leading-4">
