@@ -2,6 +2,7 @@
 
 namespace App\Services\ChatIA;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -11,14 +12,14 @@ class GeminiService
     {
         $apiKey = config('services.gemini.key');
 
-        if (! $apiKey) {
-            return 'GEMINI_API_KEY não configurada. Verifique o .env e config/services.php.';
+        if (!$apiKey) {
+            return 'A IA não está configurada. Avise o suporte.';
         }
 
         $model = 'gemini-2.0-flash';
-        $url   = "https://generativelanguage.googleapis.com/v1/models/{$model}:generateContent?key={$apiKey}";
+        $url = "https://generativelanguage.googleapis.com/v1/models/{$model}:generateContent?key={$apiKey}";
 
-        // monta histórico em texto simples
+        // histórico em texto simples
         $historyText = '';
         if (!empty($history)) {
             $lines = [];
@@ -59,7 +60,7 @@ Pergunta do usuário:
 $question
 TXT;
 
-        $response = Http::post($url, [
+        $payload = [
             'contents' => [
                 [
                     'parts' => [
@@ -67,15 +68,66 @@ TXT;
                     ],
                 ],
             ],
-        ]);
+        ];
 
-        if (! $response->ok()) {
-            Log::error('Erro Gemini', [
-                'status' => $response->status(),
-                'body'   => $response->body(),
+        $maxAttempts = 3;
+        $delayMs = 500; // 0.5s, depois 1s, 2s...
+
+        $response = null;
+
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                $response = Http::timeout(25)->post($url, $payload);
+            } catch (ConnectionException $e) {
+                Log::warning('Erro de conexão com Gemini', [
+                    'attempt' => $attempt,
+                    'msg' => $e->getMessage(),
+                ]);
+
+                if ($attempt === $maxAttempts) {
+                    return 'A IA está temporariamente indisponível. Tente novamente em alguns segundos.';
+                }
+
+                usleep($delayMs * 1000);
+                $delayMs *= 2;
+                continue;
+            }
+
+            // sucesso -> sai do loop
+            if ($response->ok()) {
+                break;
+            }
+
+            // 429: rate limit -> tenta de novo com backoff
+            if ($response->status() === 429 && $attempt < $maxAttempts) {
+                Log::warning('Rate limit Gemini (429), tentando novamente', [
+                    'attempt' => $attempt,
+                    'body' => $response->body(),
+                ]);
+
+                usleep($delayMs * 1000);
+                $delayMs *= 2;
+                continue;
+            }
+
+            // outros erros não vale insistir
+            break;
+        }
+
+        if (!$response || !$response->ok()) {
+            $status = $response ? $response->status() : null;
+
+            Log::error('Erro Gemini após tentativas', [
+                'status' => $status,
+                'body' => $response ? $response->body() : null,
             ]);
 
-            return 'Erro ao falar com o modelo de IA. (HTTP '.$response->status().')';
+            if ($status === 429) {
+                // mensagem amigável pro usuário, sem expor "HTTP 429"
+                return 'Muitas pessoas estão usando a IA ao mesmo tempo. Aguarde alguns instantes e tente novamente.';
+            }
+
+            return 'A IA teve um erro ao responder agora. Tente novamente em alguns segundos.';
         }
 
         $json = $response->json();
