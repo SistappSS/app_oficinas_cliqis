@@ -32,10 +32,14 @@ class KnowLedgeBaseController extends Controller
      */
     public function store(Request $request)
     {
+
         $data = $request->validate([
             'title'   => ['nullable', 'string', 'max:255'],
             'content' => ['nullable', 'string'],
             'file'    => ['nullable', 'file', 'mimes:pdf,xlsx,xls,csv', 'max:20480'], // ~20MB
+        ], [
+            'file.file' => 'Por favor, insira um arquivo válido.',
+            'file.max' => 'O arquivo precisa ter no máximo 20mbs.'
         ]);
 
         if (empty($data['content']) && ! $request->hasFile('file')) {
@@ -58,7 +62,7 @@ class KnowLedgeBaseController extends Controller
             $ext      = strtolower($file->getClientOriginalExtension());
 
             // salva o arquivo em storage/app/public/ai_kb
-            $filePath = $file->store('ai_kb', 'public');
+            $filePath = $file->store('ai_kb', 'private');
 
             $extracted = $this->extractTextFromFile($file);
 
@@ -112,7 +116,7 @@ class KnowLedgeBaseController extends Controller
     public function destroy(DocumentIA $document)
     {
         if ($document->file_path) {
-            Storage::disk('public')->delete($document->file_path);
+            Storage::disk('private')->delete($document->file_path);
         }
 
         $document->delete();
