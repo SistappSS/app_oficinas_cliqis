@@ -62,6 +62,12 @@ return [
             'root'   => storage_path('app/private/service-orders'),
             'throw'  => true,
         ],
+
+        'chat-docs' => [
+            'driver' => 'local',
+            'root'   => storage_path('app/private/chat-docs'),
+            'throw'  => true,
+        ],
     ],
 
     /*
