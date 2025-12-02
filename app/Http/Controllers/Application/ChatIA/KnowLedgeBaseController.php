@@ -32,7 +32,6 @@ class KnowLedgeBaseController extends Controller
      */
     public function store(Request $request)
     {
-
         $data = $request->validate([
             'title'   => ['nullable', 'string', 'max:255'],
             'content' => ['nullable', 'string'],
@@ -61,8 +60,7 @@ class KnowLedgeBaseController extends Controller
             $fileMime = $file->getMimeType();
             $ext      = strtolower($file->getClientOriginalExtension());
 
-            // salva o arquivo em storage/app/public/ai_kb
-            $filePath = $file->store('ai_kb', 'private');
+            $filePath = $file->store('ai_kb', 'chat-docs');
 
             $extracted = $this->extractTextFromFile($file);
 
@@ -116,7 +114,7 @@ class KnowLedgeBaseController extends Controller
     public function destroy(DocumentIA $document)
     {
         if ($document->file_path) {
-            Storage::disk('private')->delete($document->file_path);
+            Storage::disk('chat-docs')->delete($document->file_path);
         }
 
         $document->delete();
