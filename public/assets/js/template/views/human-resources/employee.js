@@ -56,13 +56,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         renderRow: (r) => `
 <tr class="hover:bg-slate-50">
     <td class="px-3 py-3 text-left">${r.full_name || "-"}</td>
-    <td class="px-3 py-3 text-left">${r.document_number || "-"}</td>
     <td class="px-3 py-3 text-left">${r.email || "-"}</td>
     <td class="px-3 py-3 text-left">${r.phone || "-"}</td>
     <td class="px-3 py-3 text-left">${r.position || "-"}</td>
-    <td class="px-3 py-3 text-right">
-        ${r.hourly_rate != null ? Number(r.hourly_rate).toFixed(2) : "0.00"}
-    </td>
     <td class="px-3 py-3 text-center">
         <span class="inline-flex items-center rounded-md bg-${
             r.is_technician ? "emerald" : "slate"

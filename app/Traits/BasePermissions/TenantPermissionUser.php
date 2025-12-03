@@ -6,10 +6,6 @@ use App\Models\Authenticate\Permissions\Permission;
 
 trait TenantPermissionUser
 {
-    /**
-     * Garante que as permissões base do tenant existam.
-     * Idempotente: se já existir uma permission com o prefixo, não recria nada.
-     */
     protected function ensureTenantBasePermissions(string $tenantId): void
     {
         if (! $tenantId) {
@@ -18,45 +14,44 @@ trait TenantPermissionUser
 
         $prefix = $tenantId . '_';
 
-        $alreadySeeded = Permission::where('guard_name', 'web')
-            ->where('name', 'like', $prefix . '%')
-            ->exists();
-
-        if ($alreadySeeded) {
-            return;
-        }
+//        $alreadySeeded = Permission::where('guard_name', 'web')
+//            ->where('name', 'like', $prefix . '%')
+//            ->exists();
+//
+//        if ($alreadySeeded) {
+//            return;
+//        }
 
         $actions = ['visualizar', 'cadastrar', 'editar', 'excluir'];
 
-        // cuidado com acento em "usuário" => usa "usuario" na chave interna
         $map = [
-            'Entidades' => [
-                'Clientes',
-                'Usuários',
+            'entidades' => [
+                'clientes',
+                'usuarios',
             ],
 
-            'Recursos Humanos' => [
-                'Departamentos',
-                'Benefícios',
-                'Benefícios_Funcionários',
+            'eecursos humanos' => [
+                'departamentos',
+                'beneficios',
+                'beneficios_funcionarios',
             ],
 
-            'Catálogo' => [
-                'Tipo de serviço',
-                'Serviço',
-                'Peças',
-                'Peças_Equipamentos',
+            'catálogo' => [
+                'tipo_servico',
+                'servico',
+                'pecas',
+                'pecas_equipamentos',
             ],
 
-            'Ordem de Serviço' => [
-                'Ordem de Serviço'
+            'ordem de serviço' => [
+                'ordem_servico'
             ],
         ];
 
         foreach ($map as $module => $resources) {
             foreach ($resources as $resource) {
                 foreach ($actions as $action) {
-                    $baseName = "{$action} {$resource}";
+                    $baseName = "{$action}_{$resource}";
                     $name     = $prefix . $baseName;
 
                     Permission::firstOrCreate(
@@ -69,5 +64,15 @@ trait TenantPermissionUser
                 }
             }
         }
+
+        Permission::firstOrCreate(
+            [
+                'name'       => "{$prefix}aprovar_ordem_servico",
+                'guard_name' => 'web',
+            ], [
+                'name'       => "{$prefix}visualizar_dashboard",
+                'guard_name' => 'web',
+            ]
+        );
     }
 }

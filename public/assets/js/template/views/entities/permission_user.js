@@ -366,33 +366,57 @@ document.addEventListener("DOMContentLoaded", () => {
         const container = document.querySelector("#permissions-container");
         if (!container) return;
 
-        // garante que SEMPRE seja um Set
+        // garante SET de strings
         if (!(state.selectedPermissionIds instanceof Set)) {
-            const base =
-                Array.isArray(state.selectedPermissionIds)
-                    ? state.selectedPermissionIds
-                    : [];
-            state.selectedPermissionIds = new Set(base);
+            const base = Array.isArray(state.selectedPermissionIds)
+                ? state.selectedPermissionIds
+                : [];
+            state.selectedPermissionIds = new Set(base.map(String));
         }
         const selectedIds = state.selectedPermissionIds;
 
-        // agrupa por p.group (segundo nome/recurso)
-        const groups = {};
+        // monta recursos a partir do segundo nome (ação = primeira palavra, recurso = resto)
+        const resources = {};
         (state.permissions || []).forEach((p) => {
-            const g = p.group || "Geral";
-            if (!groups[g]) groups[g] = [];
-            groups[g].push(p);
+            // evita permission interna se ainda vier do back por algum motivo
+            if ((p.base_name || "").toLowerCase().includes("employee_customer_cliqis")) {
+                return;
+            }
+
+            const label = p.display_name || p.base_name || "";
+            const parts = label.split(/\s+/).filter(Boolean);
+
+            let action = (parts[0] || "").toLowerCase();      // cadastrar / editar / excluir / visualizar
+            let resourceLabel = parts.slice(1).join(" ").trim(); // Benefícios, Clientes, etc
+
+            if (!resourceLabel) {
+                resourceLabel = "Geral";
+            }
+
+            const groupKey = resourceLabel.toUpperCase();
+
+            if (!resources[groupKey]) {
+                resources[groupKey] = [];
+            }
+
+            resources[groupKey].push({
+                id: String(p.id),
+                fullLabel: label,
+                baseName: p.base_name || "",
+                action,
+            });
         });
 
-        const entries = Object.entries(groups).sort((a, b) =>
-            a[0].localeCompare(b[0], "pt-BR")
-        );
+        const order = { cadastrar: 1, editar: 2, excluir: 3, visualizar: 4 };
 
-        const html = entries
-            .map(([group, items]) => {
-                const itemsHtml = items
-                    .map((p) => {
-                        const checked = selectedIds.has(p.id); // <= agora sempre existe
+        const sectionsHtml = Object.entries(resources)
+            .sort((a, b) => a[0].localeCompare(b[0], "pt-BR"))
+            .map(([resourceLabel, perms]) => {
+                const lines = perms
+                    .slice()
+                    .sort((a, b) => (order[a.action] || 99) - (order[b.action] || 99))
+                    .map((perm) => {
+                        const checked = selectedIds.has(perm.id);
 
                         const toggleClasses =
                             "permission-toggle relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer items-center rounded-full border transition-all " +
@@ -405,17 +429,17 @@ document.addEventListener("DOMContentLoaded", () => {
                             (checked ? "translate-x-4" : "translate-x-0");
 
                         return `
-                        <div class="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white/70 px-3 py-2.5">
+                        <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-white/80 px-3 py-2">
                             <div class="min-w-0">
                                 <p class="text-xs font-medium text-slate-900 truncate">
-                                    ${p.display_name}
+                                    ${perm.fullLabel}
                                 </p>
                                 <p class="mt-0.5 text-[11px] text-slate-400 truncate">
-                                    ${p.base_name}
+                                    ${perm.baseName}
                                 </p>
                             </div>
                             <button type="button"
-                                    data-permission-id="${p.id}"
+                                    data-permission-id="${perm.id}"
                                     data-checked="${checked ? "1" : "0"}"
                                     class="${toggleClasses}">
                                 <span class="${knobClasses}"></span>
@@ -428,45 +452,43 @@ document.addEventListener("DOMContentLoaded", () => {
                 return `
                 <section class="rounded-2xl border border-slate-100 bg-slate-50/80 p-3">
                     <header class="mb-2 text-[11px] font-semibold tracking-wide text-slate-500 uppercase">
-                        ${group}
+                        ${resourceLabel}
                     </header>
-
-                    <!-- 3 colunas por linha -->
-                    <div class="">
-                        ${itemsHtml}
+                    <div class="space-y-2">
+                        ${lines}
                     </div>
                 </section>
             `;
             })
             .join("");
 
-        container.innerHTML = html;
+        container.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            ${sectionsHtml}
+        </div>
+    `;
 
         // liga toggles
         container.querySelectorAll(".permission-toggle").forEach((btn) => {
             btn.addEventListener("click", () => {
-                const id = parseInt(btn.dataset.permissionId, 10);
-                if (Number.isNaN(id)) {
-                    console.warn("permission-id inválido no toggle:", btn.dataset.permissionId);
+                const id = btn.dataset.permissionId;
+                if (!id) {
+                    console.warn("permission-id vazio no toggle", btn.dataset);
                     return;
                 }
 
-                const isChecked = btn.dataset.checked === "1";
+                const isChecked = selectedIds.has(id);
                 const next = !isChecked;
+
+                if (next) selectedIds.add(id);
+                else selectedIds.delete(id);
+
                 btn.dataset.checked = next ? "1" : "0";
-
-                if (next) {
-                    selectedIds.add(id);
-                } else {
-                    selectedIds.delete(id);
-                }
-
                 updateToggleVisual(btn, next);
             });
         });
     }
 
-    // delegação para os toggles
     if (permissionsContainer) {
         permissionsContainer.addEventListener("click", (e) => {
             const btn = e.target.closest(
@@ -501,9 +523,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            const permissionIds = Array.from(state.rolePermissions).map(
-                (v) => String(v)
-            );
+            const permissionIds = Array.from(state.selectedPermissionIds).map(String);
 
             try {
                 await fetchJson(

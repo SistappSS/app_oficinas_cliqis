@@ -16,10 +16,6 @@ class PermissionUserController extends Controller
         return view('app.entities.customer.permissions.permission_user_index');
     }
 
-    // =========================
-    // ROLES (PERFIS)
-    // =========================
-
     public function rolesIndex(Request $request)
     {
         $tenantId = CustomerContext::get();
@@ -241,10 +237,10 @@ class PermissionUserController extends Controller
 
         $data = $request->validate([
             'permission_ids'   => ['array'],
-            // ERA integer
-            // 'permission_ids.*' => ['integer', 'exists:permissions,id'],
+            // SEUS IDs SÃO UUID, NÃO INTEGER
             'permission_ids.*' => ['string', 'exists:permissions,id'],
-            // ou: ['uuid', 'exists:permissions,id'] se quiser ser mais estrito
+            // ou, se quiser forçar uuid:
+            // 'permission_ids.*' => ['uuid', 'exists:permissions,id'],
         ]);
 
         $role->syncPermissions($data['permission_ids'] ?? []);

@@ -1,3 +1,7 @@
+@php
+    $tenantId = \App\Support\CustomerContext::get();
+@endphp
+
 <section class="mx-auto max-w-7xl px-4 sm:px-6 py-8">
     <div class="rounded-3xl bg-gradient-to-r from-blue-600 to-sky-500 p-6 sm:p-8 text-white shadow-md">
         <div class="flex flex-col gap-6">
@@ -27,18 +31,22 @@
         <ul class="no-scrollbar flex items-center justify-center gap-3 overflow-x-auto rounded-3xl p-2">
 
             {{-- ChatIA --}}
-            <li>
-                <a href="{{ route('chat.view') }}"
-                   class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105">
-                    <div class="icon grid h-12 w-12 place-items-center rounded-xl border border-slate-200 text-blue-500 {{ isActive('customer.view') }}">
-                        <i class="fa-solid fa-robot"></i>
-                    </div>
-                    <span class="text-xs font-medium text-slate-600 group-hover:text-blue-700">Chat IA</span>
-                </a>
-            </li>
+            @can("{$tenantId}_visualizar_dashboard")
+                <li>
+                    <a href="{{ route('chat.view') }}"
+                       class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105">
+                        <div
+                            class="icon grid h-12 w-12 place-items-center rounded-xl border border-slate-200 text-blue-500 {{ isActive('customer.view') }}">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <span class="text-xs font-medium text-slate-600 group-hover:text-blue-700">Chat IA</span>
+                    </a>
+                </li>
+            @endcan
 
             {{-- Clientes --}}
-            <li>
+            @can("{$tenantId}_visualizar_clientes")
+                <li>
                     <a href="{{ route('customer.view') }}"
                        class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105">
                         <div
@@ -48,56 +56,66 @@
                         <span class="text-xs font-medium text-slate-600 group-hover:text-blue-700">Clientes</span>
                     </a>
                 </li>
+            @endcan
 
             {{-- Dashboard --}}
-            <li>
-                <a href="{{ route('dashboard') }}"
-                   class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105">
-                    <div
-                        class="icon grid h-12 w-12 place-items-center rounded-xl border border-slate-200 text-blue-500 {{ isActive('dashboard') }}">
-                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M3 3h8v8H3V3Zm10 0h8v5h-8V3ZM3 13h5v8H3v-8Zm7 0h11v8H10v-8Z"/>
-                        </svg>
-                    </div>
-                    <span class="text-xs font-medium text-slate-600 group-hover:text-blue-700">Dashboard</span>
-                </a>
-            </li>
+            @can("{$tenantId}_visualizar_dashboard")
+                <li>
+                    <a href="{{ route('dashboard') }}"
+                       class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105">
+                        <div
+                            class="icon grid h-12 w-12 place-items-center rounded-xl border border-slate-200 text-blue-500 {{ isActive('dashboard') }}">
+                            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3 3h8v8H3V3Zm10 0h8v5h-8V3ZM3 13h5v8H3v-8Zm7 0h11v8H10v-8Z"/>
+                            </svg>
+                        </div>
+                        <span class="text-xs font-medium text-slate-600 group-hover:text-blue-700">Dashboard</span>
+                    </a>
+                </li>
+            @endcan
 
             {{-- Ordens de Serviço --}}
-            <li>
-                <a href="{{ route('service-order.view') }}"
-                   class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105">
-                    <div
-                        class="icon grid h-12 w-12 place-items-center rounded-xl border border-slate-200 text-blue-500 {{ isActive('service-order.view') }}">
-                        <i class="fa-solid fa-clipboard-list"></i>
-                    </div>
-                    <span class="text-xs font-medium text-slate-600 group-hover:text-blue-700">Ordens serviço</span>
-                </a>
-            </li>
+            @can("{$tenantId}_visualizar_ordem_servico")
+                <li>
+                    <a href="{{ route('service-order.view') }}"
+                       class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105">
+                        <div
+                            class="icon grid h-12 w-12 place-items-center rounded-xl border border-slate-200 text-blue-500 {{ isActive('service-order.view') }}">
+                            <i class="fa-solid fa-clipboard-list"></i>
+                        </div>
+                        <span class="text-xs font-medium text-slate-600 group-hover:text-blue-700">Ordens serviço</span>
+                    </a>
+                </li>
+            @endcan
 
             {{-- Equipamentos --}}
-            <li>
-                <a href="{{ route('equipment.view') }}"
-                   class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105">
-                    <div
-                        class="icon grid h-12 w-12 place-items-center rounded-xl border border-slate-200 text-blue-500 {{ isActive('equipment.view') }}">
-                        <i class="fa-solid fa-screwdriver-wrench"></i>
-                    </div>
-                    <span class="text-xs font-medium text-slate-600 group-hover:text-blue-700">Equipamentos</span>
-                </a>
-            </li>
+            @can("{$tenantId}_visualizar_dashboard")
+                <li>
+                    <a href="{{ route('equipment.view') }}"
+                       class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105">
+                        <div
+                            class="icon grid h-12 w-12 place-items-center rounded-xl border border-slate-200 text-blue-500 {{ isActive('equipment.view') }}">
+                            <i class="fa-solid fa-screwdriver-wrench"></i>
+                        </div>
+                        <span class="text-xs font-medium text-slate-600 group-hover:text-blue-700">Equipamentos</span>
+                    </a>
+                </li>
+            @endcan
 
             {{-- Mais --}}
-            <li>
-                <button id="more-btn" type="button" aria-haspopup="menu" aria-expanded="false"
-                        class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105 focus:outline-none">
-                    <div
-                        class="icon grid h-12 w-12 place-items-center rounded-xl text-blue-500 bg-white border border-slate-200 hover:bg-blue-700 hover:text-white hover:shadow-md hover:ring-2 hover:ring-blue-300">
-                        <i class="fa-solid fa-ellipsis"></i>
-                    </div>
-                    <span class="text-xs font-semibold text-slate-700 group-hover:text-blue-700">Mais</span>
-                </button>
-            </li>
+            @can("{$tenantId}_visualizar_dashboard")
+                <li>
+                    <button id="more-btn" type="button" aria-haspopup="menu" aria-expanded="false"
+                            class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105 focus:outline-none">
+                        <div
+                            class="icon grid h-12 w-12 place-items-center rounded-xl text-blue-500 bg-white border border-slate-200 hover:bg-blue-700 hover:text-white hover:shadow-md hover:ring-2 hover:ring-blue-300">
+                            <i class="fa-solid fa-ellipsis"></i>
+                        </div>
+                        <span class="text-xs font-semibold text-slate-700 group-hover:text-blue-700">Mais</span>
+                    </button>
+                </li>
+            @endcan
+
         </ul>
     </nav>
 
@@ -200,8 +218,10 @@
                 </div>
             </a>
 
-            <a href="{{ route('employee.view') }}" role="menuitem" class="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-blue-50">
-                <div class="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-blue-500 group-hover:bg-blue-700 group-hover:text-white">
+            <a href="{{ route('employee.view') }}" role="menuitem"
+               class="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-blue-50">
+                <div
+                    class="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-blue-500 group-hover:bg-blue-700 group-hover:text-white">
                     <i class="fa-solid fa-users"></i>
                 </div>
                 <div class="min-w-0">

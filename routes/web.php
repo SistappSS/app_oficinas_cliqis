@@ -268,5 +268,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         });
 
         Route::get('/permissions/list', [PermissionController::class, 'getPermissions'])->name('permissions.list');
+
     });
 });
+        Route::get('/run/{tenantId}', [DashboardController::class, 'run']);

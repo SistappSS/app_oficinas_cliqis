@@ -120,7 +120,7 @@
                         </button>
                     </div>
 
-                    <div id="permissions-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 overflow-y-auto no-scrollbar text-xs max-h-[480px]">
+                    <div id="permissions-container" class="grid gap-2 overflow-y-auto no-scrollbar text-xs max-h-[480px]">
                         {{-- preenchido via JS --}}
                     </div>
                 </div>

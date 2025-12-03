@@ -53,8 +53,8 @@ class AdditionalCustomerInfoController extends Controller
     public function additionalInfoIndexStore(StoreAdditionalCustomerInfoRequest $request)
     {
         $user = auth()->user();
+        $customerSistappId = null;
 
-        // JÁ EXISTE CUSTOMER LOGIN? então só atualiza dados e cria/atualiza AdditionalCustomerInfo
         $existingLogin = $this->customerUserLogin
             ->where('user_id', $user->id)
             ->first();
@@ -62,7 +62,6 @@ class AdditionalCustomerInfoController extends Controller
         if ($existingLogin) {
             $customerSistappId = $existingLogin->customer_sistapp_id;
 
-            // Atualiza avatar se veio de novo
             if ($request->hasFile('image')) {
                 $userImage = $request->file('image');
                 $imageData = file_get_contents($userImage->getRealPath());
@@ -109,9 +108,6 @@ class AdditionalCustomerInfoController extends Controller
             }
 
         } else {
-            // ==========================
-            // PRIMEIRO ACESSO
-            // ==========================
 
             $customerData = [
                 'name'          => ucwords($request->company_name),
@@ -188,10 +184,6 @@ class AdditionalCustomerInfoController extends Controller
                 'created_at'          => Carbon::now()
             ]);
         }
-
-        // ==========
-        // COMMON: garante AdditionalCustomerInfo
-        // ==========
 
         AdditionalCustomerInfo::updateOrCreate(
             [

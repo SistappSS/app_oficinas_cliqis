@@ -7,12 +7,13 @@ use App\Models\Entities\Customers\Customer;
 use App\Models\Sales\Budgets\Budget;
 use App\Models\Sales\Budgets\Subscriptions\Subscription;
 use App\Models\Sales\Invoices\Invoice;
+use App\Traits\BasePermissions\TenantPermissionUser;
 use App\Traits\RoleCheckTrait;
 
 
 class DashboardController extends Controller
 {
-    use RoleCheckTrait;
+    use RoleCheckTrait, TenantPermissionUser;
 
     public $customer;
 
@@ -40,5 +41,16 @@ class DashboardController extends Controller
         return view('app.dashboards.dashboard', compact(
             'activeCustomers',
         ));
+    }
+
+    public function run(string $tenantId) {
+
+        $this->ensureTenantBasePermissions($tenantId);
+
+        return response()->json([
+            'ok'       => true,
+            'tenantId' => $tenantId,
+            'message'  => "Permissões base sincronizadas para o tenant {$tenantId}.",
+        ]);
     }
 }

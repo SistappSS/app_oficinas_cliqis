@@ -131,6 +131,7 @@ class EmployeeController extends Controller
             CustomerEmployeeUser::create([
                 'employee_id' => $employee->id,
                 'user_id'     => $employeeUser->id,
+                'customer_sistapp_id' => $tenantId,
             ]);
 
             return response()->json($employee->load('department'), 201);
