@@ -93,14 +93,14 @@ class ServiceOrderController extends Controller
         }
 
         if (! $isMaster) {
-            if ($user && $user->can('finance view')) {
+            if ($user && $user->can('sist_894684_aprovar_ordem_servico')) {
                 // financeiro: vê todas do tenant, mas só nessas situações
                 $q->whereIn('status', ['approved', 'completed', 'rejected']);
 
-            } elseif ($user && $user->can('technician view')) {
+            } elseif ($user && $user->can('sist_894684_visualizar_ordem_servico')) {
                 // técnico: só as OS criadas por ele
                 // troca 'user_id' se o campo for outro
-                $q->where('user_id', $user->id);
+//                $q->where('user_id', $user->id);
 
             } else {
                 // sem permissão: não retorna nada

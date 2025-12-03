@@ -29,7 +29,6 @@
 <section class="mx-auto max-w-7xl px-4 sm:px-6">
     <nav aria-label="Guia rápido" class="rounded-3xl bg-gradient-to-b from-slate-50 to-blue-50 p-3">
         <ul class="no-scrollbar flex items-center justify-center gap-3 overflow-x-auto rounded-3xl p-2">
-
             {{-- ChatIA --}}
             @can("{$tenantId}_visualizar_dashboard")
                 <li>
@@ -58,7 +57,7 @@
                 </li>
             @endcan
 
-            {{-- Dashboard --}}
+            {{--             Dashboard--}}
             @can("{$tenantId}_visualizar_dashboard")
                 <li>
                     <a href="{{ route('dashboard') }}"
@@ -75,7 +74,7 @@
             @endcan
 
             {{-- Ordens de Serviço --}}
-            @can("{$tenantId}_visualizar_ordem_servico")
+{{--            @can("{$tenantId}_visualizar_ordem_servico")--}}
                 <li>
                     <a href="{{ route('service-order.view') }}"
                        class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105">
@@ -86,7 +85,7 @@
                         <span class="text-xs font-medium text-slate-600 group-hover:text-blue-700">Ordens serviço</span>
                     </a>
                 </li>
-            @endcan
+{{--            @endcan--}}
 
             {{-- Equipamentos --}}
             @can("{$tenantId}_visualizar_dashboard")
@@ -103,19 +102,16 @@
             @endcan
 
             {{-- Mais --}}
-            @can("{$tenantId}_visualizar_dashboard")
-                <li>
-                    <button id="more-btn" type="button" aria-haspopup="menu" aria-expanded="false"
-                            class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105 focus:outline-none">
-                        <div
-                            class="icon grid h-12 w-12 place-items-center rounded-xl text-blue-500 bg-white border border-slate-200 hover:bg-blue-700 hover:text-white hover:shadow-md hover:ring-2 hover:ring-blue-300">
-                            <i class="fa-solid fa-ellipsis"></i>
-                        </div>
-                        <span class="text-xs font-semibold text-slate-700 group-hover:text-blue-700">Mais</span>
-                    </button>
-                </li>
-            @endcan
-
+            <li>
+                <button id="more-btn" type="button" aria-haspopup="menu" aria-expanded="false"
+                        class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105 focus:outline-none">
+                    <div
+                        class="icon grid h-12 w-12 place-items-center rounded-xl text-blue-500 bg-white border border-slate-200 hover:bg-blue-700 hover:text-white hover:shadow-md hover:ring-2 hover:ring-blue-300">
+                        <i class="fa-solid fa-ellipsis"></i>
+                    </div>
+                    <span class="text-xs font-semibold text-slate-700 group-hover:text-blue-700">Mais</span>
+                </button>
+            </li>
         </ul>
     </nav>
 
@@ -199,7 +195,6 @@
                     <p class="text-xs text-slate-500">Gestão de fornecedores</p>
                 </div>
             </a>
-
 
             {{-- Human Resources --}}
             <div class="px-3 pt-3 pb-0">
