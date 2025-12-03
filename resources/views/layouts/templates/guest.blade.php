@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 
-@include('layouts.common.guest.head')
+@include('layouts.common.guest.headd')
 
 <body class="h-screen grid grid-rows-[auto_1fr_auto] bg-slate-50 text-slate-900 relative overflow-x-clip">
     <!-- BG -->
