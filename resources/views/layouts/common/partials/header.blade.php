@@ -30,7 +30,7 @@
     <nav aria-label="Guia rápido" class="rounded-3xl bg-gradient-to-b from-slate-50 to-blue-50 p-3">
         <ul class="no-scrollbar flex items-center justify-center gap-3 overflow-x-auto rounded-3xl p-2">
             {{-- ChatIA --}}
-            @can("{$tenantId}_visualizar_dashboard")
+{{--            @can("{$tenantId}_visualizar_dashboard")--}}
                 <li>
                     <a href="{{ route('chat.view') }}"
                        class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105">
@@ -41,10 +41,10 @@
                         <span class="text-xs font-medium text-slate-600 group-hover:text-blue-700">Chat IA</span>
                     </a>
                 </li>
-            @endcan
+{{--            @endcan--}}
 
             {{-- Clientes --}}
-            @can("{$tenantId}_visualizar_clientes")
+{{--            @can("{$tenantId}_visualizar_clientes")--}}
                 <li>
                     <a href="{{ route('customer.view') }}"
                        class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105">
@@ -55,10 +55,10 @@
                         <span class="text-xs font-medium text-slate-600 group-hover:text-blue-700">Clientes</span>
                     </a>
                 </li>
-            @endcan
+{{--            @endcan--}}
 
             {{--             Dashboard--}}
-            @can("{$tenantId}_visualizar_dashboard")
+{{--            @can("{$tenantId}_visualizar_dashboard")--}}
                 <li>
                     <a href="{{ route('dashboard') }}"
                        class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105">
@@ -71,7 +71,7 @@
                         <span class="text-xs font-medium text-slate-600 group-hover:text-blue-700">Dashboard</span>
                     </a>
                 </li>
-            @endcan
+{{--            @endcan--}}
 
             {{-- Ordens de Serviço --}}
 {{--            @can("{$tenantId}_visualizar_ordem_servico")--}}
@@ -88,7 +88,7 @@
 {{--            @endcan--}}
 
             {{-- Equipamentos --}}
-            @can("{$tenantId}_visualizar_dashboard")
+{{--            @can("{$tenantId}_visualizar_dashboard")--}}
                 <li>
                     <a href="{{ route('equipment.view') }}"
                        class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105">
@@ -99,7 +99,7 @@
                         <span class="text-xs font-medium text-slate-600 group-hover:text-blue-700">Equipamentos</span>
                     </a>
                 </li>
-            @endcan
+{{--            @endcan--}}
 
             {{-- Mais --}}
             <li>
