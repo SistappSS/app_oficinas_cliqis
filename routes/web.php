@@ -18,10 +18,12 @@ use App\Http\Controllers\Application\Entities\Customers\Permisions\PermissionUse
 use App\Http\Controllers\Application\Entities\Customers\SecondaryCustomer\SecondaryCustomerController;
 use App\Http\Controllers\Application\Entities\Suppliers\Supplier\SupplierController;
 use App\Http\Controllers\Application\Entities\Users\UserController;
+use App\Http\Controllers\Application\Finances\Payables\AccountPayableController;
 use App\Http\Controllers\Application\HumanResources\BenefitController;
 use App\Http\Controllers\Application\HumanResources\DepartmentController;
 use App\Http\Controllers\Application\HumanResources\EmployeeBenefitController;
 use App\Http\Controllers\Application\HumanResources\EmployeeController;
+use App\Http\Controllers\Application\Invoices\ServiceOrderBillingController;
 use App\Http\Controllers\Application\ServiceOrders\CompletedServiceOrderController;
 use App\Http\Controllers\Application\ServiceOrders\ServiceOrderController;
 use App\Http\Controllers\Application\ServiceOrders\ServiceOrderEquipmentController;
@@ -225,6 +227,43 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::get('/completed-service-order', [CompletedServiceOrderController::class, 'view'])->name('completed-service-order.view');
         Route::resource('/completed-service-order-api', CompletedServiceOrderController::class)->except('store');
         Route::post('/{serviceOrder}/client-signature', [CompletedServiceOrderController::class, 'store'])->name('service-orders.client-signature');
+
+        Route::get('/billing', [ServiceOrderBillingController::class, 'index'])
+            ->name('service-order-invoice.view');
+
+        // API para a tabela de cobranças
+        Route::get('/billing-api', [ServiceOrderBillingController::class, 'list'])
+            ->name('service-orders.billing.api');
+
+        // POST do modal "Gerar NF"
+        Route::post('/billing', [ServiceOrderBillingController::class, 'store'])
+            ->name('service-orders.billing.store');
+    });
+
+    /* --->| Finances |<--- */
+    Route::group(['prefix' => 'finances'], function () {
+        // Payables
+        Route::get('/payables', [AccountPayableController::class, 'view'])
+            ->name('account-payable-view')
+            ->middleware('can:finance_payable_view');
+
+        Route::get('/payable-api', [AccountPayableController::class, 'index'])
+            ->middleware('can:finance_payable_view');
+
+        Route::post('/payable-api', [AccountPayableController::class, 'store'])
+            ->middleware('can:finance_payable_create');
+
+        Route::post('/payable-api/{id}/pay', [AccountPayableController::class, 'pay'])
+            ->middleware('can:finance_payable_edit');
+
+        Route::get('/payable-api/{id}/payments', [AccountPayableController::class, 'payments'])
+            ->middleware('can:finance_payable_view');
+
+        Route::patch('/payable-api/{id}/amount', [AccountPayableController::class, 'updateParcelAmount'])
+            ->middleware('can:finance_payable_edit');
+
+        Route::post('/payable-api/{id}/cancel', [AccountPayableController::class, 'cancelParcel'])
+            ->middleware('can:finance_payable_delete');
     });
 
     /* --->| Chat IA |<--- */
@@ -271,4 +310,4 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
     });
 });
-        Route::get('/run/{tenantId}', [DashboardController::class, 'run']);
+Route::get('/run/{tenantId}', [DashboardController::class, 'run']);

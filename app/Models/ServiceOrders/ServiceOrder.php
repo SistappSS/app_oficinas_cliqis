@@ -77,6 +77,11 @@ class ServiceOrder extends Model
         return $this->hasOne(CompletedServiceOrder::class);
     }
 
+    public function invoice()
+    {
+        return $this->hasOne(ServiceOrderInvoice::class);
+    }
+
     // ---- HELPERS ----
 
     protected function statusLabel(): Attribute
