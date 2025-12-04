@@ -43,6 +43,19 @@
                 </li>
 {{--            @endcan--}}
 
+{{--            @can('sales_invoice_view')--}}
+                <li>
+                    <a href="{{route('service-order-invoice.view')}}"
+                       class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105">
+                        <div
+                            class="icon grid h-12 w-12 place-items-center rounded-xl border border-slate-200 text-blue-500 {{isActive('service-order-invoice.view')}}">
+                            <i class="fa-solid fa-file-invoice" style="font-size: 20px;"></i>
+                        </div>
+                        <span class="text-xs font-medium text-slate-600 group-hover:text-blue-700">Cobranças</span>
+                    </a>
+                </li>
+{{--            @endcan--}}
+
             {{-- Clientes --}}
 {{--            @can("{$tenantId}_visualizar_clientes")--}}
                 <li>
@@ -150,6 +163,18 @@
                 </div>
             </a>
             @endrole
+
+            <a href="{{route('account-payable-view')}}" role="menuitem"
+               class="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-blue-50">
+                <div
+                    class="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-blue-500 group-hover:bg-blue-700 group-hover:text-white">
+                    <i class="fa-solid fa-wallet"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-sm font-medium text-slate-800">A pagar</p>
+                    <p class="text-xs text-slate-500">Contas e vencimentos</p>
+                </div>
+            </a>
 
             <div class="px-3 pt-1 pb-0">
                 <p class="text-[11px] font-semibold tracking-wide uppercase text-slate-400">Permissões</p>
