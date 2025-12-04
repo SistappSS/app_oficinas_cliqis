@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('account_receivable_payments', function (Blueprint $table) {
             $table->uuid('id')->primary();
 
+            $table->string('customer_sistapp_id', 25)->index();
+
             $table->unsignedBigInteger('invoice_id')->index();
             $table->foreign('invoice_id')->references('id')->on('invoices')->cascadeOnDelete();
 

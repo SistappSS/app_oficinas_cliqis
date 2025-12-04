@@ -245,7 +245,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
     Route::group(['prefix' => 'finances'], function () {
         // Payables
         Route::get('/payables', [AccountPayableController::class, 'view'])
-            ->name('account-payable-view')
+            ->name('account-payable.view')
             ->middleware('can:finance_payable_view');
 
         Route::get('/payable-api', [AccountPayableController::class, 'index'])
@@ -267,10 +267,10 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
             ->middleware('can:finance_payable_delete');
 
         Route::get('/finances/receivables/service-orders', [AccountReceivableController::class, 'view'])
-            ->name('receivables.service-orders.view')
+            ->name('account-receivable.view')
             ->middleware('can:finance_receivable_view');
 
-        Route::get('/finances/receivables/service-orders/api', [AccountReceivableController::class, 'index'])
+        Route::get('/receivables/service-orders/api', [AccountReceivableController::class, 'index'])
             ->name('receivables.service-orders.index')
             ->middleware('can:finance_receivable_view');
 

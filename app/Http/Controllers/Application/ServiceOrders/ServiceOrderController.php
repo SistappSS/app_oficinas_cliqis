@@ -9,6 +9,7 @@ use App\Models\ServiceOrders\ServiceOrderEquipments\ServiceOrderEquipment;
 use App\Models\ServiceOrders\ServiceOrderLaborEntries\ServiceOrderLaborEntry;
 use App\Models\ServiceOrders\ServiceOrderPartItems\ServiceOrderPartItem;
 use App\Models\ServiceOrders\ServiceOrderServiceItems\ServiceOrderServiceItem;
+use App\Support\CustomerContext;
 use App\Traits\RoleCheckTrait;
 use App\Traits\WebIndex;
 use Illuminate\Http\Request;
@@ -92,12 +93,14 @@ class ServiceOrderController extends Controller
             $isMaster = (bool) optional($login)->is_master_customer;
         }
 
+        $tenantId = CustomerContext::get();
+
         if (! $isMaster) {
-            if ($user && $user->can('sist_894684_aprovar_ordem_servico')) {
+            if ($user && $user->can("{$tenantId}_aprovar_ordem_servico")) {
                 // financeiro: vê todas do tenant, mas só nessas situações
                 $q->whereIn('status', ['approved', 'completed', 'rejected']);
 
-            } elseif ($user && $user->can('sist_894684_visualizar_ordem_servico')) {
+            } elseif ($user && $user->can("{$tenantId}_visualizar_ordem_servico")) {
                 // técnico: só as OS criadas por ele
                 // troca 'user_id' se o campo for outro
 //                $q->where('user_id', $user->id);
