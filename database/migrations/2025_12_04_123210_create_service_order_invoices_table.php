@@ -13,8 +13,7 @@ return new class extends Migration {
             $table->string('customer_sistapp_id', 25)->index();
 
             $table->foreignUuid('service_order_id')
-                ->constrained('service_orders')
-                ->nullOnDelete();
+                ->constrained('service_orders');
 
             // cliente da OS (se já tiver tabela customers/clients, ajusta aqui)
             $table->unsignedBigInteger('customer_id')->nullable()->index();
