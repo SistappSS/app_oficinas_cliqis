@@ -135,15 +135,16 @@
                 </button>
             </div>
 
-            <form id="nf-form" class="mt-4 space-y-3">
+            <form id="billing-form" class="mt-4 space-y-3">
                 @csrf
-                <input type="hidden" id="nf-os-id">
+
+                <input type="hidden" name="service_order_id" id="billing-os-id">
 
                 <div class="grid sm:grid-cols-2 gap-3">
                     <div>
-                        <label class="text-sm font-medium">Data de pagamento</label>
-                        <input id="nf-payment-date" type="date" required
-                               class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"/>
+                        <label class="text-sm font-medium">Primeiro vencimento</label>
+                        <input type="date" name="first_due_date" required
+                               class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5">
                     </div>
                     <div>
                         <label class="text-sm font-medium">Forma de pagamento</label>
@@ -162,16 +163,39 @@
 
                 <div class="grid sm:grid-cols-2 gap-3">
                     <div>
-                        <label class="text-sm font-medium">Parcelas</label>
-                        <input id="nf-installments" type="number" min="1" step="1" value="1"
-                               class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"
-                               placeholder="1 = sem parcelar"/>
-                    </div>
-                    <div>
                         <label class="text-sm font-medium">Valor total (R$)</label>
                         <input id="nf-amount" type="number" min="0" step="0.01" readonly
                                class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm"/>
                     </div>
+                </div>
+
+                <div class="mt-3">
+                    <label class="flex items-center gap-2 text-sm font-medium">
+                        <input type="checkbox" name="use_down_payment" id="use_down_payment"
+                               class="h-4 w-4 rounded border-slate-300 text-blue-600">
+                        Usar sinal (% do total)
+                    </label>
+                </div>
+
+                <div id="down-payment-wrap" class="mt-3 hidden">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-sm font-medium">% de sinal</label>
+                            <input type="number" name="down_payment_percent" min="1" max="99"
+                                   class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5">
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium">Parcelas do restante</label>
+                            <input type="number" name="remaining_installments" min="1"
+                                   class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="no-down-payment-wrap" class="mt-3">
+                    <label class="text-sm font-medium">Parcelas</label>
+                    <input type="number" name="installments" min="1" value="1"
+                           class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5">
                 </div>
 
                 <div class="flex justify-end gap-2 pt-2">
@@ -189,6 +213,49 @@
     </div>
 
     @push('scripts')
+{{--        <script>--}}
+{{--            const form = document.getElementById('billing-form');--}}
+{{--            const useDown = document.getElementById('use_down_payment');--}}
+{{--            const wrapDown = document.getElementById('down-payment-wrap');--}}
+{{--            const wrapNo   = document.getElementById('no-down-payment-wrap');--}}
+
+{{--            useDown.addEventListener('change', () => {--}}
+{{--                const on = useDown.checked;--}}
+{{--                wrapDown.classList.toggle('hidden', !on);--}}
+{{--                wrapNo.classList.toggle('hidden', on);--}}
+{{--            });--}}
+
+{{--            form.addEventListener('submit', async (e) => {--}}
+{{--                e.preventDefault();--}}
+
+{{--                const osId = document.getElementById('billing-os-id').value;--}}
+{{--                const fd = new FormData(form);--}}
+{{--                fd.set('use_down_payment', useDown.checked ? 1 : 0);--}}
+
+{{--                const res = await fetch(`/service-orders/${osId}/billing/generate`, {--}}
+{{--                    method: 'POST',--}}
+{{--                    headers: {--}}
+{{--                        'Accept': 'application/json',--}}
+{{--                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''--}}
+{{--                    },--}}
+{{--                    body: fd--}}
+{{--                });--}}
+
+{{--                if (!res.ok) {--}}
+{{--                    console.error(await res.text());--}}
+{{--                    alert('Erro ao gerar cobrança.');--}}
+{{--                    return;--}}
+{{--                }--}}
+
+{{--                const j = await res.json();--}}
+{{--                if (!j.ok) {--}}
+{{--                    alert(j.error || 'Erro ao gerar cobrança.');--}}
+{{--                    return;--}}
+{{--                }--}}
+
+{{--                // sucesso → fecha modal, recarrega lista de invoices/OS--}}
+{{--            });--}}
+{{--        </script>--}}
         <script src="{{ asset('assets/js/template/views/service-orders/service-order-billing.js') }}"></script>
     @endpush
 
