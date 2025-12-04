@@ -19,6 +19,7 @@ use App\Http\Controllers\Application\Entities\Customers\SecondaryCustomer\Second
 use App\Http\Controllers\Application\Entities\Suppliers\Supplier\SupplierController;
 use App\Http\Controllers\Application\Entities\Users\UserController;
 use App\Http\Controllers\Application\Finances\Payables\AccountPayableController;
+use App\Http\Controllers\Application\Finances\Receivables\AccountReceivableController;
 use App\Http\Controllers\Application\HumanResources\BenefitController;
 use App\Http\Controllers\Application\HumanResources\DepartmentController;
 use App\Http\Controllers\Application\HumanResources\EmployeeBenefitController;
@@ -264,6 +265,18 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
 
         Route::post('/payable-api/{id}/cancel', [AccountPayableController::class, 'cancelParcel'])
             ->middleware('can:finance_payable_delete');
+
+        Route::get('/finances/receivables/service-orders', [AccountReceivableController::class, 'view'])
+            ->name('receivables.service-orders.view')
+            ->middleware('can:finance_receivable_view');
+
+        Route::get('/finances/receivables/service-orders/api', [AccountReceivableController::class, 'index'])
+            ->name('receivables.service-orders.index')
+            ->middleware('can:finance_receivable_view');
+
+        Route::post('/finances/receivables/invoices/{invoice}/pay', [AccountReceivableController::class, 'setPaid'])
+            ->name('receivables.service-orders.pay')
+            ->middleware('can:finance_receivable_edit');
     });
 
     /* --->| Chat IA |<--- */
