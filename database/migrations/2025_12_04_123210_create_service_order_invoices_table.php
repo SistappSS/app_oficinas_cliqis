@@ -12,8 +12,9 @@ return new class extends Migration {
 
             $table->string('customer_sistapp_id', 25)->index();
 
-            $table->unsignedBigInteger('service_order_id')->index();
-            $table->foreign('service_order_id')->references('id')->on('service_orders')->cascadeOnDelete();
+            $table->foreignUuid('service_order_id')
+                ->constrained('service_orders')
+                ->nullOnDelete();
 
             // cliente da OS (se já tiver tabela customers/clients, ajusta aqui)
             $table->unsignedBigInteger('customer_id')->nullable()->index();
