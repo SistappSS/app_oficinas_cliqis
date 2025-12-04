@@ -16,8 +16,8 @@ return new class extends Migration
 
             $table->string('customer_sistapp_id', 25)->index();
 
-            $table->unsignedBigInteger('invoice_id')->index();
-            $table->foreign('invoice_id')->references('id')->on('service_order_invoices');
+            $table->foreignUuid('service_order_invoice_id')
+                ->constrained('service_order_invoices');
 
             $table->date('paid_at');
             $table->decimal('amount', 14, 2);
