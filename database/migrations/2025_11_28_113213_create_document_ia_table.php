@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('customer_sistapp_id', 36)->index();
 
             $table->string('title');
-            $table->text('content');
+            $table->longText('content');
             $table->string('file_name')->nullable();
             $table->string('file_path')->nullable();
             $table->string('file_mime')->nullable();
