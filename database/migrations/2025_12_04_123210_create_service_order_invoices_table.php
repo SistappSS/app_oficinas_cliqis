@@ -10,6 +10,8 @@ return new class extends Migration {
         Schema::create('service_order_invoices', function (Blueprint $table) {
             $table->uuid('id')->primary();
 
+            $table->string('customer_sistapp_id', 25)->index();
+
             $table->unsignedBigInteger('service_order_id')->index();
             $table->foreign('service_order_id')->references('id')->on('service_orders')->cascadeOnDelete();
 

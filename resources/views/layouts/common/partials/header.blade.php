@@ -163,8 +163,19 @@
                 </div>
             </a>
             @endrole
+            <a href="{{route('account-receivable.view')}}" role="menuitem"
+               class="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-blue-50">
+                <div
+                    class="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-blue-500 group-hover:bg-blue-700 group-hover:text-white">
+                    <i class="fa-solid fa-money-bill"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-sm font-medium text-slate-800">A receber</p>
+                    <p class="text-xs text-slate-500">Orçamentos e propostas</p>
+                </div>
+            </a>
 
-            <a href="{{route('account-payable-view')}}" role="menuitem"
+            <a href="{{route('account-payable.view')}}" role="menuitem"
                class="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-blue-50">
                 <div
                     class="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-blue-500 group-hover:bg-blue-700 group-hover:text-white">
