@@ -257,7 +257,7 @@ class ServiceOrderController extends Controller
                 $os->order_number = $this->generateNextNumber();
             }
 
-            $os->customer_sistapp_id = auth()->user()->employeeCustomerLogin->customer_sistapp_id;
+            $os->customer_sistapp_id = auth()->user()->employeeCustomerLogin->customer_sistapp_id ?? $this->customerSistappID();
 
             $os->fill($validated);
             $os->status            = $status;
