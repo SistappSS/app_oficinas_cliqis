@@ -1382,6 +1382,7 @@ document.addEventListener("DOMContentLoaded", () => {
             };
 
             try {
+                // 1) salva a imagem da assinatura
                 const resp = await fetch(`/service-orders/${serviceOrderId}/client-signature`, {
                     method: 'POST',
                     headers: {
@@ -1401,7 +1402,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 const json = await resp.json();
                 console.log('Assinatura salva:', json);
 
-                alert('Assinatura salva com sucesso.');
+                // 2) após a assinatura, marcar OS como APROVADA
+                const approveResult = await submitServiceOrder("approved");
+                if (!approveResult) {
+                    alert('Assinatura salva, mas houve erro ao aprovar a OS. Verifique na listagem de OS.');
+                    return;
+                }
+
+                alert('Assinatura salva e OS aprovada com sucesso.');
                 closeSignatureModal();
             } catch (e) {
                 console.error(e);
