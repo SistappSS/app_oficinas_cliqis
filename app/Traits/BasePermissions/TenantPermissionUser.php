@@ -28,6 +28,7 @@ trait TenantPermissionUser
             'entidades' => [
                 'clientes',
                 'usuarios',
+                'fornecedores'
             ],
 
             'eecursos humanos' => [
@@ -39,6 +40,7 @@ trait TenantPermissionUser
             'catálogo' => [
                 'tipo_servico',
                 'servico',
+                'equipamentos',
                 'pecas',
                 'pecas_equipamentos',
             ],
@@ -46,6 +48,11 @@ trait TenantPermissionUser
             'ordem de serviço' => [
                 'ordem_servico'
             ],
+
+            'permissoes' => [
+                'perfis',
+                'permissoes',
+            ]
         ];
 
         foreach ($map as $module => $resources) {
@@ -84,6 +91,10 @@ trait TenantPermissionUser
             ],
             [
                 'name'       => "{$prefix}visualizar_dashboard",
+                'guard_name' => 'web',
+            ],
+            [
+                'name'       => "{$prefix}visualizar_chat_ia",
                 'guard_name' => 'web',
             ]
         );
