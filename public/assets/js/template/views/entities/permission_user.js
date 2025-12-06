@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
         roles: [],
         permissions: [],
         selectedRoleId: null,
-        selectedPermissionIds: new Set(),
+        rolePermissions: new Set(),
     };
 
     // ===== helpers =====
@@ -234,21 +234,20 @@ document.addEventListener("DOMContentLoaded", () => {
             roleNameInput.value = role.display_name || "";
         }
 
-        // carrega ids de permissões do perfil (UUID string)
         try {
-            const json = await fetchJson(
-                ROUTES.rolePermissions(role.id)
-            );
+            const json = await fetchJson(ROUTES.rolePermissions(role.id));
             const ids = Array.isArray(json) ? json : [];
-            state.rolePermissions = new Set(
-                ids.map((v) => String(v))
-            );
+
+            const normIds = ids
+                .map(v => (typeof v === "object" && v !== null ? v.id : v))
+                .filter(Boolean);
+
+            state.rolePermissions = new Set(normIds.map(String));
         } catch (e) {
             console.error(e);
             state.rolePermissions = new Set();
         }
 
-        // garantir que as permissões globais estejam carregadas
         if (!state.loadedPermissions) {
             await loadPermissions();
         }
@@ -366,19 +365,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const container = document.querySelector("#permissions-container");
         if (!container) return;
 
-        // garante SET de strings
-        if (!(state.selectedPermissionIds instanceof Set)) {
-            const base = Array.isArray(state.selectedPermissionIds)
-                ? state.selectedPermissionIds
+        if (!(state.rolePermissions instanceof Set)) {
+            const base = Array.isArray(state.rolePermissions)
+                ? state.rolePermissions
                 : [];
-            state.selectedPermissionIds = new Set(base.map(String));
+            state.rolePermissions = new Set(base.map(String));
         }
-        const selectedIds = state.selectedPermissionIds;
+        const selectedIds = state.rolePermissions;
 
-        // monta recursos a partir do segundo nome (ação = primeira palavra, recurso = resto)
         const resources = {};
         (state.permissions || []).forEach((p) => {
-            // evita permission interna se ainda vier do back por algum motivo
             if ((p.base_name || "").toLowerCase().includes("employee_customer_cliqis")) {
                 return;
             }
@@ -386,8 +382,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const label = p.display_name || p.base_name || "";
             const parts = label.split(/\s+/).filter(Boolean);
 
-            let action = (parts[0] || "").toLowerCase();      // cadastrar / editar / excluir / visualizar
-            let resourceLabel = parts.slice(1).join(" ").trim(); // Benefícios, Clientes, etc
+            let action = (parts[0] || "").toLowerCase();
+            let resourceLabel = parts.slice(1).join(" ").trim();
 
             if (!resourceLabel) {
                 resourceLabel = "Geral";
@@ -489,33 +485,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    if (permissionsContainer) {
-        permissionsContainer.addEventListener("click", (e) => {
-            const btn = e.target.closest(
-                "[data-permission-toggle]"
-            );
-            if (!btn) return;
-
-            const id = btn.getAttribute("data-permission-id");
-            if (!id) {
-                console.warn("permission-id vazio no toggle");
-                return;
-            }
-
-            const current = btn.getAttribute("data-checked") === "1";
-            const next = !current;
-            btn.setAttribute("data-checked", next ? "1" : "0");
-
-            if (next) {
-                state.rolePermissions.add(String(id));
-            } else {
-                state.rolePermissions.delete(String(id));
-            }
-
-            updateToggleVisual(btn);
-        });
-    }
-
     if (btnSaveRolePermissions) {
         btnSaveRolePermissions.addEventListener("click", async () => {
             if (!state.activeRole) {
@@ -523,7 +492,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            const permissionIds = Array.from(state.selectedPermissionIds).map(String);
+            const permissionIds = Array.from(state.rolePermissions).map(String);
 
             try {
                 await fetchJson(

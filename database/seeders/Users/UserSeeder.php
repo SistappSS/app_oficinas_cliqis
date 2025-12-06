@@ -73,15 +73,15 @@ class UserSeeder extends Seeder
             'is_active' => true,
         ])->assignRole($adminRole);
 
-        $prefix = 'sist_';
-        $randomNumber = mt_rand(100000, 999999);
-
-        $customerSistappId = $prefix . $randomNumber;
+//        $prefix = 'sist_';
+//        $randomNumber = mt_rand(100000, 999999);
+//
+//        $customerSistappId = $prefix . $randomNumber;
 
         CustomerUserLogin::firstOrCreate([
             'user_id' => $user->id,
             'customer_id' => 0,
-            'customer_sistapp_id' => $customerSistappId,
+            'customer_sistapp_id' => 'sist_000000',
             'trial_ends_at' => '2030-01-01 18:00:00',
             'is_master_customer' => 1,
             'subscription' => 1
