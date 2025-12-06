@@ -1,34 +1,178 @@
 import { ModelCrud } from "../../partials/modelCrud.js";
 
-async function loadSelectOptions() {
-    await Promise.all([
-        loadDepartments(),
-    ]);
-}
+const escapeHtml = (str = "") => {
+    return String(str).replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+    }[c] || c));
+};
 
-async function loadDepartments() {
-    const sel = document.querySelector("#department_id");
-    if (!sel) return;
+function initDepartmentAutocomplete() {
+    const input  = document.querySelector("#department_search");
+    const hidden = document.querySelector("#department_id");
+    const box    = document.querySelector("#department_results");
 
-    try {
-        const res = await fetch("/human-resources/department-api");
-        if (!res.ok) throw new Error("Erro ao buscar funcionários");
+    if (!input || !hidden || !box) return;
+
+    let typingTimer = null;
+
+    async function searchDepartments(term) {
+        const url = new URL("/human-resources/department-api", window.location.origin);
+        if (term) url.searchParams.set("q", term);
+
+        const res = await fetch(url, {
+            headers: { "Accept": "application/json" }
+        });
+
+        if (!res.ok) {
+            console.error("Erro ao buscar departamentos", res.status);
+            return [];
+        }
 
         const json = await res.json();
-        const list = json.data || json || [];
-
-        sel.innerHTML = '<option value="">Selecione...</option>' +
-            list
-                .map(e => `<option value="${e.id}">${e.name || "(sem nome)"}</option>`)
-                .join("");
-    } catch (e) {
-        console.error(e);
-        sel.innerHTML = '<option value="">Erro ao carregar departamentos</option>';
+        return json.data || json || [];
     }
+
+    function closeBox() {
+        box.classList.add("hidden");
+        box.innerHTML = "";
+    }
+
+    function openBox(html) {
+        box.innerHTML = html;
+        box.classList.remove("hidden");
+    }
+
+    async function handleSearch(term) {
+        hidden.value = "";
+
+        if (!term) {
+            closeBox();
+            return;
+        }
+
+        const list = await searchDepartments(term);
+
+        const normalize = (str = "") =>
+            str
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .trim()
+                .toLowerCase();
+
+        const normalizedTerm = normalize(term);
+
+        const existsExact = list.some(d => normalize(d.name || "") === normalizedTerm);
+
+        if (!list.length) {
+            openBox(`
+            <button type="button"
+                    data-create="${escapeHtml(term)}"
+                    class="block w-full px-3 py-2 text-left text-sm text-blue-700 hover:bg-blue-50">
+                + Criar novo departamento "${escapeHtml(term)}"
+            </button>
+        `);
+            return;
+        }
+
+        const itemsHtml = list.map(d => `
+        <button type="button"
+                data-id="${escapeHtml(d.id)}"
+                data-name="${escapeHtml(d.name || "(sem nome)")}"
+                class="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+            <span>${escapeHtml(d.name || "(sem nome)")}</span>
+        </button>
+    `).join("");
+
+        let createHtml = "";
+        if (!existsExact) {
+            createHtml = `
+            <button type="button"
+                    data-create="${escapeHtml(term)}"
+                    class="block w-full border-t border-slate-200 px-3 py-2 text-left text-xs text-slate-500 hover:bg-slate-50">
+                + Criar novo departamento "${escapeHtml(term)}"
+            </button>
+        `;
+        }
+
+        openBox(itemsHtml + createHtml);
+    }
+
+    input.addEventListener("input", () => {
+        const term = input.value.trim();
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => handleSearch(term), 250);
+    });
+
+    input.addEventListener("focus", () => {
+        if (input.value.trim()) {
+            handleSearch(input.value.trim());
+        }
+    });
+
+    box.addEventListener("click", async (e) => {
+        const btn = e.target.closest("button");
+        if (!btn) return;
+
+        const id   = btn.dataset.id;
+        const name = btn.dataset.name;
+        const createName = btn.dataset.create;
+
+        // selecionar existente
+        if (id && name) {
+            hidden.value = id;
+            input.value  = name;
+            closeBox();
+            return;
+        }
+
+        // criar novo
+        if (createName) {
+            try {
+                const fd = new FormData();
+                fd.append("name", createName);
+
+                const res = await fetch("/human-resources/department-api", {
+                    method: "POST",
+                    headers: {
+                        "Accept": "application/json",
+                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.content || "",
+                    },
+                    body: fd,
+                });
+
+                if (!res.ok) {
+                    console.error("Erro ao criar departamento", res.status, await res.text());
+                    alert("Erro ao criar departamento.");
+                    return;
+                }
+
+                const json = await res.json();
+                const d = json.data || json;
+
+                hidden.value = d.id;
+                input.value  = d.name || createName;
+                closeBox();
+            } catch (err) {
+                console.error(err);
+                alert("Erro ao criar departamento.");
+            }
+        }
+    });
+
+    // fechar ao clicar fora
+    document.addEventListener("click", (e) => {
+        if (!box.contains(e.target) && e.target !== input) {
+            closeBox();
+        }
+    });
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-    await loadSelectOptions();
+    initDepartmentAutocomplete();
 
     new ModelCrud({
         name: "funcionarios",
@@ -49,7 +193,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             update: "/human-resources/employee-api",
             delete: "/human-resources/employee-api",
         },
-        // campos usados na busca
         searchKeys: ["full_name", "email", "phone", "document_number", "position"],
         normalize: (json) => json.data || [],
 
@@ -136,9 +279,16 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.querySelector("#position").value = e.position || "";
             document.querySelector("#hourly_rate").value = e.hourly_rate ?? "";
 
-            const departmentSelect = document.querySelector("#department_id");
-            if (departmentSelect) departmentSelect.value = e.department_id || "";
-
+            // departamento
+            const depHidden = document.querySelector("#department_id");
+            const depSearch = document.querySelector("#department_search");
+            if (depHidden) depHidden.value = e.department_id || "";
+            if (depSearch) {
+                depSearch.value =
+                    (e.department && e.department.name) ||
+                    e.department_name ||
+                    "";
+            }
 
             document.querySelector("#is_active").checked = !!e.is_active;
             document.querySelector("#is_technician").checked = !!e.is_technician;

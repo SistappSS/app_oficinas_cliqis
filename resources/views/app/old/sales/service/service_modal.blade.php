@@ -19,4 +19,6 @@
     </div>
 </x-modal>
 
-<script src="{{asset('assets/js/common/mask_price.js')}}"></script>
+@push('scripts')
+    <script src="{{asset('assets/js/common/mask_price.js')}}"></script>
+@endpush

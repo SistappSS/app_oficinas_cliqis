@@ -5,6 +5,33 @@ let META = {
     permissions_grouped: {},
 };
 
+const INTERNAL_ROLE_NAMES = [
+    "segment_authorized",
+    "employee_customer_cliqis",
+];
+
+// --- helpers de role internas -----------------------------------------
+function normalizeRoleName(role) {
+    const raw = (role?.name || role?.base_name || "").toLowerCase();
+
+    // remove prefixo sist_{tenantId}_ se existir
+    const m = raw.match(/^sist_[0-9]+_(.+)$/);
+    return m ? m[1] : raw;
+}
+
+function isInternalRole(role) {
+    const norm = normalizeRoleName(role);
+    return INTERNAL_ROLE_NAMES.includes(norm);
+}
+
+function getVisibleRoles(roles = []) {
+    return roles.filter((r) => !isInternalRole(r));
+}
+
+// vai guardar as roles internas do usuário carregado no modal
+let CURRENT_USER_INTERNAL_ROLES = [];
+
+// ----------------------------------------------------------------------
 async function loadMeta() {
     try {
         const res = await fetch("/entities/user/permissions");
@@ -21,13 +48,15 @@ function renderRoles(currentRoles) {
 
     const selected = new Set((currentRoles || []).map((r) => r.name));
 
-    if (!META.roles || !META.roles.length) {
+    const visibleMetaRoles = getVisibleRoles(META.roles || []);
+
+    if (!visibleMetaRoles.length) {
         container.innerHTML =
             '<span class="text-xs text-slate-400">Nenhuma role disponível para este tenant.</span>';
         return;
     }
 
-    container.innerHTML = META.roles
+    container.innerHTML = visibleMetaRoles
         .map((role) => {
             const checked = selected.has(role.name) ? "checked" : "";
             return `
@@ -87,8 +116,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         tbody: "#tbody",
         modal: "#user-modal",
         form: "#user-form",
-        // sem criação manual por aqui
-        // btnAdd: "#btn-add",
         search: "#search",
         modalTitle: "#m-title",
         btnClose: "#m-close",
@@ -104,12 +131,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         normalize: (json) => json.data || [],
 
         renderRow: (u) => {
-            const roles = (u.roles || []).map((r) => r.name);
+            // só exibe roles visíveis
+            const visibleRoles = getVisibleRoles(u.roles || []);
 
-            const niceRoles = roles.map((name) => {
-                const m = name.match(/^sist_\d+_(.+)$/);
-                const raw = m ? m[1] : name;
-                return raw.replace(/_/g, " ");
+            const niceRoles = visibleRoles.map((role) => {
+                const base = normalizeRoleName(role); // tira sist_{id}_
+                return base.replace(/_/g, " ");
             });
 
             const typeLabel =
@@ -127,7 +154,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 `<span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">${r}</span>`
                         )
                         .join(" ")
-                    : '<span class="text-xs text-slate-400">Sem roles</span>';
+                    : '<span class="text-xs text-slate-400">-</span>';
 
             const createdAt = u.created_at
                 ? new Date(u.created_at).toLocaleString("pt-BR")
@@ -218,27 +245,46 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             const pwd = document.querySelector("#password");
-            const pwdConf = document.querySelector("#password_confirmation");
+            const pwdConf = document.querySelector(
+                "#password_confirmation"
+            );
 
             if (pwd) pwd.value = "";
             if (pwdConf) pwdConf.value = "";
 
-            renderRoles(u.roles || []);
+            // guarda roles internas do usuário para não perder ao salvar
+            CURRENT_USER_INTERNAL_ROLES = (u.roles || [])
+                .filter(isInternalRole)
+                .map((r) => r.name);
+
+            // só renderiza roles “visíveis”
+            renderRoles(getVisibleRoles(u.roles || []));
             renderPermissions(u.permissions || []);
         },
 
         getPayload: () => {
-            const roles = Array.from(
+            // roles visíveis marcadas
+            const visibleRoles = Array.from(
                 document.querySelectorAll(".role-checkbox:checked")
             ).map((el) => el.value);
+
+            // junta com roles internas atuais (não aparecem no UI)
+            const roles = [
+                ...new Set([
+                    ...visibleRoles,
+                    ...CURRENT_USER_INTERNAL_ROLES,
+                ]),
+            ];
 
             const permissions = Array.from(
                 document.querySelectorAll(".perm-checkbox:checked")
             ).map((el) => el.value);
 
-            const password = document.querySelector("#password")?.value || "";
+            const password =
+                document.querySelector("#password")?.value || "";
             const password_confirmation =
-                document.querySelector("#password_confirmation")?.value || "";
+                document.querySelector("#password_confirmation")?.value ||
+                "";
 
             const payload = {
                 name: document.querySelector("#name").value,
@@ -249,7 +295,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (password) {
                 payload.password = password;
-                payload.password_confirmation = password_confirmation;
+                payload.password_confirmation =
+                    password_confirmation;
             }
 
             return payload;

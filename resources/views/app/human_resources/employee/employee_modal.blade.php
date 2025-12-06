@@ -35,16 +35,33 @@
         </div>
 
         <div class="grid gap-4 sm:grid-cols-2">
-            <!-- departamento (UUID) – opções vão vir via JS ou backend -->
             <div>
-                <label for="department_id" class="block text-sm font-medium text-slate-700 mb-1">
+                <label for="department_search" class="block text-sm font-medium text-slate-700 mb-1">
                     Departamento
                 </label>
-                <select id="department_id" name="department_id"
-                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 hover:border-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 outline-none">
-                    <option value="">Selecione...</option>
-                    {{-- popular via backend ou JS --}}
-                </select>
+
+                <div class="relative">
+                    {{-- hidden que vai o UUID pro backend --}}
+                    <input type="hidden" id="department_id" name="department_id">
+
+                    {{-- input texto para buscar / criar --}}
+                    <input id="department_search"
+                           type="text"
+                           autocomplete="off"
+                           placeholder="Digite para buscar ou criar..."
+                           class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700
+                      hover:border-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 outline-none">
+
+                    {{-- dropdown de resultados --}}
+                    <div id="department_results"
+                         class="absolute z-50 mt-1 w-full max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg hidden">
+                        {{-- preenchido via JS --}}
+                    </div>
+                </div>
+
+                <p class="mt-1 text-xs text-slate-500">
+                    Digite o nome do departamento. Se não existir, você poderá criar um novo.
+                </p>
             </div>
 
             <div class="space-y-3">

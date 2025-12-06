@@ -14,13 +14,13 @@ trait TenantPermissionUser
 
         $prefix = $tenantId . '_';
 
-//        $alreadySeeded = Permission::where('guard_name', 'web')
-//            ->where('name', 'like', $prefix . '%')
-//            ->exists();
-//
-//        if ($alreadySeeded) {
-//            return;
-//        }
+        $alreadySeeded = Permission::where('guard_name', 'web')
+            ->where('name', 'like', $prefix . '%')
+            ->exists();
+
+        if ($alreadySeeded) {
+            return;
+        }
 
         $actions = ['visualizar', 'cadastrar', 'editar', 'excluir'];
 
@@ -69,7 +69,20 @@ trait TenantPermissionUser
             [
                 'name'       => "{$prefix}aprovar_ordem_servico",
                 'guard_name' => 'web',
-            ], [
+            ],
+            [
+                'name'       => "{$prefix}visualizar_cobrancas",
+                'guard_name' => 'web',
+            ],
+            [
+                'name'       => "{$prefix}visualizar_contas_a_receber",
+                'guard_name' => 'web',
+            ],
+            [
+                'name'       => "{$prefix}visualizar_contas_a_pagar",
+                'guard_name' => 'web',
+            ],
+            [
                 'name'       => "{$prefix}visualizar_dashboard",
                 'guard_name' => 'web',
             ]
