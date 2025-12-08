@@ -12,6 +12,7 @@ use App\Models\Inventories\Products\Product;
 use App\Models\Modules\UserFeature;
 use App\Models\Modules\UserModulePermission;
 use App\Models\Supports\SupportChat\SupportChat;
+use App\Support\CustomerContext;
 use App\Traits\HasSubscriptionCheck;
 use App\Traits\RoleCheckTrait;
 use Carbon\Carbon;
@@ -68,6 +69,20 @@ class User extends Authenticatable
     public function customerLogin()
     {
         return $this->hasOne(CustomerUserLogin::class, 'user_id');
+    }
+
+    public function isMasterCustomerForTenant(?string $tenantId = null): bool
+    {
+        $tenantId = $tenantId ?: CustomerContext::get();
+
+        if (! $tenantId) {
+            return false;
+        }
+
+        return $this->customerLogin()
+            ->where('customer_sistapp_id', $tenantId)
+            ->where('is_master_customer', 1)
+            ->exists();
     }
 
     public function employeeCustomerLogin()

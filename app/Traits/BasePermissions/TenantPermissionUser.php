@@ -72,31 +72,23 @@ trait TenantPermissionUser
             }
         }
 
-        Permission::firstOrCreate(
-            [
-                'name'       => "{$prefix}aprovar_ordem_servico",
-                'guard_name' => 'web',
-            ],
-            [
-                'name'       => "{$prefix}visualizar_cobrancas",
-                'guard_name' => 'web',
-            ],
-            [
-                'name'       => "{$prefix}visualizar_contas_a_receber",
-                'guard_name' => 'web',
-            ],
-            [
-                'name'       => "{$prefix}visualizar_contas_a_pagar",
-                'guard_name' => 'web',
-            ],
-            [
-                'name'       => "{$prefix}visualizar_dashboard",
-                'guard_name' => 'web',
-            ],
-            [
-                'name'       => "{$prefix}visualizar_chat_ia",
-                'guard_name' => 'web',
-            ]
-        );
+        $extras = [
+            'aprovar_ordem_servico',
+            'visualizar_cobrancas',
+            'visualizar_contas_a_receber',
+            'visualizar_contas_a_pagar',
+            'visualizar_dashboard',
+            'visualizar_chat_ia',
+        ];
+
+        foreach ($extras as $perm) {
+            Permission::firstOrCreate(
+                [
+                    'name'       => "{$prefix}{$perm}",
+                    'guard_name' => 'web',
+                ],
+                []
+            );
+        }
     }
 }
