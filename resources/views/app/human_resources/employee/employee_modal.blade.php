@@ -91,8 +91,12 @@
                                 value="1"
                                 class="peer sr-only"
                             >
-                            <div class="relative inline-flex h-5 w-9 items-center rounded-full bg-slate-300 transition-colors peer-checked:bg-blue-600">
-                                <span class="inline-block h-4 w-4 translate-x-0 rounded-full bg-white shadow transition-transform peer-checked:translate-x-4"></span>
+
+                            <!-- Track (anima via padding) -->
+                            <div class="relative inline-flex h-5 w-9 items-center rounded-full bg-slate-300
+                                        pl-0.5 pr-0.5 transition-all duration-200 ease-in-out
+                                        peer-checked:bg-blue-600 peer-checked:pl-4">
+                                <span class="inline-block h-4 w-4 rounded-full bg-white shadow"></span>
                             </div>
                         </div>
                     </label>
@@ -124,8 +128,12 @@
                                 value="1"
                                 class="peer sr-only"
                             >
-                            <div class="relative inline-flex h-5 w-9 items-center rounded-full bg-slate-300 transition-colors peer-checked:bg-purple-600">
-                                <span class="inline-block h-4 w-4 translate-x-0 rounded-full bg-white shadow transition-transform peer-checked:translate-x-4"></span>
+
+                            <!-- Track (anima via padding) -->
+                            <div class="relative inline-flex h-5 w-9 items-center rounded-full bg-slate-300
+                                        pl-0.5 pr-0.5 transition-all duration-200 ease-in-out
+                                        peer-checked:bg-purple-600 peer-checked:pl-4">
+                                <span class="inline-block h-4 w-4 rounded-full bg-white shadow"></span>
                             </div>
                         </div>
                     </label>

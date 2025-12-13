@@ -1,11 +1,32 @@
 @php
     use Illuminate\Support\Facades\Auth;
+    use Illuminate\Support\Str;
 
     $tenantId = \App\Support\CustomerContext::get();
     $user = Auth::user();
 
     $menuItems = collect([
         // ------- PRINCIPAIS / GERAIS -------
+        [
+            'key'   => 'chat-ia',
+            'label' => 'Chat IA',
+            'route' => route('chat.view'),
+            'icon'  => '<i class="fa-solid fa-robot"></i>',
+            'group' => null,
+            'description' => null,
+            'permissions' => ["{$tenantId}_visualizar_chat_ia"],
+            'active' => isActive('chat.view'),
+        ],
+        [
+            'key'   => 'cobrancas',
+            'label' => 'Cobranças',
+            'route' => route('service-order-invoice.view'),
+            'icon'  => '<i class="fa-solid fa-file-invoice" style="font-size: 20px;"></i>',
+            'group' => 'Financeiro',
+            'description' => 'Orçamentos e propostas',
+            'permissions' => ["{$tenantId}_visualizar_cobrancas"],
+            'active' => isActive('service-order-invoice.view'),
+        ],
         [
             'key'   => 'dashboard',
             'label' => 'Dashboard',
@@ -17,26 +38,6 @@
             'description' => null,
             'permissions' => ["{$tenantId}_visualizar_dashboard"],
             'active' => isActive('dashboard'),
-        ],
-        [
-            'key'   => 'chat-ia',
-            'label' => 'Chat IA',
-            'route' => route('chat.view'),
-            'icon'  => '<i class="fa-solid fa-robot"></i>',
-            'group' => null,
-            'description' => null,
-            'permissions' => ["{$tenantId}_visualizar_chat_ia"],
-            'active' => isActive('customer.view'), // igual ao que já usava
-        ],
-        [
-            'key'   => 'cobrancas',
-            'label' => 'Cobranças',
-            'route' => route('service-order-invoice.view'),
-            'icon'  => '<i class="fa-solid fa-file-invoice" style="font-size: 20px;"></i>',
-            'group' => 'Financeiro',
-            'description' => 'Orçamentos e propostas',
-            'permissions' => ["{$tenantId}_visualizar_cobrancas"],
-            'active' => isActive('service-order-invoice.view'),
         ],
         [
             'key'   => 'service-order',
@@ -111,7 +112,7 @@
                 "{$tenantId}_visualizar_permissoes",
                 "{$tenantId}_visualizar_perfis",
             ],
-            'permission_mode' => 'any', // se tiver qualquer uma, mostra
+            'permission_mode' => 'any',
         ],
 
         // ------- ENTIDADES -------
@@ -247,10 +248,49 @@
         return true;
     })->values();
 
-    $topItems  = $visibleItems->take(5);
-    $moreItems = $visibleItems->slice(5)->groupBy(fn ($item) => $item['group'] ?? null);
+    $MAX_PINS = 5;
+
+    $defaultTopItems = $visibleItems->take($MAX_PINS);
+    $defaultTopKeys  = $defaultTopItems->pluck('key')->values();
+
+    // grupos de todos itens (com fallback)
+    $groupsAll = $visibleItems
+        ->map(fn ($i) => $i['group'] ?? 'Outros')
+        ->unique()
+        ->values();
+
+    // itens do "Mais" padrão = tudo que não está no top padrão
+    $restItems = $visibleItems->slice($MAX_PINS)
+        ->map(function ($item) {
+            $item['group'] = $item['group'] ?? 'Outros';
+            return $item;
+        });
+
+    $restByGroup = $restItems->groupBy('group');
+
+    // default group (primeiro grupo que tem itens; se não tiver, primeiro grupo da lista)
+    $defaultGroupName = $groupsAll->first(function ($g) use ($restByGroup) {
+        return ($restByGroup->get($g, collect())->count() > 0);
+    }) ?? ($groupsAll->first() ?? 'Outros');
+
+    $defaultGroupId = Str::slug($defaultGroupName);
+
+    // dataset pro JS (todos itens visíveis)
+    $itemsForJs = $visibleItems->map(function ($item) {
+        $group = $item['group'] ?? 'Outros';
+        return [
+            'key'         => $item['key'],
+            'label'       => $item['label'],
+            'route'       => $item['route'],
+            'icon'        => $item['icon'],
+            'group'       => $group,
+            'groupId'     => Str::slug($group),
+            'description' => $item['description'] ?? null,
+        ];
+    })->values();
 @endphp
 
+{{-- HERO --}}
 <section class="mx-auto max-w-7xl px-4 sm:px-6 py-8">
     <div class="rounded-3xl bg-gradient-to-r from-blue-600 to-sky-500 p-6 sm:p-8 text-white shadow-md">
         <div class="flex flex-col gap-6">
@@ -259,6 +299,7 @@
                 <h1 class="text-2xl sm:text-3xl font-bold">Seu painel de agência</h1>
                 <p class="text-white/80 text-sm">Acompanhe métricas, clientes e cobranças em um só lugar.</p>
             </div>
+
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl bg-white/10 p-4">
                 <div class="min-w-0">
                     <p id="trial-text" class="text-sm font-medium">Seu teste gratuito termina em 14 dias.</p>
@@ -275,152 +316,581 @@
     </div>
 </section>
 
+{{-- GUIA RÁPIDO + MAIS --}}
 <section class="mx-auto max-w-7xl px-4 sm:px-6">
-    <nav aria-label="Guia rápido" class="rounded-3xl bg-gradient-to-b from-slate-50 to-blue-50 p-3">
-        <ul class="no-scrollbar flex items-center justify-center gap-3 overflow-x-auto rounded-3xl p-2">
-            @foreach($topItems as $item)
-                <li>
+
+    <div class="flex items-center justify-end gap-2 mb-2">
+        <button id="quick-edit"
+                type="button"
+                class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            Personalizar
+        </button>
+
+        <button id="quick-reset"
+                type="button"
+                  class="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+            <i class="fa-solid fa-rotate-left"></i>
+            Reset
+        </button>
+    </div>
+
+    <nav aria-label="Guia rápido"
+     class="rounded-3xl overflow-hidden bg-gradient-to-b from-slate-50 to-blue-50 p-3">
+
+        <ul id="quick-nav"
+            data-tenant="{{ $tenantId }}"
+            data-user="{{ $user->id }}"
+             class="no-scrollbar flex items-center gap-2 overflow-x-auto rounded-3xl px-2 py-2 justify-start sm:justify-center">
+            
+
+            {{-- server render padrão (JS vai reordenar pelo localStorage) --}}
+            @foreach($defaultTopItems as $item)
+                <li class="shrink-0" data-qkey="{{ $item['key'] }}">
                     <a href="{{ $item['route'] }}"
-                       class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105">
-                        <div
-                            class="icon grid h-12 w-12 place-items-center rounded-xl border border-slate-200 text-blue-500 {{ $item['active'] ?? '' }}">
+                       class="group flex w-24 sm:w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105"
+                       data-qkey="{{ $item['key'] }}">
+                        <div class="icon grid h-11 w-11 sm:h-12 sm:w-12 place-items-center rounded-xl border border-slate-200 text-blue-500 {{ $item['active'] ?? '' }}">
                             {!! $item['icon'] !!}
                         </div>
-                        <span class="text-xs font-medium text-slate-600 group-hover:text-blue-700">
-                    {{ $item['label'] }}
-                </span>
+                        <span class="text-[11px] sm:text-xs font-medium text-slate-600 group-hover:text-blue-700 text-center leading-tight">
+                            {{ $item['label'] }}
+                        </span>
                     </a>
                 </li>
             @endforeach
 
-            @if($moreItems->flatten()->isNotEmpty())
-                <li>
+            @if($visibleItems->count() > $MAX_PINS)
+                <li id="quick-more-slot" class="shrink-0">
                     <button id="more-btn" type="button" aria-haspopup="menu" aria-expanded="false"
-                            class="group flex w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105 focus:outline-none">
-                        <div
-                            class="icon grid h-12 w-12 place-items-center rounded-xl text-blue-500 bg-white border border-slate-200 hover:bg-blue-700 hover:text-white hover:shadow-md hover:ring-2 hover:ring-blue-300">
+                            class="group flex w-24 sm:w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105 focus:outline-none">
+                        <div class="icon grid h-11 w-11 sm:h-12 sm:w-12 place-items-center rounded-xl text-blue-500 bg-white border border-slate-200 hover:bg-blue-700 hover:text-white hover:shadow-md hover:ring-2 hover:ring-blue-300">
                             <i class="fa-solid fa-ellipsis"></i>
                         </div>
-                        <span class="text-xs font-semibold text-slate-700 group-hover:text-blue-700">Mais</span>
+                        <span class="text-[11px] sm:text-xs font-semibold text-slate-700 group-hover:text-blue-700">Mais</span>
                     </button>
                 </li>
             @endif
         </ul>
     </nav>
 
-    {{-- DROPDOWN MAIS --}}
-    @if($moreItems->flatten()->isNotEmpty())
-        <div id="more-menu" role="menu" tabindex="-1"
-             class="fixed z-50 hidden min-w-[260px] rounded-2xl border border-slate-200 bg-white/95 backdrop-blur shadow-xl ring-1 ring-black/5">
-            <div class="p-2 grid grid-cols-1 gap-1">
+    @if($visibleItems->count() > $MAX_PINS)
+        <div id="more-menu"
+             role="menu"
+             tabindex="-1"
+             data-default-group="{{ $defaultGroupId }}"
+             class="fixed z-50 hidden w-[640px] max-w-[94vw] overflow-hidden rounded-2xl border border-slate-200 bg-white/95 backdrop-blur shadow-xl ring-1 ring-black/5">
 
-                @foreach($moreItems as $group => $items)
-                    @if($group)
-                        <div class="px-3 pt-1 pb-0">
-                            <p class="text-[11px] font-semibold tracking-wide uppercase text-slate-400">
-                                {{ $group }}
-                            </p>
-                        </div>
-                    @endif
+            <div class="grid grid-cols-12">
+                {{-- CATEGORIAS --}}
+                <div class="col-span-4 border-r border-slate-200/70 p-2 max-h-[70vh] overflow-y-auto">
+                    @foreach($groupsAll as $groupName)
+                        @php
+                            $gid = Str::slug($groupName);
+                            $count = $restByGroup->get($groupName, collect())->count();
+                        @endphp
 
-                    @foreach($items as $item)
-                        <a href="{{ $item['route'] }}" role="menuitem"
-                           class="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-blue-50">
-                            <div
-                                class="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-blue-500 group-hover:bg-blue-700 group-hover:text-white">
-                                {!! $item['icon'] !!}
-                            </div>
-                            <div class="min-w-0">
-                                <p class="text-sm font-medium text-slate-800">{{ $item['label'] }}</p>
-                                @if(!empty($item['description']))
-                                    <p class="text-xs text-slate-500">{{ $item['description'] }}</p>
-                                @endif
-                            </div>
-                        </a>
+                        <button type="button"
+                                data-more-group="{{ $gid }}"
+                                class="more-tab w-full flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-left hover:bg-blue-50 {{ $gid === $defaultGroupId ? 'bg-blue-50' : '' }}">
+                            <span class="text-xs font-semibold text-slate-700">{{ $groupName }}</span>
+                            <span class="more-count text-[11px] text-slate-400">{{ $count }}</span>
+                        </button>
                     @endforeach
-                @endforeach
+                </div>
 
+                {{-- ITENS --}}
+                <div class="col-span-8 p-2 max-h-[70vh] overflow-y-auto">
+                    @foreach($groupsAll as $groupName)
+                        @php
+                            $gid = Str::slug($groupName);
+                            $items = $restByGroup->get($groupName, collect());
+                        @endphp
+
+                        <div class="more-panel {{ $gid === $defaultGroupId ? '' : 'hidden' }}" data-more-panel="{{ $gid }}">
+                            <div class="sticky top-0 z-10 bg-white/95 backdrop-blur px-2 py-2">
+                                <p class="text-[11px] font-semibold tracking-wide uppercase text-slate-400">{{ $groupName }}</p>
+                            </div>
+
+                            <div class="more-items grid grid-cols-1 gap-1">
+                                @foreach($items as $item)
+                                    <a href="{{ $item['route'] }}" role="menuitem"
+                                       class="more-row group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-blue-50"
+                                       data-qkey="{{ $item['key'] }}"
+                                       data-group="{{ $gid }}">
+                                        <div class="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-blue-500 group-hover:bg-blue-700 group-hover:text-white">
+                                            {!! $item['icon'] !!}
+                                        </div>
+                                        <div class="min-w-0">
+                                            <p class="text-sm font-medium text-slate-800">{{ $item['label'] }}</p>
+                                            @if(!empty($item['description']))
+                                                <p class="text-xs text-slate-500">{{ $item['description'] }}</p>
+                                            @endif
+                                        </div>
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
             </div>
+
         </div>
     @endif
 </section>
 
 @push('scripts')
-    <script>
-        (() => {
-            const btn = document.getElementById('more-btn');
-            const menu = document.getElementById('more-menu');
+<script>
+(() => {
+    const MAX_PINS = 5;
 
-            if (menu.parentElement !== document.body) {
-                document.body.appendChild(menu);
+    const ITEMS = @json($itemsForJs);
+    const DEFAULT_TOP_KEYS = @json($defaultTopKeys);
+
+    const quickNav = document.getElementById('quick-nav');
+    const moreBtn  = document.getElementById('more-btn');
+    const moreMenu = document.getElementById('more-menu');
+    const moreSlot = document.getElementById('quick-more-slot');
+
+    const editBtn  = document.getElementById('quick-edit');
+    const resetBtn = document.getElementById('quick-reset');
+
+    if (!quickNav) return;
+
+    const tenantId = quickNav.dataset.tenant || 't';
+    const userId   = quickNav.dataset.user || 'u';
+    const storageKey = `quicknav:${tenantId}:${userId}`;
+
+    const byKey = Object.fromEntries(ITEMS.map(i => [i.key, i]));
+    const allKeys = ITEMS.map(i => i.key);
+
+    let pinned = [];
+    let editing = false;
+    let isDragging = false;
+    let closeTimer = null;
+    let currentGroup = moreMenu?.getAttribute('data-default-group') || null;
+
+    function uniq(arr) {
+        const out = [];
+        for (const k of arr) {
+            if (k && byKey[k] && !out.includes(k)) out.push(k);
+        }
+        return out;
+    }
+
+    function normalizePinned(arr) {
+        let p = uniq(arr);
+
+        // completa até MAX_PINS com itens restantes
+        for (const k of allKeys) {
+            if (p.length >= MAX_PINS) break;
+            if (!p.includes(k)) p.push(k);
+        }
+
+        return p.slice(0, Math.min(MAX_PINS, allKeys.length));
+    }
+
+    function loadPinned() {
+        try {
+            const raw = localStorage.getItem(storageKey);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed?.pinned)) return null;
+            return parsed.pinned;
+        } catch {
+            return null;
+        }
+    }
+
+    function savePinned() {
+        try {
+            localStorage.setItem(storageKey, JSON.stringify({ pinned }));
+        } catch {}
+    }
+
+    function isActiveUrl(href) {
+        try {
+            const u = new URL(href, window.location.origin);
+            return u.pathname === window.location.pathname;
+        } catch {
+            return false;
+        }
+    }
+
+    function buildTopLi(item) {
+        const li = document.createElement('li');
+        li.className = 'shrink-0';
+        li.dataset.qkey = item.key;
+
+        const active = isActiveUrl(item.route);
+
+        const iconBase = 'icon grid h-11 w-11 sm:h-12 sm:w-12 place-items-center rounded-xl border';
+        const iconClass = active
+            ? `${iconBase} border-blue-700 bg-blue-700 text-white shadow-md ring-2 ring-blue-300`
+            : `${iconBase} border-slate-200 text-blue-500`;
+
+        li.innerHTML = `
+            <a href="${item.route}"
+               data-qkey="${item.key}"
+               class="group flex w-24 sm:w-28 flex-col items-center gap-2 rounded-2xl p-2 transition hover:scale-105">
+                <div class="${iconClass}">
+                    ${item.icon}
+                </div>
+                <span class="text-[11px] sm:text-xs font-medium text-slate-600 group-hover:text-blue-700 text-center leading-tight">
+                    ${item.label}
+                </span>
+            </a>
+        `;
+
+        return li;
+    }
+
+    function buildMoreRow(item) {
+        const a = document.createElement('a');
+        a.href = item.route;
+        a.setAttribute('role', 'menuitem');
+        a.className = 'more-row group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-blue-50';
+        a.dataset.qkey = item.key;
+        a.dataset.group = item.groupId;
+
+        a.innerHTML = `
+            <div class="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-blue-500 group-hover:bg-blue-700 group-hover:text-white">
+                ${item.icon}
+            </div>
+            <div class="min-w-0">
+                <p class="text-sm font-medium text-slate-800">${item.label}</p>
+                ${item.description ? `<p class="text-xs text-slate-500">${item.description}</p>` : ``}
+            </div>
+        `;
+
+        return a;
+    }
+
+    function applyEditingState() {
+        const nav = quickNav.closest('nav');
+       if (nav) {
+  // mantém o shape sempre
+  nav.classList.add('rounded-3xl', 'overflow-hidden', 'relative');
+
+  // ✅ ring dentro (não corta)
+  nav.classList.toggle('ring-2', editing);
+  nav.classList.toggle('ring-inset', editing);
+  nav.classList.toggle('ring-blue-200', editing);
+
+  // ✅ garante que não fica “atrás” do próximo conteúdo
+  nav.classList.toggle('z-10', editing);
+}
+
+        // draggable
+        quickNav.querySelectorAll('li[data-qkey]').forEach(li => {
+            li.draggable = editing;
+            li.classList.toggle('cursor-move', editing);
+        });
+
+        if (moreMenu) {
+            moreMenu.querySelectorAll('a.more-row[data-qkey]').forEach(a => {
+                a.draggable = editing;
+                a.classList.toggle('cursor-move', editing);
+            });
+        }
+
+        if (resetBtn) resetBtn.classList.toggle('hidden', !editing);
+
+        if (editBtn) {
+            editBtn.innerHTML = editing
+                ? `<i class="fa-solid fa-check"></i> Concluir`
+                : `<i class="fa-solid fa-wand-magic-sparkles"></i> Personalizar`;
+        }
+    }
+
+    function setGroup(id) {
+        if (!moreMenu || !id) return;
+        currentGroup = id;
+
+        const tabs = Array.from(moreMenu.querySelectorAll('[data-more-group]'));
+        const panels = Array.from(moreMenu.querySelectorAll('[data-more-panel]'));
+
+        tabs.forEach(t => t.classList.toggle('bg-blue-50', t.dataset.moreGroup === id));
+        panels.forEach(p => p.classList.toggle('hidden', p.dataset.morePanel !== id));
+    }
+
+    function updateMenuCountsAndHideEmpty() {
+        if (!moreMenu) return;
+
+        const tabs = Array.from(moreMenu.querySelectorAll('[data-more-group]'));
+        tabs.forEach(tab => {
+            const gid = tab.dataset.moreGroup;
+            const panel = moreMenu.querySelector(`[data-more-panel="${gid}"]`);
+            const wrap = panel?.querySelector('.more-items');
+            const count = wrap ? wrap.children.length : 0;
+
+            const countEl = tab.querySelector('.more-count');
+            if (countEl) countEl.textContent = count;
+
+            tab.classList.toggle('hidden', count === 0);
+        });
+
+        const firstVisible = tabs.find(t => !t.classList.contains('hidden'));
+        if (firstVisible) setGroup(firstVisible.dataset.moreGroup);
+    }
+
+    function renderTop() {
+        // remove só os lis de itens (mantém slot do Mais)
+        quickNav.querySelectorAll('li[data-qkey]').forEach(li => li.remove());
+
+        const insertBefore = moreSlot || null;
+
+        pinned.forEach(k => {
+            const item = byKey[k];
+            if (!item) return;
+            const li = buildTopLi(item);
+            if (insertBefore) quickNav.insertBefore(li, insertBefore);
+            else quickNav.appendChild(li);
+        });
+    }
+
+    function renderMore() {
+        if (!moreMenu) return;
+
+        // limpa todas as listas
+        moreMenu.querySelectorAll('.more-items').forEach(wrap => wrap.innerHTML = '');
+
+        const restKeys = allKeys.filter(k => !pinned.includes(k));
+
+        for (const k of restKeys) {
+            const item = byKey[k];
+            if (!item) continue;
+
+            const panel = moreMenu.querySelector(`[data-more-panel="${item.groupId}"]`);
+            const wrap = panel?.querySelector('.more-items');
+            if (!wrap) continue;
+
+            wrap.appendChild(buildMoreRow(item));
+        }
+
+        updateMenuCountsAndHideEmpty();
+    }
+
+    function renderAll() {
+        renderTop();
+        renderMore();
+        applyEditingState();
+    }
+
+    // --------- MENU OPEN/CLOSE (abaixo do botão + fecha ao sair) ----------
+    function clearCloseTimer() {
+        if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+    }
+
+    function closeMenu({ focusBtn = false } = {}) {
+        if (!moreMenu || !moreBtn) return;
+        if (!moreMenu.classList.contains('hidden')) {
+            moreMenu.classList.add('hidden');
+            moreBtn.setAttribute('aria-expanded', 'false');
+            if (focusBtn) moreBtn.focus({ preventScroll: true });
+        }
+    }
+
+    function scheduleClose() {
+        if (!moreMenu || !moreBtn) return;
+        if (isDragging) return;
+        clearCloseTimer();
+        closeTimer = setTimeout(() => {
+            const hoveringMenu = moreMenu.matches(':hover');
+            const hoveringBtn  = moreBtn.matches(':hover');
+            if (!hoveringMenu && !hoveringBtn) closeMenu();
+        }, 120);
+    }
+
+    function openMenu() {
+        if (!moreMenu || !moreBtn) return;
+
+        // garante grupo válido visível
+        const visibleTabs = Array.from(moreMenu.querySelectorAll('[data-more-group]'))
+            .filter(t => !t.classList.contains('hidden'));
+
+        if (!currentGroup || !moreMenu.querySelector(`[data-more-group="${currentGroup}"]`) || moreMenu.querySelector(`[data-more-group="${currentGroup}"]`)?.classList.contains('hidden')) {
+            currentGroup = visibleTabs[0]?.dataset.moreGroup || currentGroup;
+        }
+        setGroup(currentGroup);
+
+        const margin = 12;
+        const gapY = 10;
+
+        moreMenu.style.visibility = 'hidden';
+        moreMenu.classList.remove('hidden');
+
+        const r = moreBtn.getBoundingClientRect();
+        const mw = moreMenu.offsetWidth;
+        const mh = moreMenu.offsetHeight;
+
+        let top = r.bottom + gapY;
+        let left = r.left; // lado direito do botão (começa no left dele)
+
+        left = Math.max(margin, Math.min(left, window.innerWidth - mw - margin));
+
+        // se não couber embaixo, abre pra cima
+        if (top + mh + margin > window.innerHeight) {
+            top = r.top - mh - gapY;
+        }
+        top = Math.max(margin, Math.min(top, window.innerHeight - mh - margin));
+
+        moreMenu.style.top = `${top}px`;
+        moreMenu.style.left = `${left}px`;
+        moreMenu.style.visibility = 'visible';
+
+        moreBtn.setAttribute('aria-expanded', 'true');
+        moreMenu.focus({ preventScroll: true });
+    }
+
+    // --------- EDITING ----------
+    function setEditing(on) {
+        editing = !!on;
+        applyEditingState();
+        if (!editing) savePinned();
+    }
+
+    // bloquear clique durante edição
+    document.addEventListener('click', (e) => {
+        if (!editing) return;
+        const a = e.target.closest('a[data-qkey], a.more-row');
+        if (a) e.preventDefault();
+    });
+
+    // dragstart / dragend
+    document.addEventListener('dragstart', (e) => {
+        if (!editing) return;
+        const el = e.target.closest('[data-qkey]');
+        if (!el) return;
+
+        isDragging = true;
+        clearCloseTimer();
+
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', el.dataset.qkey);
+    });
+
+    document.addEventListener('dragend', () => {
+        isDragging = false;
+        scheduleClose();
+    });
+
+    // drop no TOP (reordena / puxa do Mais)
+    quickNav.addEventListener('dragover', (e) => {
+        if (!editing) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    });
+
+    quickNav.addEventListener('drop', (e) => {
+        if (!editing) return;
+        e.preventDefault();
+
+        const key = e.dataTransfer.getData('text/plain');
+        if (!byKey[key]) return;
+
+        const without = pinned.filter(k => k !== key);
+
+        const targetLi = e.target.closest('li[data-qkey]');
+        let idx = without.length;
+
+        if (targetLi?.dataset?.qkey) {
+            const tkey = targetLi.dataset.qkey;
+            const tIndex = without.indexOf(tkey);
+            if (tIndex >= 0) idx = tIndex;
+        }
+
+        without.splice(idx, 0, key);
+        pinned = normalizePinned(without);
+        savePinned();
+        renderAll();
+    });
+
+    // drop no MENU (remove do top)
+    if (moreMenu) {
+        moreMenu.addEventListener('dragover', (e) => {
+            if (!editing) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        });
+
+        moreMenu.addEventListener('drop', (e) => {
+            if (!editing) return;
+            e.preventDefault();
+
+            const key = e.dataTransfer.getData('text/plain');
+            if (!byKey[key]) return;
+
+            pinned = normalizePinned(pinned.filter(k => k !== key));
+            savePinned();
+            renderAll();
+        });
+    }
+
+    // --------- INIT ----------
+    const stored = loadPinned();
+    pinned = normalizePinned(stored && stored.length ? stored : DEFAULT_TOP_KEYS);
+
+    renderAll();
+
+    // --------- BUTTONS ----------
+    if (editBtn) {
+        editBtn.addEventListener('click', () => setEditing(!editing));
+    }
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            try { localStorage.removeItem(storageKey); } catch {}
+            pinned = normalizePinned(DEFAULT_TOP_KEYS);
+            savePinned();
+            renderAll();
+        });
+    }
+
+    // --------- MENU EVENTS ----------
+    if (moreMenu && moreBtn) {
+        if (moreMenu.parentElement !== document.body) document.body.appendChild(moreMenu);
+
+        moreBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (moreMenu.classList.contains('hidden')) openMenu();
+            else closeMenu({ focusBtn: true });
+        });
+
+        // tabs hover/click
+        moreMenu.addEventListener('click', (e) => {
+            const tab = e.target.closest('[data-more-group]');
+            if (tab) setGroup(tab.dataset.moreGroup);
+        });
+        moreMenu.addEventListener('mousemove', (e) => {
+            const tab = e.target.closest('[data-more-group]');
+            if (tab) setGroup(tab.dataset.moreGroup);
+        });
+
+        // fecha ao sair com mouse (btn + menu)
+        moreBtn.addEventListener('mouseenter', clearCloseTimer);
+        moreMenu.addEventListener('mouseenter', clearCloseTimer);
+        moreBtn.addEventListener('mouseleave', scheduleClose);
+        moreMenu.addEventListener('mouseleave', scheduleClose);
+
+        // clique fora fecha
+        document.addEventListener('click', (e) => {
+            if (!moreMenu.classList.contains('hidden')) {
+                if (!moreMenu.contains(e.target) && !moreBtn.contains(e.target)) closeMenu();
             }
+        });
 
-            function openMenu() {
-                const btn = document.getElementById('more-btn');
-                const menu = document.getElementById('more-menu');
-                const gap = -25;
-                const margin = 12;
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeMenu({ focusBtn: true });
+        });
 
-                menu.style.visibility = 'hidden';
-                menu.classList.remove('hidden');
-
-                const r = btn.getBoundingClientRect();
-                const mw = menu.offsetWidth;
-                const mh = menu.offsetHeight;
-
-                let top = r.top + (r.height / 2) - (mh / 2);
-                let left = r.left - mw - gap;
-
-                top = Math.max(margin, Math.min(top, window.innerHeight - mh - margin));
-
-                if (left < margin) {
-                    left = Math.max(
-                        margin,
-                        Math.min(r.left + (r.width / 2) - (mw / 2), window.innerWidth - mw - margin)
-                    );
-                    top = r.bottom + gap;
-                }
-
-                menu.style.top = `${top}px`;
-                menu.style.left = `${left}px`;
-                menu.style.visibility = 'visible';
-                btn.setAttribute('aria-expanded', 'true');
-                menu.focus({preventScroll: true});
-            }
-
-            function closeMenu() {
-                if (!menu.classList.contains('hidden')) {
-                    menu.classList.add('hidden');
-                    btn.setAttribute('aria-expanded', 'false');
-                    btn.focus({preventScroll: true});
-                }
-            }
-
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (menu.classList.contains('hidden')) openMenu(); else closeMenu();
-            });
-
-            document.addEventListener('click', (e) => {
-                if (!menu.classList.contains('hidden')) {
-                    if (!menu.contains(e.target) && !btn.contains(e.target)) closeMenu();
-                }
-            });
-
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') closeMenu();
-                if ((e.key === 'Enter' || e.key === ' ') && document.activeElement === btn) {
-                    e.preventDefault();
-                    openMenu();
-                }
-            });
-
-            window.addEventListener('resize', () => {
-                if (!menu.classList.contains('hidden')) openMenu();
-            });
-            window.addEventListener('scroll', () => {
-                if (!menu.classList.contains('hidden')) openMenu();
-            }, true);
-        })();
-    </script>
+        window.addEventListener('resize', () => {
+            if (!moreMenu.classList.contains('hidden')) openMenu();
+        });
+        window.addEventListener('scroll', () => {
+            if (!moreMenu.classList.contains('hidden')) openMenu();
+        }, true);
+    }
+})();
+</script>
 @endpush
