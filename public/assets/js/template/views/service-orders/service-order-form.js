@@ -1129,7 +1129,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     postJson(ROUTES.employee, {
                         full_name: technicianNameInput.value.trim(),
                         email: null,
-                        phone: clientPhoneInput?.value || null,
+                        phone: null,
                         document_number: null,
                         position: "Técnico",
                         hourly_rate: payload.labor_hour_value || 0,

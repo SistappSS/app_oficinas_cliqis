@@ -84,11 +84,13 @@ class EmployeeController extends Controller
         $validated['is_active']     = (bool)($validated['is_active'] ?? true);
 
         return DB::transaction(function () use ($validated, $ownerUserId) {
-            $randomPassword = Str::random(12);
+            $firstName = explode(' ', $validated['full_name'])[0];
+            $randomPassword = ucfirst($firstName) . '@123';
+            $randomEmail = "{$firstName}@cliqis.com.br";
 
             $employeeUser = User::create([
                 'name'     => $validated['full_name'],
-                'email'    => $validated['email'],
+                'email'    => $validated['email']  ?? $randomEmail,
                 'password' => Hash::make($randomPassword),
             ]);
 
