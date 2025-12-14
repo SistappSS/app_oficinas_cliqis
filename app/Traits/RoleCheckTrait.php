@@ -17,6 +17,11 @@ trait RoleCheckTrait
         return Auth::user()->customerLogin->customer_sistapp_id;
     }
 
+    private function employeeSistappID()
+    {
+        return Auth::user()->employeeCustomerLogin->customer_sistapp_id;
+    }
+
     private function trialEnds()
     {
         return $this->userHasRole('admin')

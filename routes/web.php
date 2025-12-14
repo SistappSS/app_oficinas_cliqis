@@ -94,11 +94,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), CheckSubscr
     |--------------------------------------------------------------------------
     */
 
-    Route::get('/modules', [ModuleController::class, 'index'])->name('module.index');
-    Route::post('/modules', [ModuleController::class, 'store'])->name('module.store');
-
-    Route::post('/modules/feature', [ModuleController::class, 'storeFeature'])->name('feature.store');
-
     Route::get('/module/buy-module/billing/{userId}', [BuyModuleController::class, 'billing'])->name('billing.index');
 
     Route::post('/modules/upgrade-annual', [BuyModuleController::class, 'upgradeToAnnual'])->name('modules.upgrade-annual');
@@ -109,8 +104,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), CheckSubscr
         Route::post('/verificar-pix-pendente', [BuyModuleController::class, 'checkPendingPix'])->name('verificar-pix-pendente');
         Route::post('/gerar-qrcode-module', [BuyModuleController::class, 'qrCodeGenerate'])->name('gerar-qrcode.module');
         Route::get('/checar-status-pagamento/{paymentId}', [BuyModuleController::class, 'checkPaymentStatus'])->name('checar-pagamento.module');
-        Route::post('/cancelar/{paymentId}', [BuyModuleController::class, 'cancel'])
-            ->name('module.cancel');
+        Route::post('/cancelar/{paymentId}', [BuyModuleController::class, 'cancel'])->name('module.cancel');
     });
 });
 
@@ -322,5 +316,14 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/permissions/list', [PermissionController::class, 'getPermissions'])->name('permissions.list');
 
     });
+
+    Route::get('/modules', [ModuleController::class, 'index'])->name('module.index');
+    Route::post('/modules', [ModuleController::class, 'store'])->name('module.store');
+
+    Route::post('/modules/feature', [ModuleController::class, 'storeFeature'])->name('feature.store');
 });
+
 Route::get('/run/{tenantId}', [DashboardController::class, 'run']);
+
+
+

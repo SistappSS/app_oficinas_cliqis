@@ -82,13 +82,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const clientNameInput = q("#os_client_name");
-    const clientDocInput = q("#os_client_document");
+    const clientDocInput = q("#cpfCnpj");
     const clientEmailInput = q("#os_client_email");
-    const clientPhoneInput = q("#os_client_phone");
-    const clientAddressInput = q("#os_client_address");
-    const clientCityInput = q("#os_client_city");
-    const clientStateInput = q("#os_client_state");
-    const clientZipInput = q("#os_client_zip");
+    const clientPhoneInput = q("#mobilePhone");
+    const clientAddressInput = q("#address");
+    const clientAddressNumberInput = q("#addressNumber");
+    const clientComplementInput = q("#complement");
+    const clientCityInput = q("#cityName");
+    const clientStateInput = q("#state");
+    const clientProvinceInput = q("#province");
+    const clientZipInput = q("#postalCode");
     const ticketNumberInput = q("#ticket_number");
 
     const clientResults = q("#os_client_results");
@@ -279,14 +282,10 @@ document.addEventListener("DOMContentLoaded", () => {
         if (clientEmailInput) clientEmailInput.value = c.email || "";
         if (clientPhoneInput) clientPhoneInput.value = c.mobilePhone || "";
 
-        if (clientAddressInput) {
-            const parts = [];
-            if (c.address) parts.push(c.address);
-            if (c.addressNumber) parts.push(c.addressNumber);
-            if (c.province) parts.push(c.province);
-            if (c.complement) parts.push(c.complement);
-            clientAddressInput.value = parts.join(", ");
-        }
+        if (clientAddressInput) clientAddressInput.value = c.address || "";
+        if (clientAddressNumberInput) clientAddressNumberInput.value = c.addressNumber || "";
+        if (clientProvinceInput) clientProvinceInput.value = c.province || "";
+        if (clientComplementInput) clientComplementInput.value = c.complement || "";
 
         if (clientCityInput) clientCityInput.value = c.cityName || "";
         if (clientStateInput) clientStateInput.value = c.state || "";
@@ -1018,8 +1017,10 @@ document.addEventListener("DOMContentLoaded", () => {
             requester_phone: clientPhoneInput?.value || null,
             ticket_number: ticketNumberInput?.value || null,
 
-            address_line1: clientAddressInput?.value || null,
-            address_line2: null,
+            address: clientAddressInput?.value || null,
+            addressNumber: clientAddressNumberInput?.value || null,
+            complement: clientComplementInput?.value || null,
+            province: clientProvinceInput?.value || null,
             city: clientCityInput?.value || null,
             state: clientStateInput?.value || null,
             zip_code: clientZipInput?.value || null,
@@ -1110,12 +1111,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         email: clientEmailInput?.value || null,
                         mobilePhone: clientPhoneInput?.value || null,
                         address: clientAddressInput?.value || null,
-                        addressNumber: null,
+                        addressNumber: clientAddressNumberInput?.value || null,
                         postalCode: clientZipInput?.value || null,
                         cityName: clientCityInput?.value || null,
                         state: clientStateInput?.value || null,
-                        province: null,
-                        complement: null,
+                        province: clientProvinceInput?.value || null,
+                        complement: clientComplementInput?.value || null,
                     })
                 );
             }
@@ -1223,6 +1224,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
         const confirmBtn = q("#os-save-confirm");
+
         if (confirmBtn) {
             confirmBtn.addEventListener("click", async () => {
                 const opts = {
