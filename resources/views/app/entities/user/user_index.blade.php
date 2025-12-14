@@ -20,7 +20,6 @@
             </div>
 
             <div class="ml-auto flex items-center gap-2 shrink-0">
-                {{-- por enquanto sem criação de usuário manual por aqui --}}
                 <button id="btn-add"
                         class="hidden rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-800">
                     Adicionar usuário
@@ -28,6 +27,12 @@
                 <button
                     class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow hover:bg-slate-50">
                     Exportar
+                </button>
+                <button id="toggle-header"
+                        class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow hover:bg-slate-50"
+                        aria-expanded="true" aria-controls="header-collapsible" type="button"
+                        title="Expandir/contrair cabeçalho">
+                    <i id="toggle-icon" class="fa-solid fa-up-right-and-down-left-from-center"></i>
                 </button>
             </div>
         </div>
