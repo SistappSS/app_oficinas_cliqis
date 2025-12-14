@@ -36,7 +36,7 @@ trait CrudResponse
         if(isset($data['price'])) { $data['price'] = str_replace(',', '.', $data['price']); }
 
         //$data['user_id'] = $this->userAuth();
-        $data['customer_sistapp_id'] = $this->customerSistappID();
+        $data['customer_sistapp_id'] = $this->customerSistappID() ?? $this->employeeSistappID();
         $data['created_at'] = Carbon::now();
 
         return $this->trait("store", $model->create($data));
