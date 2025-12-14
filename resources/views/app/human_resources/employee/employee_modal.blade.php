@@ -1,6 +1,6 @@
 <x-modal modalId="employee-modal" formId="employee-form" modalTitle="Novo funcionário" :input="$input">
     <input type="hidden" id="employee_id" name="employee_id">
-    <input type="hidden" id="user_id" name="user_id"><!-- se quiser vincular com User depois -->
+    <input type="hidden" id="user_id" name="user_id">
 
     <div class="space-y-6">
         <div class="grid gap-4 sm:grid-cols-2">
