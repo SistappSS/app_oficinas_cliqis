@@ -13,6 +13,7 @@ use App\Support\CustomerContext;
 use App\Traits\RoleCheckTrait;
 use App\Traits\WebIndex;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class ServiceOrderController extends Controller
@@ -172,19 +173,16 @@ class ServiceOrderController extends Controller
             'requester_phone'         => ['nullable', 'string', 'max:30'],
             'ticket_number'           => ['nullable', 'string', 'max:255'],
             'address_line1'           => ['nullable', 'string', 'max:255'],
-            'address_line2'           => ['nullable', 'string', 'max:255'],
             'city'                    => ['nullable', 'string', 'max:255'],
             'state'                   => ['nullable', 'string', 'max:2'],
             'zip_code'                => ['nullable', 'string', 'max:15'],
             'payment_condition'       => ['nullable', 'string', 'max:255'],
             'notes'                   => ['nullable', 'string'],
 
-            // totais (vêm da tela, mas serão recalculados no back mesmo)
             'labor_hour_value'        => ['nullable', 'numeric'],
             'discount_amount'         => ['nullable', 'numeric'],
             'addition_amount'         => ['nullable', 'numeric'],
 
-            // blocos filhos (arrays)
             'equipments'              => ['array'],
             'equipments.*.id'         => ['nullable', 'string'],
             'equipments.*.equipment_id'         => ['nullable', 'string'],
@@ -227,7 +225,6 @@ class ServiceOrderController extends Controller
         $discountAmount  = (float)($validated['discount_amount'] ?? 0);
         $additionAmount  = (float)($validated['addition_amount'] ?? 0);
 
-        // remove campos de arrays do cabeçalho validado
         unset(
             $validated['equipments'],
             $validated['services'],
@@ -247,9 +244,6 @@ class ServiceOrderController extends Controller
             $discountAmount,
             $additionAmount
         ) {
-            // -------------------
-            // criar ou buscar OS
-            // -------------------
             if ($id) {
                 $os = \App\Models\ServiceOrders\ServiceOrder::findOrFail($id);
             } else {
@@ -271,7 +265,6 @@ class ServiceOrderController extends Controller
             $keepEquipIds = [];
 
             foreach ($equip as $row) {
-                // ignora linha totalmente vazia
                 if (
                     empty($row['equipment_id']) &&
                     empty($row['equipment_description']) &&
@@ -473,8 +466,6 @@ class ServiceOrderController extends Controller
             ]);
         });
     }
-
-    // gera próximo número sequencial simples: 000001, 000002...
     protected function generateNextNumber(): string
     {
         $last = ServiceOrder::orderByDesc('created_at')->value('order_number');

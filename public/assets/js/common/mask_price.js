@@ -22,9 +22,7 @@ document.addEventListener("DOMContentLoaded", function() {
         // pré-preenchido
         if (el.value && /\d/.test(el.value)) el.value = formatBRL(el.value.replace(/\D/g, ''));
 
-        el.addEventListener('beforeinput', (e) => {
-            // deixa colar; formatamos depois
-        });
+        el.addEventListener('beforeinput', (e) => {});
 
         el.addEventListener('keypress', (e) => {
             if (!allowKey(e)) e.preventDefault();
@@ -33,7 +31,7 @@ document.addEventListener("DOMContentLoaded", function() {
         el.addEventListener('input', function() {
             const digits = this.value.replace(/\D/g, '');
             this.value   = formatBRL(digits);
-            this.dataset.cents = String(unmaskBRL(this.value)); // útil no submit
+            this.dataset.cents = String(unmaskBRL(this.value));
         });
 
         el.addEventListener('paste', function() {
@@ -47,7 +45,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
     document.querySelectorAll('.money-brl, [data-mask="money-brl"]').forEach(applyMoneyMask);
 
-    // helper global (se precisar em algum submit)
     window.getBrlCents = function(idOrEl) {
         const el = (typeof idOrEl === 'string') ? document.getElementById(idOrEl) : idOrEl;
         return el ? unmaskBRL(el.value) : 0;

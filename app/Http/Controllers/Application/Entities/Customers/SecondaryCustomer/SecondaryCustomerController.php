@@ -56,6 +56,7 @@ class SecondaryCustomerController extends Controller
         $request->validated();
 
         $data = [
+            'customer_sistapp_id' => $this->employeeSistappID(),
             'name' => $request->name,
             'cpfCnpj' => $request->cpfCnpj,
             'mobilePhone' => $request->mobilePhone,
@@ -69,7 +70,7 @@ class SecondaryCustomerController extends Controller
             'complement' => $request->complement
         ];
 
-        return $this->storeMethod($this->customer, $data);
+        return $this->trait("store", $this->customer->create($data));
     }
 
     public function show($id)
