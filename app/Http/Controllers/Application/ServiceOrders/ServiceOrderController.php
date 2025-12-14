@@ -104,7 +104,7 @@ class ServiceOrderController extends Controller
             } elseif ($user && $user->can("{$tenantId}_visualizar_ordem_servico")) {
                 // técnico: só as OS criadas por ele
                 // troca 'user_id' se o campo for outro
-                $q->where('technician_id', $user->employeeCustomerLogin->employee_id);
+                //$q->where('technician_id', $user->employeeCustomerLogin->employee_id);
 
             } else {
                 // sem permissão: não retorna nada
