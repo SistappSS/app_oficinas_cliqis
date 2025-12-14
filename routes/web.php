@@ -260,18 +260,18 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::post('/payable-api/{id}/cancel', [AccountPayableController::class, 'cancelParcel'])
             ->middleware('can:finance_payable_delete');
 
-        Route::get('/finances/receivables/service-orders', [AccountReceivableController::class, 'view'])
-            ->name('account-receivable.view')
-            ->middleware('can:finance_receivable_view');
+        Route::get('/receivables/service-orders', [AccountReceivableController::class, 'view'])
+            ->name('account-receivable.view');
 
         Route::get('/receivables/service-orders/api', [AccountReceivableController::class, 'index'])
-            ->name('receivables.service-orders.index')
-            ->middleware('can:finance_receivable_view');
+            ->name('receivables.service-orders.index');
 
-        Route::post('/finances/receivables/invoices/{invoice}/pay', [AccountReceivableController::class, 'setPaid'])
-            ->name('receivables.service-orders.pay')
-            ->middleware('can:finance_receivable_edit');
+        Route::post('/receivables/invoices/{invoice}/pay', [AccountReceivableController::class, 'setPaid'])
+            ->name('receivables.service-orders.pay');
+
     });
+        Route::post('/service-orders/{serviceOrder}/billing/generate', [ServiceOrderBillingController::class, 'generate'])
+            ->name('service-orders.billing.generate');
 
     /* --->| Chat IA |<--- */
     Route::group(['prefix' => 'chat'], function () {

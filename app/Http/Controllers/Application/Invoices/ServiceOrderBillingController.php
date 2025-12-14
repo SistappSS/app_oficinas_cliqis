@@ -8,6 +8,7 @@ use App\Models\ServiceOrders\ServiceOrderInvoice;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ServiceOrderBillingController extends Controller
 {
@@ -181,5 +182,140 @@ class ServiceOrderBillingController extends Controller
             'status'             => 'pending',
             'payment_method'     => $paymentMethod,
         ]);
+    }
+
+    public function generate(Request $request, ServiceOrder $serviceOrder)
+    {
+        $data = $request->validate([
+            'first_due_date' => ['required', 'date'],
+            'payment_method' => ['required', 'string', 'max:50'],
+
+            'use_down_payment' => ['nullable'],
+            'down_payment_percent' => ['required_if:use_down_payment,1','integer','min:1','max:99'],
+            'remaining_installments' => ['required_if:use_down_payment,1','integer','min:1'],
+
+            'installments' => ['required_unless:use_down_payment,1','integer','min:1'],
+        ]);
+
+        return DB::transaction(function () use ($serviceOrder, $data) {
+
+            if ($serviceOrder->status === 'nf_emitida') {
+                return response()->json(['ok' => false, 'message' => 'NF já emitida para esta OS.'], 409);
+            }
+
+            $tenantId   = $serviceOrder->customer_sistapp_id;
+            $customerId = $serviceOrder->secondary_customer_id ?? null;
+
+            $total = round((float) ($serviceOrder->grand_total ?? 0), 2);
+            if ($total <= 0) {
+                return response()->json(['ok' => false, 'message' => 'Total da OS inválido.'], 422);
+            }
+
+            $firstDue = Carbon::parse($data['first_due_date'])->startOfDay();
+
+            $makeNumber = function () {
+                return 'NF' . now()->format('ymd') . '-' . strtoupper(Str::random(6));
+            };
+
+            $createdIds = [];
+
+            $useDown = (string)($data['use_down_payment'] ?? '0') === '1';
+
+            if ($useDown) {
+                $pct = (int) $data['down_payment_percent'];
+                $n   = (int) $data['remaining_installments'];
+
+                $signal    = round($total * ($pct / 100), 2);
+                $remaining = round($total - $signal, 2);
+
+                // SINAL (vence no primeiro vencimento)
+                $signalInv = ServiceOrderInvoice::create([
+                    'customer_sistapp_id'  => $tenantId,
+                    'service_order_id'     => $serviceOrder->id,
+                    'customer_id'          => $customerId,
+                    'number'               => $makeNumber(),
+                    'due_date'             => $firstDue->toDateString(),
+                    'amount'               => $signal,
+                    'type'                 => 'signal',
+                    'installment'          => 0,
+                    'installments_total'   => $n,
+                    'status'               => 'pending',
+                    'payment_method'       => $data['payment_method'],
+                ]);
+
+                $createdIds[] = $signalInv->id;
+
+                // PARCELAS do restante (mensal a partir do mês seguinte)
+                $per = $n > 0 ? round($remaining / $n, 2) : 0;
+                $acc = 0;
+
+                for ($i = 1; $i <= $n; $i++) {
+                    $amt = ($i === $n) ? round($remaining - $acc, 2) : $per;
+                    $acc = round($acc + $amt, 2);
+
+                    $inv = ServiceOrderInvoice::create([
+                        'customer_sistapp_id' => $tenantId,
+                        'service_order_id'    => $serviceOrder->id,
+                        'customer_id'         => $customerId,
+                        'number'              => $makeNumber(),
+                        'due_date'            => $firstDue->copy()->addMonthsNoOverflow($i)->toDateString(),
+                        'amount'              => $amt,
+                        'type'                => 'parcel',
+                        'installment'         => $i,
+                        'installments_total'  => $n,
+                        'status'              => 'pending',
+                        'payment_method'      => $data['payment_method'],
+                    ]);
+                    $createdIds[] = $inv->id;
+                }
+            } else {
+                $n = max(1, (int) $data['installments']);
+
+                if ($n === 1) {
+                    $inv = ServiceOrderInvoice::create([
+                        'customer_sistapp_id' => $tenantId,
+                        'service_order_id'    => $serviceOrder->id,
+                        'customer_id'         => $customerId,
+                        'number'              => $makeNumber(),
+                        'due_date'            => $firstDue->toDateString(),
+                        'amount'              => $total,
+                        'type'                => 'single',
+                        'installment'         => 1,
+                        'installments_total'  => 1,
+                        'status'              => 'pending',
+                        'payment_method'      => $data['payment_method'],
+                    ]);
+                    $createdIds[] = $inv->id;
+                } else {
+                    $per = round($total / $n, 2);
+                    $acc = 0;
+
+                    for ($i = 1; $i <= $n; $i++) {
+                        $amt = ($i === $n) ? round($total - $acc, 2) : $per;
+                        $acc = round($acc + $amt, 2);
+
+                        $inv = ServiceOrderInvoice::create([
+                            'customer_sistapp_id' => $tenantId,
+                            'service_order_id'    => $serviceOrder->id,
+                            'customer_id'         => $customerId,
+                            'number'              => $makeNumber(),
+                            'due_date'            => $firstDue->copy()->addMonthsNoOverflow($i - 1)->toDateString(),
+                            'amount'              => $amt,
+                            'type'                => 'parcel',
+                            'installment'         => $i,
+                            'installments_total'  => $n,
+                            'status'              => 'pending',
+                            'payment_method'      => $data['payment_method'],
+                        ]);
+                        $createdIds[] = $inv->id;
+                    }
+                }
+            }
+
+            $serviceOrder->status = 'nf_emitida';
+            $serviceOrder->save();
+
+            return response()->json(['ok' => true, 'created' => $createdIds]);
+        });
     }
 }

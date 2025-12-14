@@ -4,13 +4,13 @@ namespace App\Models\ServiceOrders;
 
 use App\Models\Finances\AccountReceivablePayment;
 use App\Traits\HasCustomerScope;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ServiceOrderInvoice extends Model
 {
-    use HasFactory;
-    use HasCustomerScope;
+    use HasFactory, HasCustomerScope, HasUuids;
 
     protected $table = 'service_order_invoices';
 

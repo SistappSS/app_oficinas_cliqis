@@ -138,19 +138,20 @@
             <form id="billing-form" class="mt-4 space-y-3">
                 @csrf
 
-                <input type="hidden" name="service_order_id" id="billing-os-id">
+                <input type="hidden" name="service_order_id" id="nf-os-id">
 
                 <div class="grid sm:grid-cols-2 gap-3">
                     <div>
                         <label class="text-sm font-medium">Primeiro vencimento</label>
-                        <input type="date" name="first_due_date" required
+
+                        <input id="nf-payment-date" type="date" name="first_due_date" required
                                class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5">
                     </div>
+
                     <div>
                         <label class="text-sm font-medium">Forma de pagamento</label>
-                        <select id="nf-payment-method" required
-                                class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
-                            <option value="">Selecione...</option>
+                        <select id="nf-payment-method" name="payment_method" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
+                        <option value="">Selecione...</option>
                             <option value="pix">Pix</option>
                             <option value="boleto">Boleto</option>
                             <option value="cartao_credito">Cartão de crédito</option>
@@ -169,11 +170,21 @@
                     </div>
                 </div>
 
-                <div class="mt-3">
-                    <label class="flex items-center gap-2 text-sm font-medium">
-                        <input type="checkbox" name="use_down_payment" id="use_down_payment"
-                               class="h-4 w-4 rounded border-slate-300 text-blue-600">
-                        Usar sinal (% do total)
+                <div class="mt-3 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-slate-900">Usar sinal</p>
+                        <p class="text-xs text-slate-500">Cria um sinal (% do total) e parcela o restante</p>
+                    </div>
+
+                    <label class="relative inline-flex cursor-pointer select-none items-center">
+                        <input
+                            type="checkbox"
+                            name="use_down_payment"
+                            id="use_down_payment"
+                            class="sr-only peer"
+                        >
+                        <span class="h-6 w-11 rounded-full bg-slate-300 transition peer-checked:bg-blue-600"></span>
+                        <span class="absolute left-0.5 top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-white shadow transition peer-checked:translate-x-5"></span>
                     </label>
                 </div>
 
@@ -194,7 +205,8 @@
 
                 <div id="no-down-payment-wrap" class="mt-3">
                     <label class="text-sm font-medium">Parcelas</label>
-                    <input type="number" name="installments" min="1" value="1"
+
+                    <input id="nf-installments" type="number" name="installments" min="1" value="1"
                            class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5">
                 </div>
 
