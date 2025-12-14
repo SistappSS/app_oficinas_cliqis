@@ -274,8 +274,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.querySelector("#user_id").value = e.user_id || "";
             document.querySelector("#full_name").value = e.full_name || "";
             document.querySelector("#email").value = e.email || "";
-            document.querySelector("#phone").value = e.phone || "";
-            document.querySelector("#document_number").value = e.document_number || "";
+            document.querySelector("#mobilePhone").value = e.phone || "";
+            document.querySelector("#cpfCnpj").value = e.document_number || "";
             document.querySelector("#position").value = e.position || "";
             document.querySelector("#hourly_rate").value = e.hourly_rate ?? "";
 
@@ -299,8 +299,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             department_id: document.querySelector("#department_id").value || null,
             full_name: document.querySelector("#full_name").value,
             email: document.querySelector("#email").value,
-            phone: document.querySelector("#phone").value,
-            document_number: document.querySelector("#document_number").value,
+            phone: document.querySelector("#mobilePhone").value,
+            document_number: document.querySelector("#cpfCnpj").value,
             position: document.querySelector("#position").value,
             hourly_rate: document.querySelector("#hourly_rate").value || 0,
             is_active: document.querySelector("#is_active").checked,
