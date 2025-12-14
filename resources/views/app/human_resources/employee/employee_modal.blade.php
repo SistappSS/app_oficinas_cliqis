@@ -14,11 +14,11 @@
         </div>
 
         <div class="grid gap-4 sm:grid-cols-2">
-            <x-input col="" set="" id="document_number" name="document_number" type="text"
+            <x-input col="" set="" id="cpfCnpj" name="document_number" type="text"
                      label="Documento (CPF/CNPJ)"
                      placeholder="000.000.000-00"></x-input>
 
-            <x-input col="" set="" id="phone" name="phone" type="text"
+            <x-input col="" set="" id="mobilePhone" name="phone" type="text"
                      label="Telefone"
                      placeholder="(11) 99999-9999"></x-input>
         </div>
@@ -142,3 +142,7 @@
         </div>
     </div>
 </x-modal>
+
+@push('scripts')
+    <script src="{{asset('assets/js/common/mask_input.js')}}"></script>
+@endpush
