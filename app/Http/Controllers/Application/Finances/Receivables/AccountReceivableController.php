@@ -148,7 +148,9 @@ class AccountReceivableController extends Controller
             }
 
             AccountReceivablePayment::create([
-                'invoice_id' => $invoice->id,
+                'customer_sistapp_id'       => $invoice->customer_sistapp_id,
+                'service_order_invoice_id'  => $invoice->id,
+
                 'paid_at'    => $data['paid_at'],
                 'amount'     => $data['amount'],
                 'interest'   => $data['interest']  ?? 0,
@@ -157,6 +159,7 @@ class AccountReceivableController extends Controller
                 'reference'  => $data['reference'] ?? null,
                 'notes'      => $data['notes']     ?? null,
             ]);
+
 
             $invoice->status = 'paid';
             $invoice->save();

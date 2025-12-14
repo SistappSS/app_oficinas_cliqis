@@ -226,6 +226,9 @@ document.addEventListener("DOMContentLoaded", () => {
         nfPaymentMethod.value = "";
         nfInstallments.value  = 1;
 
+        useDown.checked = false;
+        syncDownPaymentUI();
+
         nfModal.classList.remove("hidden");
     }
 
@@ -234,36 +237,64 @@ document.addEventListener("DOMContentLoaded", () => {
         nfModal.classList.add("hidden");
     }
 
+    const useDown  = q("#use_down_payment");
+    const wrapDown = q("#down-payment-wrap");
+    const wrapNo   = q("#no-down-payment-wrap");
+
+    function syncDownPaymentUI() {
+        const on = !!useDown?.checked;
+
+        wrapDown?.classList.toggle("hidden", !on);
+        wrapNo?.classList.toggle("hidden", on);
+
+        const downPercent = wrapDown?.querySelector('input[name="down_payment_percent"]');
+        const remainInst  = wrapDown?.querySelector('input[name="remaining_installments"]');
+        const inst        = wrapNo?.querySelector('input[name="installments"]');
+
+        if (downPercent) downPercent.required = on;
+        if (remainInst)  remainInst.required  = on;
+        if (inst)        inst.required        = !on;
+    }
+
+    useDown?.addEventListener("change", syncDownPaymentUI);
+    syncDownPaymentUI();
+
     if (nfClose)  nfClose.addEventListener("click", closeNfModal);
     if (nfCancel) nfCancel.addEventListener("click", closeNfModal);
 
     if (nfForm) {
-        nfForm.addEventListener("submit", (e) => {
+        nfForm.addEventListener("submit", async (e) => {
             e.preventDefault();
 
-            const payload = {
-                service_order_id: nfOsIdInput.value || null,
-                payment_date: nfPaymentDate.value || null,
-                payment_method: nfPaymentMethod.value || null,
-                installments: Number(nfInstallments.value || 1),
-                amount: Number(nfAmount.value || 0),
-            };
+            const osId = nfOsIdInput.value;
+            if (!osId) return alert("OS inválida.");
 
-            if (!payload.service_order_id) {
-                alert("OS inválida.");
+            const fd = new FormData(nfForm);
+
+            // garante o switch indo como 1/0
+            const useDown = document.querySelector("#use_down_payment")?.checked;
+            fd.set("use_down_payment", useDown ? "1" : "0");
+
+            const res = await fetch(`/service-orders/${osId}/billing/generate`, {
+                method: "POST",
+                headers: {
+                    "Accept": "application/json",
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.content || ""
+                },
+                body: fd
+            });
+
+            const j = await res.json().catch(() => null);
+
+            if (!res.ok || !j?.ok) {
+                console.error(j);
+                alert(j?.message || "Erro ao gerar NF.");
                 return;
             }
-
-            if (!payload.payment_date || !payload.payment_method) {
-                alert("Preencha data de pagamento e forma de pagamento.");
-                return;
-            }
-
-            // POR ENQUANTO: apenas simulação
-            console.log("Payload NF / Contas a Receber (simulado):", payload);
-            alert("Simulação de geração de NF / lançamento em contas a receber.\nDepois plugamos na API real.");
 
             closeNfModal();
+            alert("NF gerada. Títulos lançados em contas a receber.");
+            loadApprovedOrders(); // vai sumir porque status virou nf_emitida
         });
     }
 

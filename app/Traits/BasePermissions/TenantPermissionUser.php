@@ -14,63 +14,63 @@ trait TenantPermissionUser
 
         $prefix = $tenantId . '_';
 
-        $alreadySeeded = Permission::where('guard_name', 'web')
-            ->where('name', 'like', $prefix . '%')
-            ->exists();
-
-        if ($alreadySeeded) {
-            return;
-        }
-
-        $actions = ['visualizar', 'cadastrar', 'editar', 'excluir'];
-
-        $map = [
-            'entidades' => [
-                'clientes',
-                'usuarios',
-                'fornecedores'
-            ],
-
-            'eecursos humanos' => [
-                'departamentos',
-                'beneficios',
-                'beneficios_funcionarios',
-            ],
-
-            'catálogo' => [
-                'tipo_servico',
-                'servico',
-                'equipamentos',
-                'pecas',
-                'pecas_equipamentos',
-            ],
-
-            'ordem de serviço' => [
-                'ordem_servico'
-            ],
-
-            'permissoes' => [
-                'perfis',
-                'permissoes',
-            ]
-        ];
-
-        foreach ($map as $module => $resources) {
-            foreach ($resources as $resource) {
-                foreach ($actions as $action) {
-                    $baseName = "{$action}_{$resource}";
-                    $name     = $prefix . $baseName;
-
-                    Permission::firstOrCreate(
-                        [
-                            'name'       => $name,
-                            'guard_name' => 'web',
-                        ],
-                        []
-                    );
-                }
-            }
-        }
+//        $alreadySeeded = Permission::where('guard_name', 'web')
+//            ->where('name', 'like', $prefix . '%')
+//            ->exists();
+//
+//        if ($alreadySeeded) {
+//            return;
+//        }
+//
+//        $actions = ['visualizar', 'cadastrar', 'editar', 'excluir'];
+//
+//        $map = [
+//            'entidades' => [
+//                'clientes',
+//                'usuarios',
+//                'fornecedores'
+//            ],
+//
+//            'eecursos humanos' => [
+//                'departamentos',
+//                'beneficios',
+//                'beneficios_funcionarios',
+//            ],
+//
+//            'catálogo' => [
+//                'tipo_servico',
+//                'servico',
+//                'equipamentos',
+//                'pecas',
+//                'pecas_equipamentos',
+//            ],
+//
+//            'ordem de serviço' => [
+//                'ordem_servico'
+//            ],
+//
+//            'permissoes' => [
+//                'perfis',
+//                'permissoes',
+//            ]
+//        ];
+//
+//        foreach ($map as $module => $resources) {
+//            foreach ($resources as $resource) {
+//                foreach ($actions as $action) {
+//                    $baseName = "{$action}_{$resource}";
+//                    $name     = $prefix . $baseName;
+//
+//                    Permission::firstOrCreate(
+//                        [
+//                            'name'       => $name,
+//                            'guard_name' => 'web',
+//                        ],
+//                        []
+//                    );
+//                }
+//            }
+//        }
 
         $extras = [
             'aprovar_ordem_servico',
