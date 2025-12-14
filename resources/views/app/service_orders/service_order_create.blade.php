@@ -24,7 +24,8 @@
                 class="relative overflow-hidden rounded-[28px] px-6 py-5 md:px-8 md:py-6 text-white shadow-[0_24px_70px_rgba(37,99,235,0.25)] bg-gradient-to-tr from-sky-400 via-blue-600 to-indigo-800">
                 <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
-                        <div class="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium tracking-wide">
+                        <div
+                            class="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium tracking-wide">
                             <span class="opacity-90">OS</span>
                             <span class="mx-1 opacity-60">•</span>
                             <span class="opacity-90">
@@ -63,29 +64,39 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-sm text-slate-600 mb-1">Nº</label>
-                        <input id="order_number_display" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900" value="{{ $serviceOrder->order_number ?? $displayOrderNumber ?? '' }}" disabled/>
+                        <input id="order_number_display"
+                               class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900"
+                               value="{{ $serviceOrder->order_number ?? $displayOrderNumber ?? '' }}" disabled/>
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-sm text-slate-600 mb-1">Data</label>
-                        <input id="order_date" type="date" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900" value="{{ now()->format('Y-m-d') }}"/>
+                        <input id="order_date" type="date"
+                               class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900"
+                               value="{{ now()->format('Y-m-d') }}"/>
                     </div>
                 </div>
 
                 <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm text-slate-600 mb-1">Solicitante</label>
-                        <input id="requester_name" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm" placeholder="Nome do solicitante" value="{{ old('requester_name', $serviceOrder->requester_name ?? '') }}"/>
+                        <input id="requester_name"
+                               class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm"
+                               placeholder="Nome do solicitante"
+                               value="{{ old('requester_name', $serviceOrder->requester_name ?? '') }}"/>
                     </div>
                     <div>
                         <label class="block text-sm text-slate-600 mb-1">Responsável pelo serviço</label>
-                        <input id="service_responsible" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm" value="{{ $technicianName }}" @if($technicianName) disabled @endif/>
+                        <input id="service_responsible"
+                               class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm"
+                               value="{{ $technicianName }}" @if($technicianName) disabled @endif/>
                         <input type="hidden" id="technician_id" value="{{ $technicianId }}">
                     </div>
                 </div>
             </section>
 
             {{-- CLIENTE --}}
-            <section class="bg-white rounded-[24px] border border-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.04)] p-5 md:p-7">
+            <section
+                class="bg-white rounded-[24px] border border-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.04)] p-5 md:p-7">
                 <h2 class="font-semibold text-slate-900 mb-5 text-lg">Cliente</h2>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -93,21 +104,30 @@
                         <label class="block text-sm text-slate-600 mb-1">
                             Cliente / Razão Social *
                         </label>
-                        <input id="os_client_name" name="customer_name" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition" placeholder="Ex.: BAR DO SANTO" value="{{ old('customer_name', $serviceOrder->customer_name ?? '') }}"/>
-                        <div id="os_client_results" class="absolute z-30 mt-1 w-full rounded-2xl border border-slate-200 bg-white shadow-lg hidden max-h-64 overflow-auto text-xs"></div>
+                        <input id="os_client_name" name="customer_name"
+                               class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
+                               placeholder="Ex.: BAR DO SANTO"
+                               value="{{ old('customer_name', $serviceOrder->customer_name ?? '') }}"/>
+                        <div id="os_client_results"
+                             class="absolute z-30 mt-1 w-full rounded-2xl border border-slate-200 bg-white shadow-lg hidden max-h-64 overflow-auto text-xs"></div>
                     </div>
 
                     <div>
                         <label class="block text-sm text-slate-600 mb-1">
                             CNPJ / CPF
                         </label>
-                        <input id="cpfCnpj" name="customer_document" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition" placeholder="00.000.000/0000-00" value="{{ old('customer_document', $serviceOrder->customer_document ?? '') }}"/>
+                        <input id="cpfCnpj" name="customer_document"
+                               class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
+                               placeholder="00.000.000/0000-00"
+                               value="{{ old('customer_document', $serviceOrder->customer_document ?? '') }}"/>
                     </div>
                     <div>
                         <label class="block text-sm text-slate-600 mb-1">
                             E-mail
                         </label>
-                        <input id="os_client_email" name="email" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition" placeholder="Endereço de e-mail" value="{{ old('email', $serviceOrder->email ?? '') }}"/>
+                        <input id="os_client_email" name="email"
+                               class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
+                               placeholder="Endereço de e-mail" value="{{ old('email', $serviceOrder->email ?? '') }}"/>
                     </div>
                 </div>
 
@@ -116,14 +136,20 @@
                         <label class="block text-sm text-slate-600 mb-1">
                             Telefone
                         </label>
-                        <input id="mobilePhone" name="customer_phone" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition" placeholder="(11) 99999-9999" value="{{ old('customer_phone', $serviceOrder->customer_phone ?? '') }}"/>
+                        <input id="mobilePhone" name="customer_phone"
+                               class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
+                               placeholder="(11) 99999-9999"
+                               value="{{ old('customer_phone', $serviceOrder->customer_phone ?? '') }}"/>
                     </div>
 
                     <div>
                         <label class="block text-sm text-slate-600 mb-1">
                             Chamado / Ticket
                         </label>
-                        <input id="ticket_number" name="ticket_number" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition" placeholder="Opcional" value="{{ old('ticket_number', $serviceOrder->ticket_number ?? '') }}"/>
+                        <input id="ticket_number" name="ticket_number"
+                               class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
+                               placeholder="Opcional"
+                               value="{{ old('ticket_number', $serviceOrder->ticket_number ?? '') }}"/>
                     </div>
 
                     <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -131,19 +157,27 @@
                             <label class="block text-sm text-slate-600 mb-1">
                                 CEP
                             </label>
-                            <input id="postalCode" name="postal_code" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition" placeholder="00000-000" value="{{ old('postal_code', $serviceOrder->postal_code ?? '') }}"/>
+                            <input id="postalCode" name="postal_code"
+                                   class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
+                                   placeholder="00000-000"
+                                   value="{{ old('postal_code', $serviceOrder->postal_code ?? '') }}"/>
                         </div>
                         <div>
                             <label class="block text-sm text-slate-600 mb-1">
                                 Número
                             </label>
-                            <input id="addressNumber" name="addressNumber" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition" placeholder="000" value="{{ old('address', $serviceOrder->address ?? '') }}"/>
+                            <input id="addressNumber" name="addressNumber"
+                                   class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
+                                   placeholder="000" value="{{ old('address', $serviceOrder->address ?? '') }}"/>
                         </div>
                         <div>
                             <label class="block text-sm text-slate-600 mb-1">
                                 Complemento
                             </label>
-                            <input id="complement" name="complement" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition" placeholder="Apartamento X" value="{{ old('address', $serviceOrder->address ?? '') }}"/>
+                            <input id="complement" name="complement"
+                                   class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
+                                   placeholder="Apartamento X"
+                                   value="{{ old('address', $serviceOrder->address ?? '') }}"/>
                         </div>
                     </div>
 
@@ -152,17 +186,25 @@
                             <label class="block text-sm text-slate-600 mb-1">
                                 Endereço
                             </label>
-                            <input id="address" name="address" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition" placeholder="Rua ..." value="{{ old('address', $serviceOrder->address ?? '') }}" disabled />
+                            <input id="address" name="address"
+                                   class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
+                                   placeholder="Rua ..." value="{{ old('address', $serviceOrder->address ?? '') }}"
+                                   disabled/>
                         </div>
                         <div>
                             <label class="block text-sm text-slate-600 mb-1">
                                 Cidade
                             </label>
-                            <input id="cityName" name="city" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition" placeholder="Cidade" value="{{ old('city', $serviceOrder->city ?? '') }}" disabled />
+                            <input id="cityName" name="city"
+                                   class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
+                                   placeholder="Cidade" value="{{ old('city', $serviceOrder->city ?? '') }}" disabled/>
                         </div>
                         <div>
                             <label class="block text-sm text-slate-600 mb-1">UF</label>
-                            <input id="state" name="state" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition" placeholder="SP" maxlength="2" value="{{ old('state', $serviceOrder->state ?? '') }}" disabled />
+                            <input id="state" name="state"
+                                   class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
+                                   placeholder="SP" maxlength="2" value="{{ old('state', $serviceOrder->state ?? '') }}"
+                                   disabled/>
                         </div>
                     </div>
                 </div>
@@ -385,8 +427,7 @@
         </form>
 
         {{-- BARRA INFERIOR FIXA --}}
-        <div
-            class="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-18px_40px_rgba(15,23,42,0.12)]">
+        <div class="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-18px_40px_rgba(15,23,42,0.12)]">
             <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div class="flex-1 flex flex-wrap gap-6 text-xs text-slate-600">
                     <div class="flex flex-col leading-4">
@@ -416,22 +457,14 @@
                 </div>
 
                 <div class="flex gap-2">
-                    <button
-                        type="button"
-                        id="btn-save-os"
-                        class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100"
-                    >
-                        💾
-                        <span>Salvar</span>
+                    <button type="button" id="btn-save-os"
+                            class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100">
+                        💾<span>Salvar</span></button>
+                    <button type="button" id="btn-finish-os"
+                            class="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700">
+                        ✉️
+                        <span>Finalizar</span>
                     </button>
-                  <button
-  type="button"
-  id="btn-finish-os"
-  class="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
->
-  ✉️
-  <span>Finalizar</span>
-</button>
 
                 </div>
             </div>
@@ -601,10 +634,10 @@
                                 class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
                             Limpar
                         </button>
-                       <button type="button" id="signature-save"
-  class="inline-flex items-center rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700">
-  Salvar assinatura
-</button>
+                        <button type="button" id="signature-save"
+                                class="inline-flex items-center rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700">
+                            Salvar assinatura
+                        </button>
 
                     </div>
                 </div>

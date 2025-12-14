@@ -326,4 +326,13 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 Route::get('/run/{tenantId}', [DashboardController::class, 'run']);
 
 
+/*
 
+Ultima mexida foi em ordem de serviço, analisado que precisamos criar um json na tabela de orders. Caso não quiser salvos o cliente, esse json irá ser salvo
+assim da pra saber quem é o cliente da order de serviço. (utilizar os mesmos dados).
+
+Se selecionar pra salvar o cliente, o json pode ser salvo também mas não será preciso.
+
+Está salvado o cliente no banco, mas peças/equipamentos... não.
+
+*/

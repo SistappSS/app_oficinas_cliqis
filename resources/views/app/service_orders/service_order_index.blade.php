@@ -6,20 +6,17 @@
             <h1 class="text-xl font-semibold">Ordens de serviço</h1>
 
             <div class="ml-auto flex items-center gap-2 shrink-0">
-                {{-- Nova OS --}}
                 <a href="{{ route('service-order.create') }}"
                    id="btn-add"
                    class="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-800">
                     Nova OS
                 </a>
 
-                {{-- Exportar (depois ligamos na rota/CSV) --}}
                 <button
                     class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow hover:bg-slate-50">
                     Exportar
                 </button>
 
-                {{-- Toggle header (segue padrão das outras telas, se já tiver script global) --}}
                 <button id="toggle-header"
                         class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow hover:bg-slate-50"
                         aria-expanded="true" aria-controls="header-collapsible" type="button"

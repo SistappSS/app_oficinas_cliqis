@@ -50,8 +50,9 @@ class ServiceTypeController extends Controller
         ]);
 
         $validated['is_active'] = (bool)($validated['is_active'] ?? true);
+        $validated['customer_sistapp_id'] = $this->employeeSistappID();
 
-        return $this->storeMethod($this->serviceType, $validated);
+        return $this->trait("store", $this->serviceType->create($validated));
     }
 
     public function show(string $id)
