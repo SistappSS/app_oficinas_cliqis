@@ -471,7 +471,7 @@
                     </div>
                     <div class="flex flex-col leading-4">
                         <span>Total</span>
-                        <span id="footer-grand-value" class="font-semibold text-indigo-600 text-sm">
+                        <span id="footer-grand-value" class="font-semibold text-blue-700 text-sm">
                             R$ 0,00
                         </span>
                     </div>
@@ -486,14 +486,15 @@
                         💾
                         <span>Salvar</span>
                     </button>
-                    <button
-                        type="button"
-                        id="btn-finish-os"
-                        class="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
-                    >
-                        ✉️
-                        <span>Finalizar</span>
-                    </button>
+                  <button
+  type="button"
+  id="btn-finish-os"
+  class="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
+>
+  ✉️
+  <span>Finalizar</span>
+</button>
+
                 </div>
             </div>
         </div>
@@ -662,10 +663,11 @@
                                 class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
                             Limpar
                         </button>
-                        <button type="button" id="signature-save"
-                                class="inline-flex items-center rounded-xl bg-brand-600 px-4 py-2 text-xs font-semibold text-white hover:bg-brand-700">
-                            Salvar assinatura
-                        </button>
+                       <button type="button" id="signature-save"
+  class="inline-flex items-center rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700">
+  Salvar assinatura
+</button>
+
                     </div>
                 </div>
             </div>

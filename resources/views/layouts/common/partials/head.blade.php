@@ -70,6 +70,9 @@
         }
         html.loading #route-preloader { opacity: 1; transform: scaleX(.35); }
 
+        html { font-size: 90%; }
+
+
     </style>
 
     @stack('styles')
