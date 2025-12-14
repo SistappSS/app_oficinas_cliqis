@@ -68,7 +68,9 @@ class PartController extends Controller
             'is_active'   => ['boolean'],
         ]);
 
-        return $this->storeMethod($this->part, $validated);
+        $validated['customer_sistapp_id'] = $this->employeeSistappID();
+
+        return $this->trait("store", $this->part->create($validated));
     }
 
     public function update(Request $request, string $id)
