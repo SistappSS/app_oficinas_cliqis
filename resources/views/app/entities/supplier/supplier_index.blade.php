@@ -3,7 +3,7 @@
 @section('content')
     <div class="mx-auto max-w-7xl px-4 sm:px-6">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h1 class="text-xl font-semibold">Fornecedors</h1>
+            <h1 class="text-xl font-semibold">Fornecedores</h1>
         </div>
 
         <!-- busca + ações na mesma linha -->

@@ -42,14 +42,13 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $tenantId = CustomerContext::get();
-        if (!$tenantId) {
-            abort(403, 'Tenant não definido.');
-        }
+        abort_if(! $tenantId, 403, 'Tenant não definido.');
 
         $ids = $this->tenantUserIds();
 
         $query = User::query()
             ->with(['roles', 'permissions'])
+            ->when($ids->isEmpty(), fn($q) => $q->whereRaw('1=0'))
             ->when($ids->isNotEmpty(), fn($q) => $q->whereIn('id', $ids))
             ->orderBy('name');
 
@@ -63,7 +62,7 @@ class UserController extends Controller
         $data = $query->paginate(20);
 
         $ownerIds    = CustomerUserLogin::where('customer_sistapp_id', $tenantId)->pluck('user_id');
-        $employeeIds = CustomerEmployeeUser::pluck('user_id'); // filtrado por HasCustomerScope
+        $employeeIds = CustomerEmployeeUser::pluck('user_id');
 
         $data->getCollection()->transform(function (User $user) use ($ownerIds, $employeeIds) {
             if ($ownerIds->contains($user->id)) {

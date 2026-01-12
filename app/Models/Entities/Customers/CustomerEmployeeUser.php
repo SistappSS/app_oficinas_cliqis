@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 class CustomerEmployeeUser extends Model
 {
     use HasUuids;
+    use HasCustomerScope;
 
     public $incrementing = false;
     protected $keyType = 'string';

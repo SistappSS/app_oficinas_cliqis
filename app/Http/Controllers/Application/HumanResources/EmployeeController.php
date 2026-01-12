@@ -40,6 +40,17 @@ class EmployeeController extends Controller
             ->with('department')
             ->orderBy('full_name');
 
+        // 1) só ativos (opcional mas recomendado)
+        if ($request->boolean('only_active', true)) {
+            $q->where('is_active', true);
+        }
+
+        // 2) filtro técnico (usado no typeahead)
+        if ($request->boolean('is_technician')) {
+            $q->where('is_technician', true);
+        }
+
+        // 3) busca
         if ($term = trim($request->input('q', ''))) {
             $q->where(function ($w) use ($term) {
                 $w->where('full_name', 'like', "%{$term}%")
@@ -47,6 +58,12 @@ class EmployeeController extends Controller
                     ->orWhere('phone', 'like', "%{$term}%")
                     ->orWhere('document_number', 'like', "%{$term}%");
             });
+        }
+
+        if ($request->boolean('typeahead')) {
+            return response()->json([
+                'data' => $q->limit(20)->get(['id','full_name','hourly_rate']),
+            ]);
         }
 
         $data = $q->paginate(20);

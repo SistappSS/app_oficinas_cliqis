@@ -366,13 +366,11 @@ document.addEventListener("DOMContentLoaded", () => {
             input: technicianNameInput,
             hiddenIdInput: technicianIdInput,
             searchUrl: ROUTES.employee,
-            extraQuery: "&is_technician=1",
+            extraQuery: "&is_technician=1&only_active=1&typeahead=1",
             mapItem: (e) => ({
                 id: e.id,
                 label: e.full_name,
-                sublabel: e.hourly_rate
-                    ? `R$ ${formatCurrency(toNumber(e.hourly_rate))}/h`
-                    : "",
+                sublabel: e.hourly_rate ? `R$ ${formatCurrency(toNumber(e.hourly_rate))}/h` : "",
                 hourly_rate: e.hourly_rate,
             }),
             onSelect: (item) => {
@@ -382,6 +380,35 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             },
         });
+
+        technicianNameInput.addEventListener("blur", debounce(async () => {
+            // se já escolheu da lista, não faz nada
+            if (technicianIdInput?.value) return;
+
+            const id = await ensureEntityId({
+                inputEl: technicianNameInput,
+                hiddenIdEl: technicianIdInput,
+                searchUrl: ROUTES.employee,
+                createUrl: ROUTES.employee,
+                buildCreateBody: (label) => ({
+                    full_name: label,
+                    email: null,
+                    phone: null,
+                    document_number: null,
+                    position: "Técnico",
+                    hourly_rate: toNumber(laborHourValueInput?.value || 0),
+                    is_technician: true,
+                    is_active: true,
+                }),
+                pickFirstMatch: (json) => {
+                    const data = Array.isArray(json) ? json : (json.data || []);
+                    const label = technicianNameInput.value.trim().toLowerCase();
+                    return data.find(e => (e.full_name || "").trim().toLowerCase() === label) || null;
+                }
+            });
+
+            if (id) recalcTotals();
+        }, 350));
     }
 
     // ========== BLOCS DINÂMICOS ==========
@@ -500,9 +527,31 @@ document.addEventListener("DOMContentLoaded", () => {
                 notesInput.value = eq.description;
         };
 
-        nameInput.addEventListener("blur", () =>
-            autoFillEquipment(nameInput.value)
-        );
+        nameInput.addEventListener("blur", debounce(async () => {
+            if (idInput.value) return;
+            const label = nameInput.value.trim();
+            if (!label) return;
+
+            await ensureEntityId({
+                inputEl: nameInput,
+                hiddenIdEl: idInput,
+                searchUrl: ROUTES.equipment,
+                createUrl: ROUTES.equipment,
+                buildCreateBody: (name) => ({
+                    code: serialInput.value.trim() || null,
+                    name,
+                    description: notesInput.value.trim() || null,
+                    serial_number: serialInput.value.trim() || null,
+                    notes: locInput.value.trim() || null,
+                }),
+                pickFirstMatch: (json) => {
+                    const data = Array.isArray(json) ? json : (json.data || []);
+                    const v = label.toLowerCase();
+                    return data.find(e => (e.name || "").trim().toLowerCase() === v) || null;
+                }
+            });
+        }, 350));
+
         serialInput.addEventListener("blur", () =>
             autoFillEquipment(serialInput.value)
         );
@@ -606,9 +655,34 @@ document.addEventListener("DOMContentLoaded", () => {
             recalcRow();
         };
 
-        descInput.addEventListener("blur", () =>
-            autoFillService(descInput.value)
-        );
+        descInput.addEventListener("blur", debounce(async () => {
+            if (idInput.value) return;
+            const label = descInput.value.trim();
+            if (!label) return;
+
+            const newId = await ensureEntityId({
+                inputEl: descInput,
+                hiddenIdEl: idInput,
+                searchUrl: ROUTES.part,
+                createUrl: ROUTES.part,
+                buildCreateBody: (name) => ({
+                    code: codeInput.value.trim() || null,
+                    name,
+                    description: name,
+                    ncm_code: null,
+                    unit_price: toNumber(unitInput.value || 0),
+                    supplier_id: null,
+                    is_active: true,
+                }),
+                pickFirstMatch: (json) => {
+                    const data = Array.isArray(json) ? json : (json.data || []);
+                    const v = label.toLowerCase();
+                    return data.find(p => (p.name || "").trim().toLowerCase() === v) || null;
+                }
+            });
+
+            if (newId) recalcRow();
+        }, 350));
 
         serviceListEl.appendChild(row);
         recalcRow();
@@ -1045,11 +1119,75 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
+    function ensureTechnicianSelected() {
+        const name = technicianNameInput?.value?.trim() || "";
+        const id = technicianIdInput?.value || "";
+
+        if (!name) {
+            alert("Selecione um técnico.");
+            technicianNameInput?.focus();
+            return false;
+        }
+
+        // se digitou algo e não selecionou da lista
+        if (!id) {
+            alert("Selecione um técnico na lista (não só digite).");
+            technicianNameInput?.focus();
+            return false;
+        }
+
+        return true;
+    }
+
+    async function ensureTechnicianIdOrCreate() {
+        const name = technicianNameInput?.value?.trim() || "";
+        if (!name) {
+            alert("Informe o técnico.");
+            technicianNameInput?.focus();
+            return null;
+        }
+
+        if (technicianIdInput?.value) return technicianIdInput.value;
+
+        // cria se não existe
+        const id = await ensureEntityId({
+            inputEl: technicianNameInput,
+            hiddenIdEl: technicianIdInput,
+            searchUrl: ROUTES.employee,
+            createUrl: ROUTES.employee,
+            buildCreateBody: (label) => ({
+                full_name: label,
+                email: null,
+                phone: null,
+                document_number: null,
+                position: "Técnico",
+                hourly_rate: toNumber(laborHourValueInput?.value || 0),
+                is_technician: true,
+                is_active: true,
+            }),
+            pickFirstMatch: (json) => {
+                const data = Array.isArray(json) ? json : (json.data || []);
+                const label = technicianNameInput.value.trim().toLowerCase();
+                return data.find(e => (e.full_name || "").trim().toLowerCase() === label) || null;
+            }
+        });
+
+        if (!id) {
+            alert("Não foi possível criar/selecionar o técnico.");
+            return null;
+        }
+
+        return id;
+    }
+
     async function submitServiceOrder(status) {
         if (state.saving) return null;
         state.saving = true;
 
         try {
+            const techId = await ensureTechnicianIdOrCreate();
+            if (!techId) return null;
+
             const payload = await buildPayload(status);
             const id = payload.id;
             const isUpdate = !!id;
@@ -1210,6 +1348,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnSave && saveModal) {
         btnSave.addEventListener("click", (e) => {
             e.preventDefault();
+            if (!ensureTechnicianSelected()) return;
             saveModal.classList.remove("hidden");
             saveModal.classList.add("flex");
         });
@@ -1251,6 +1390,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnFinish && finalizeModal) {
         btnFinish.addEventListener("click", (e) => {
             e.preventDefault();
+            if (!ensureTechnicianSelected()) return;
 
             const hasEmail =
                 clientEmailInput && clientEmailInput.value.trim() !== "";
@@ -1496,6 +1636,59 @@ document.addEventListener("DOMContentLoaded", () => {
         window.addEventListener('resize', () => {
             if (signatureCanvas._resizeCanvas) signatureCanvas._resizeCanvas();
         });
+    }
+
+    async function ensureEntityId({
+                                      inputEl,
+                                      hiddenIdEl,
+                                      searchUrl,
+                                      createUrl,
+                                      buildCreateBody,
+                                      pickFirstMatch, // (json) => item|null
+                                      minChars = 2,
+                                  }) {
+        if (!inputEl) return null;
+
+        const label = inputEl.value.trim();
+        const currentId = hiddenIdEl?.value || "";
+
+        if (currentId) return currentId;          // já selecionado
+        if (!label || label.length < minChars) return null;
+
+        // 1) tenta achar "igual" via search (pra evitar duplicar)
+        try {
+            const res = await fetch(`${searchUrl}?q=${encodeURIComponent(label)}&typeahead=1`, {
+                headers: { Accept: "application/json" },
+            });
+            if (res.ok) {
+                const json = await res.json();
+                const found = pickFirstMatch ? pickFirstMatch(json) : null;
+                if (found?.id) {
+                    if (hiddenIdEl) hiddenIdEl.value = found.id;
+                    // garante nome bonitinho
+                    if (found.full_name) inputEl.value = found.full_name;
+                    if (found.name) inputEl.value = found.name;
+                    return found.id;
+                }
+            }
+        } catch (e) {
+            // ignora e segue pra criar
+        }
+
+        // 2) cria
+        const body = buildCreateBody(label);
+        const created = await postJson(createUrl, body);
+        const createdData = created.data || created;
+
+        if (createdData?.id) {
+            if (hiddenIdEl) hiddenIdEl.value = createdData.id;
+            // normaliza label
+            if (createdData.full_name) inputEl.value = createdData.full_name;
+            if (createdData.name) inputEl.value = createdData.name;
+            return createdData.id;
+        }
+
+        return null;
     }
 
     // ========== INIT ==========

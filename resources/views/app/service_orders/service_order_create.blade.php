@@ -4,17 +4,36 @@
     <main class="mx-auto max-w-6xl px-4 sm:px-6 pb-32 pt-6">
         @php
             $userAuth = auth()->user();
-            $technicianAuth = \App\Models\Entities\Customers\CustomerEmployeeUser::where('user_id', $userAuth->id)->first();
-            $technicianEmployee = \App\Models\HumanResources\Employees\Employee::where('id', $technicianAuth->employee_id)->where('is_technician', true)->where('is_active', true)->first();
 
-            $technician     = $serviceOrder->technician ?? $technicianEmployee;
-            $technicianName = $technician->full_name ?? $technicianEmployee?->full_name;
-            $technicianId   = $technician->id ?? $technicianAuth->employee_id;
+            $technicianAuth = \App\Models\Entities\Customers\CustomerEmployeeUser::where('user_id', $userAuth->id)->first();
+
+            $technicianEmployee = null;
+            if ($technicianAuth?->employee_id) {
+                $technicianEmployee = \App\Models\HumanResources\Employees\Employee::query()
+                    ->where('id', $technicianAuth->employee_id)
+                    ->where('is_technician', true)
+                    ->where('is_active', true)
+                    ->first();
+            }
+
+            // prioridade:
+            // 1) técnico já definido na OS (edição)
+            // 2) técnico do login (se for funcionário)
+            // 3) null (se for usuário principal e não existir técnico)
+            $technician = $serviceOrder->technician ?? $technicianEmployee;
+
+            $technicianName = $technician?->full_name ?? null;
+            $technicianId   = $technician?->id ?? null;
+
+            // fallback de exibição se não tiver técnico
+            if (! $technicianName) {
+                $technicianName = $userAuth->name; // ou deixa vazio, se preferir
+            }
 
             $laborHourDefault = old(
                 'hourly_rate',
                 $serviceOrder->labor_hour_value
-                    ?? ($technician->hourly_rate ?? null)
+                    ?? ($technician?->hourly_rate ?? null)
             );
         @endphp
 
@@ -84,12 +103,13 @@
                                placeholder="Nome do solicitante"
                                value="{{ old('requester_name', $serviceOrder->requester_name ?? '') }}"/>
                     </div>
-                    <div>
+                    <div class="relative">
                         <label class="block text-sm text-slate-600 mb-1">Responsável pelo serviço</label>
                         <input id="service_responsible"
                                class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm"
-                               value="{{ $technicianName }}" @if($technicianName) disabled @endif/>
-                        <input type="hidden" id="technician_id" value="{{ $technicianId }}">
+                               placeholder="Digite o nome do técnico..."
+                               value="{{ old('service_responsible', $technicianName ?? '') }}" />
+                        <input type="hidden" id="technician_id" value="{{ $technicianId ?? '' }}">
                     </div>
                 </div>
             </section>

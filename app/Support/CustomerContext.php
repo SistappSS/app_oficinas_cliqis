@@ -3,7 +3,7 @@
 namespace App\Support;
 
 use Illuminate\Support\Facades\Auth;
-use App\Models\Entities\Customers\CustomerEmployeeUser;
+use Illuminate\Support\Facades\DB;
 
 final class CustomerContext
 {
@@ -17,36 +17,26 @@ final class CustomerContext
 
     public static function get(): ?string
     {
-        // se já foi setado (via login, impersonate, for(), etc), só devolve
-        if (static::$id !== null) {
-            return static::$id;
-        }
-
-        // se estiver em bypass, não resolve nada (scope não será aplicado)
-        if (static::$bypass) {
-            return null;
-        }
+        if (static::$id !== null) return static::$id;
+        if (static::$bypass) return null;
 
         $user = Auth::user();
-        if (! $user) {
-            return null;
-        }
+        if (! $user) return null;
 
-        // 1) CUSTOMER PRINCIPAL (customer_user_login)
-        // ajuste esse relacionamento pro que você já usa hoje (ex.: customerLogin)
+        // 1) OWNER
         $login = $user->customerLogin ?? null;
         if ($login && $login->customer_sistapp_id) {
             static::$id = $login->customer_sistapp_id;
             return static::$id;
         }
 
-        // 2) EMPLOYEE (técnico) -> tabela customer_employee_users
-        $link = CustomerEmployeeUser::where('user_id', $user->id)->first();
+        // 2) EMPLOYEE (sem Eloquent pra não disparar scopes/boot)
+        $tenantId = DB::table('customer_employee_users')
+            ->where('user_id', $user->id)
+            ->value('customer_sistapp_id');
 
-        if ($link) {
-            // ajuste o nome da coluna conforme sua tabela:
-            // se for "customer_sistapp_id", ótimo. Se for "customer_id", troca aqui.
-            static::$id = $link->customer_sistapp_id ?? $link->customer_id;
+        if ($tenantId) {
+            static::$id = $tenantId;
             return static::$id;
         }
 
@@ -68,10 +58,7 @@ final class CustomerContext
         $prev = static::$id;
         static::$id = $id;
 
-        try {
-            return $cb();
-        } finally {
-            static::$id = $prev;
-        }
+        try { return $cb(); }
+        finally { static::$id = $prev; }
     }
 }
