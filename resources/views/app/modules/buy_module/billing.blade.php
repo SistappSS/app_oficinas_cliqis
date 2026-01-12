@@ -7,7 +7,7 @@
         </style>
     @endpush
 
-    <main class="mx-auto max-w-7xl w-full px-6">
+    <main class="mx-auto max-w-7xl w-full pt-3 px-6">
         @if (session('error'))
             <div id="alert-error"
                  class="mb-4 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-800"

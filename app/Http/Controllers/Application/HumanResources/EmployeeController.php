@@ -40,6 +40,17 @@ class EmployeeController extends Controller
             ->with('department')
             ->orderBy('full_name');
 
+        // 1) só ativos (opcional mas recomendado)
+        if ($request->boolean('only_active', true)) {
+            $q->where('is_active', true);
+        }
+
+        // 2) filtro técnico (usado no typeahead)
+        if ($request->boolean('is_technician')) {
+            $q->where('is_technician', true);
+        }
+
+        // 3) busca
         if ($term = trim($request->input('q', ''))) {
             $q->where(function ($w) use ($term) {
                 $w->where('full_name', 'like', "%{$term}%")
@@ -47,6 +58,12 @@ class EmployeeController extends Controller
                     ->orWhere('phone', 'like', "%{$term}%")
                     ->orWhere('document_number', 'like', "%{$term}%");
             });
+        }
+
+        if ($request->boolean('typeahead')) {
+            return response()->json([
+                'data' => $q->limit(20)->get(['id','full_name','hourly_rate']),
+            ]);
         }
 
         $data = $q->paginate(20);
@@ -59,10 +76,10 @@ class EmployeeController extends Controller
         $ownerUserId = $this->userAuth();
 
         $validated = $request->validate([
-            'department_id'   => ['required', 'uuid'],
+            'department_id'   => ['nullable', 'uuid'],
             'full_name'       => ['required', 'string', 'max:255'],
             'email'           => [
-                'required',
+                'nullable',
                 'email',
                 'max:255',
                 Rule::unique('users', 'email'),
@@ -75,9 +92,7 @@ class EmployeeController extends Controller
             'is_active'       => ['sometimes', 'boolean'],
             'user_id'         => ['nullable', 'uuid'],
         ], [
-            'department_id.required' => 'Selecione um departamento para esse funcionário.',
             'full_name.required' => 'Insira um nome para esse funcionário.',
-            'email.required' => 'Insira um e-mail de acesso para esse funcionário.'
         ]);
 
         $validated['is_technician'] = (bool)($validated['is_technician'] ?? false);

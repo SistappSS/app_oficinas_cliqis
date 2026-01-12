@@ -141,7 +141,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const typeLabel =
                 u.type === "owner"
-                    ? "Cliente principal"
+                    ? "Usuário principal"
                     : u.type === "employee"
                         ? "Funcionário"
                         : "Outro";
