@@ -12,6 +12,7 @@ use App\Traits\CrudResponse;
 use App\Traits\RoleCheckTrait;
 use App\Traits\WebIndex;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class SecondaryCustomerController extends Controller
 {
@@ -55,8 +56,10 @@ class SecondaryCustomerController extends Controller
     {
         $request->validated();
 
+        $customerSistappId = Auth::user()->customerLogin->customer_sistapp_id;
+
         $data = [
-            'customer_sistapp_id' => $this->employeeSistappID(),
+            'customer_sistapp_id' => $customerSistappId,
             'name' => $request->name,
             'cpfCnpj' => $request->cpfCnpj,
             'mobilePhone' => $request->mobilePhone,

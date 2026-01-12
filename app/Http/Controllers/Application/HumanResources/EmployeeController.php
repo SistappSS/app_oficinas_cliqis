@@ -76,10 +76,10 @@ class EmployeeController extends Controller
         $ownerUserId = $this->userAuth();
 
         $validated = $request->validate([
-            'department_id'   => ['required', 'uuid'],
+            'department_id'   => ['nullable', 'uuid'],
             'full_name'       => ['required', 'string', 'max:255'],
             'email'           => [
-                'required',
+                'nullable',
                 'email',
                 'max:255',
                 Rule::unique('users', 'email'),
@@ -92,9 +92,7 @@ class EmployeeController extends Controller
             'is_active'       => ['sometimes', 'boolean'],
             'user_id'         => ['nullable', 'uuid'],
         ], [
-            'department_id.required' => 'Selecione um departamento para esse funcionário.',
             'full_name.required' => 'Insira um nome para esse funcionário.',
-            'email.required' => 'Insira um e-mail de acesso para esse funcionário.'
         ]);
 
         $validated['is_technician'] = (bool)($validated['is_technician'] ?? false);

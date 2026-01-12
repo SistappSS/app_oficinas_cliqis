@@ -255,9 +255,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ========== CLIENTE (search + preencher) ==========
+    // ========== CLIENTE (search + preencher + auto-create) ==========
     async function searchCustomers(term) {
         const url = new URL(ROUTES.customerSearch, window.location.origin);
         url.searchParams.set("q", term);
+        url.searchParams.set("typeahead", "1"); // opcional
 
         const resp = await fetch(url.toString(), {
             headers: { Accept: "application/json" },
@@ -269,7 +271,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const json = await resp.json();
-        return json.data || [];
+        const data = Array.isArray(json) ? json : (json.data || []);
+        return data;
     }
 
     let lastCustomerResults = [];
@@ -290,6 +293,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (clientCityInput) clientCityInput.value = c.cityName || "";
         if (clientStateInput) clientStateInput.value = c.state || "";
         if (clientZipInput) clientZipInput.value = c.postalCode || "";
+
+        // >>> AQUI: seta o id do cliente selecionado
+        if (customerIdInput) customerIdInput.value = c.id || "";
     }
 
     function renderCustomerResults(items) {
@@ -303,39 +309,85 @@ document.addEventListener("DOMContentLoaded", () => {
 
         lastCustomerResults = items;
         clientResults.innerHTML = items
-            .map(
-                (c, idx) => `
+            .map((c, idx) => `
             <button type="button"
                     class="block w-full px-3 py-2 text-left hover:bg-slate-50"
                     data-index="${idx}">
-                <div class="text-xs font-medium text-slate-900">${c.name}</div>
+                <div class="text-xs font-medium text-slate-900">${c.name || "-"}</div>
                 <div class="text-[11px] text-slate-500">
                     ${(c.cpfCnpj || "")} ${(c.cityName || "")}/${c.state || ""}
                 </div>
             </button>
-        `
-            )
+        `)
             .join("");
 
         clientResults.classList.remove("hidden");
 
-        clientResults
-            .querySelectorAll("button[data-index]")
-            .forEach((btn) => {
-                btn.addEventListener("click", () => {
-                    const idx = parseInt(btn.dataset.index, 10);
-                    const c = lastCustomerResults[idx];
-                    applyCustomerToForm(c);
-                    clientResults.classList.add("hidden");
-                    clientResults.innerHTML = "";
-                    // não seto secondary_customer_id aqui, porque é outra tabela
-                });
+        clientResults.querySelectorAll("button[data-index]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const idx = parseInt(btn.dataset.index, 10);
+                const c = lastCustomerResults[idx];
+
+                applyCustomerToForm(c);
+
+                clientResults.classList.add("hidden");
+                clientResults.innerHTML = "";
             });
+        });
+    }
+
+    async function ensureCustomerIdOrCreate() {
+        if (!clientNameInput) return null;
+
+        const name = clientNameInput.value.trim();
+        if (!name) return null;
+
+        // se já veio de seleção
+        if (customerIdInput?.value) return customerIdInput.value;
+
+        // tenta achar igual pra não duplicar
+        try {
+            const items = await searchCustomers(name);
+            const normalized = name.toLowerCase();
+            const found = items.find(c => (c.name || "").trim().toLowerCase() === normalized);
+
+            if (found?.id) {
+                applyCustomerToForm(found);
+                return found.id;
+            }
+        } catch (e) {}
+
+        // cria
+        const created = await postJson(ROUTES.customer, {
+            name: name,
+            cpfCnpj: clientDocInput?.value || null,
+            email: clientEmailInput?.value || null,
+            mobilePhone: clientPhoneInput?.value || null,
+            address: clientAddressInput?.value || null,
+            addressNumber: clientAddressNumberInput?.value || null,
+            postalCode: clientZipInput?.value || null,
+            cityName: clientCityInput?.value || null,
+            state: clientStateInput?.value || null,
+            province: clientProvinceInput?.value || null,
+            complement: clientComplementInput?.value || null,
+        });
+
+        const data = created.data || created;
+        if (data?.id) {
+            if (customerIdInput) customerIdInput.value = data.id;
+            return data.id;
+        }
+
+        return null;
     }
 
     if (clientNameInput && clientResults) {
         const handleClientInput = debounce(async () => {
             const term = clientNameInput.value.trim();
+
+            // qualquer digitação invalida o id (pra não salvar ID errado)
+            if (customerIdInput) customerIdInput.value = "";
+
             if (term.length < 2) {
                 clientResults.classList.add("hidden");
                 clientResults.innerHTML = "";
@@ -344,15 +396,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const items = await searchCustomers(term);
             renderCustomerResults(items);
-        }, 300);
+        }, 250);
 
         clientNameInput.addEventListener("input", handleClientInput);
 
+        // >>> blur = auto-create (se não selecionou)
+        clientNameInput.addEventListener("blur", debounce(async () => {
+            // dá um tempo pro click no dropdown acontecer antes do blur
+            setTimeout(async () => {
+                if (customerIdInput?.value) return;
+                await ensureCustomerIdOrCreate();
+            }, 120);
+        }, 200));
+
         document.addEventListener("click", (e) => {
-            if (
-                !clientResults.contains(e.target) &&
-                e.target !== clientNameInput
-            ) {
+            if (!clientResults.contains(e.target) && e.target !== clientNameInput) {
                 clientResults.classList.add("hidden");
             }
         });
