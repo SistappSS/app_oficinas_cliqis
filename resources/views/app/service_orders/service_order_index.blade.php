@@ -30,7 +30,7 @@
         <div class="mt-4">
             <div class="relative w-full max-w-xl">
                 <input id="search"
-                       placeholder="Buscar por nº, cliente, ticket..."
+                       placeholder="Buscar por nº, cliente ..."
                        class="w-full rounded-xl border border-slate-300 bg-white pl-10 pr-3 py-2.5 text-sm placeholder:text-slate-400 hover:border-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 outline-none"/>
                 <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"
                      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -76,11 +76,10 @@
                     <tr>
                         <th class="px-6 py-4 first:rounded-tl-2xl text-left">OS</th>
                         <th class="px-3 py-4 text-left">Cliente</th>
-                        <th class="px-3 py-4 text-left">Data</th>
-                        <th class="px-3 py-4 text-left">Ticket</th>
-                        <th class="px-3 py-4 text-right">Total (R$)</th>
+                        <th class="px-3 py-4 text-center">Total (R$)</th>
                         <th class="px-3 py-4 text-center">Status</th>
-                        <th class="px-6 py-4 text-right last:rounded-tr-2xl">Ações</th>
+                        <th class="px-3 py-4 text-center">Data</th>
+                        <th class="px-6 py-4 text-center last:rounded-tr-2xl">Ações</th>
                     </tr>
                     </thead>
                     <tbody id="tbody" class="divide-y divide-slate-100"></tbody>
@@ -88,6 +87,74 @@
             </div>
         </div>
     </div>
+
+    <dialog id="send-email"
+            class="fixed inset-0 size-auto max-h-none max-w-none bg-transparent backdrop:bg-transparent">
+        <div class="fixed inset-0 bg-slate-900/50"></div>
+
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div
+                class="relative w-full sm:max-w-lg transform overflow-hidden rounded-2xl bg-white text-left shadow-xl border border-slate-200">
+
+                <div class="px-5 pb-4 sm:p-6 sm:pb-4">
+
+                    <div id="email-feedback"
+                         style="display:none; margin-bottom: 15px; padding:10px 12px; border-radius:12px; font-size:12px;">
+                        <strong id="email-feedback-title"></strong>
+                        <div id="email-feedback-msg" style="margin-top:4px;"></div>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                        <div class="flex size-10 items-center justify-center rounded-full bg-blue-50 text-blue-700">
+                            ✉️
+                        </div>
+
+
+                        <div class="flex-1">
+                            <h3 class="text-base font-semibold text-slate-900">Enviar OS por e-mail</h3>
+                            <p class="mt-1 text-sm text-slate-500">PDF será anexado automaticamente.</p>
+
+                            <div class="mt-4 grid gap-3">
+                                <div>
+                                    <label class="block text-sm text-slate-600 mb-1">Para</label>
+                                    <input id="mail_to" type="email"
+                                           class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 outline-none"
+                                           placeholder="cliente@empresa.com"/>
+                                    <p class="mt-1 text-xs text-slate-400">Se vazio, usa o e-mail cadastrado do
+                                        cliente.</p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm text-slate-600 mb-1">Assunto</label>
+                                    <input id="mail_subject" type="text"
+                                           class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 outline-none"/>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm text-slate-600 mb-1">Mensagem</label>
+                                    <textarea id="mail_message"
+                                              class="w-full min-h-[90px] resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 outline-none"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="bg-slate-50/60 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 gap-2">
+                    <button type="button" id="send-email-yes"
+                            class="inline-flex w-full justify-center rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 sm:ml-3 sm:w-auto">
+                        Enviar
+                    </button>
+
+                    <button type="button" id="send-email-no"
+                            class="mt-2 inline-flex w-full justify-center rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:mt-0 sm:w-auto">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </dialog>
 
     @include('layouts.common.modal.modal_delete')
 @endsection

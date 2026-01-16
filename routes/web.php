@@ -200,6 +200,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         // Service Orders
         Route::get('/service-order', [ServiceOrderController::class, 'view'])->name('service-order.view');
         Route::get('/service-order/create/{serviceOrder?}', [ServiceOrderController::class, 'create'])->name('service-order.create');
+        Route::get('/service-order/{serviceOrder}/edit', [ServiceOrderController::class, 'edit'])->name('service-order.edit');
         Route::resource('/service-order-api', ServiceOrderController::class);
 
         // Equipments da OS
@@ -223,16 +224,17 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::resource('/completed-service-order-api', CompletedServiceOrderController::class)->except('store');
         Route::post('/{serviceOrder}/client-signature', [CompletedServiceOrderController::class, 'store'])->name('service-orders.client-signature');
 
-        Route::get('/billing', [ServiceOrderBillingController::class, 'index'])
-            ->name('service-order-invoice.view');
+        // Ações botão
+        Route::get('/{serviceOrder}/pdf', [ServiceOrderController::class, 'pdf'])->name('service-order.pdf');
+        Route::get('/{serviceOrder}/pdf/download', [ServiceOrderController::class, 'pdfDownload'])->name('service-order.pdf.download');
+        Route::post('{serviceOrder}/email', [ServiceOrderController::class, 'sendPdfEmail'])->name('service-orders.email');
+        Route::post('{serviceOrder}/duplicate', [ServiceOrderController::class, 'duplicate'])->name('service-orders.duplicate');
 
-        // API para a tabela de cobranças
-        Route::get('/billing-api', [ServiceOrderBillingController::class, 'list'])
-            ->name('service-orders.billing.api');
 
-        // POST do modal "Gerar NF"
-        Route::post('/billing', [ServiceOrderBillingController::class, 'store'])
-            ->name('service-orders.billing.store');
+        // API para a tabela de cobranças + NF
+        Route::get('/billing', [ServiceOrderBillingController::class, 'index'])->name('service-order-invoice.view');
+        Route::get('/billing-api', [ServiceOrderBillingController::class, 'list'])->name('service-orders.billing.api');
+        Route::post('/billing', [ServiceOrderBillingController::class, 'store'])->name('service-orders.billing.store');
     });
 
     /* --->| Finances |<--- */

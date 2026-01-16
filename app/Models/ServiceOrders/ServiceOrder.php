@@ -35,6 +35,8 @@ class ServiceOrder extends Model
         'grand_total'         => 'decimal:2',
     ];
 
+    protected $appends = ['status_label'];
+
     // ---- RELACIONAMENTOS ----
 
     public function secondaryCustomer()

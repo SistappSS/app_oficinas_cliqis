@@ -606,6 +606,39 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal: salvar cadastros pendentes -->
+        <div id="os-catalog-modal" class="fixed inset-0 z-[80] hidden items-center justify-center bg-slate-900/50 p-4">
+            <div class="w-full max-w-2xl rounded-2xl bg-white shadow-xl border border-slate-200 overflow-hidden">
+                <div class="px-5 py-4 border-b border-slate-100">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-900">Cadastros pendentes</h3>
+                            <p class="text-xs text-slate-600 mt-1">
+                                Os registros abaixo não existem no banco. Marque o que deseja salvar antes de continuar.
+                            </p>
+                        </div>
+                        <button type="button" data-os-catalog-cancel class="rounded-xl p-2 text-slate-500 hover:bg-slate-50">✕</button>
+                    </div>
+                </div>
+
+                <div class="px-5 py-4">
+                    <div id="os-catalog-list" class="space-y-3"></div>
+                </div>
+
+                <div class="px-5 py-4 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" data-os-catalog-cancel
+                            class="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        Cancelar
+                    </button>
+
+                    <button type="button" id="os-catalog-confirm"
+                            class="rounded-2xl bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed">
+                        Salvar selecionados e continuar
+                    </button>
+                </div>
+            </div>
+        </div>
     </main>
 @endsection
 

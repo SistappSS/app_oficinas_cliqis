@@ -1,219 +1,569 @@
 // assets/js/template/views/service-orders/service-order-form.js
 
 document.addEventListener("DOMContentLoaded", () => {
-    const csrf =
-        document.querySelector('meta[name="csrf-token"]')?.content || "";
+        const csrf =
+            document.querySelector('meta[name="csrf-token"]')?.content || "";
 
-    const q = (sel) => document.querySelector(sel);
+        const q = (sel) => document.querySelector(sel);
 
-    const ROUTES = {
-        serviceOrder: "/service-orders/service-order-api",
-        customerSearch: "/entities/customer-api",
-        customer: "/entities/customer-api",
-        employee: "/human-resources/employee-api",
-        serviceItem: "/catalogs/service-item-api",
-        part: "/catalogs/part-api",
-        equipment: "/catalogs/equipment-api",
-    };
-
-    // ========== HELPERS ==========
-    const toNumber = (v) => {
-        if (v === null || v === undefined) return 0;
-        let s = String(v).trim();
-        if (!s) return 0;
-
-        // pt-BR -> 1.234,56
-        if (s.includes(",") && !s.includes(".")) {
-            s = s.replace(/\./g, "").replace(",", ".");
-        }
-
-        const n = Number(s);
-        return isNaN(n) ? 0 : n;
-    };
-
-    const formatCurrency = (n) =>
-        (n || 0).toLocaleString("pt-BR", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        });
-
-    const debounce = (fn, delay = 300) => {
-        let t;
-        return (...args) => {
-            clearTimeout(t);
-            t = setTimeout(() => fn(...args), delay);
+        const ROUTES = {
+            serviceOrder: "/service-orders/service-order-api",
+            customerSearch: "/entities/customer-api",
+            customer: "/entities/customer-api",
+            employee: "/human-resources/employee-api",
+            serviceItem: "/catalogs/service-item-api",
+            part: "/catalogs/part-api",
+            equipment: "/catalogs/equipment-api",
         };
-    };
 
-    const postJson = async (url, body) => {
-        const res = await fetch(url, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRF-TOKEN": csrf,
-                Accept: "application/json",
-            },
-            body: JSON.stringify(body),
-        });
-        if (!res.ok) {
-            console.error("Erro POST", url, await res.text());
-            throw new Error("Falha POST " + url);
-        }
-        return await res.json();
-    };
+        // ========== HELPERS ==========
+        const toNumber = (v) => {
+            if (v === null || v === undefined) return 0;
+            let s = String(v).trim();
+            if (!s) return 0;
 
-    const state = {
-        saving: false,
-    };
-
-    // ========== CAMPOS PRINCIPAIS ==========
-    const orderIdInput = q("#service_order_id");
-    const orderNumberDisplay = q("#order_number_display");
-    const orderDateInput = q("#order_date");
-    const requesterNameInput = q("#requester_name");
-
-    const technicianNameInput = q("#service_responsible");
-    let technicianIdInput = q("#technician_id");
-    if (!technicianIdInput && technicianNameInput) {
-        technicianIdInput = document.createElement("input");
-        technicianIdInput.type = "hidden";
-        technicianIdInput.id = "technician_id";
-        technicianNameInput.parentNode.appendChild(technicianIdInput);
-    }
-
-    const clientNameInput = q("#os_client_name");
-    const clientDocInput = q("#cpfCnpj");
-    const clientEmailInput = q("#os_client_email");
-    const clientPhoneInput = q("#mobilePhone");
-    const clientAddressInput = q("#address");
-    const clientAddressNumberInput = q("#addressNumber");
-    const clientComplementInput = q("#complement");
-    const clientCityInput = q("#cityName");
-    const clientStateInput = q("#state");
-    const clientProvinceInput = q("#province");
-    const clientZipInput = q("#postalCode");
-    const ticketNumberInput = q("#ticket_number");
-
-    const clientResults = q("#os_client_results");
-    let customerIdInput = q("#secondary_customer_id");
-    if (!customerIdInput && clientNameInput) {
-        customerIdInput = document.createElement("input");
-        customerIdInput.type = "hidden";
-        customerIdInput.id = "secondary_customer_id";
-        clientNameInput.parentNode.appendChild(customerIdInput);
-    }
-
-    // listas dinâmicas
-    const equipmentListEl = q("#equipment-list");
-    const serviceListEl = q("#service-list");
-    const partListEl = q("#part-list");
-    const laborListEl = q("#labor-list");
-
-    // totais / blocos
-    const servicesSubtotalDisplay = q("#services-subtotal-display");
-    const partsSubtotalDisplay = q("#parts-subtotal-display");
-    const laborTotalAmountDisplay = q("#labor-total-amount-display");
-
-    const boxServicesValue = q("#box-services-value");
-    const boxPartsValue = q("#box-parts-value");
-    // pode ser que o id do box de mão de obra ainda esteja duplicado como box-parts-value
-    let boxLaborValue = q("#box-labor-value");
-    if (!boxLaborValue) {
-        // fallback tosco: pega o terceiro card de totais
-        const cards = document.querySelectorAll(
-            "#so-totals-block .rounded-2xl.bg-slate-50\\/80 span.font-semibold"
-        );
-        if (cards[2]) boxLaborValue = cards[2];
-    }
-
-    const discountInput = q("#discount");
-    const additionInput = q("#addition");
-    const grandTotalDisplay = q("#grand_total_display");
-
-    const footerServicesValue = q("#footer-services-value");
-    const footerPartsValue = q("#footer-parts-value");
-    const footerLaborValue = q("#footer-labor-value");
-    const footerGrandValue = q("#footer-grand-value");
-
-    const laborHourValueInput = q("#labor_hour_value");
-    const paymentConditionSel = q("#payment_condition");
-    const paymentNotesInput = q("#payment_notes");
-
-    const btnAddEquipment = q("#btn-add-equipment");
-    const btnAddService = q("#btn-add-service");
-    const btnAddPart = q("#btn-add-part");
-    const btnAddLabor = q("#btn-add-labor");
-    const btnSave = q("#btn-save-os");
-    const btnFinish = q("#btn-finish-os");
-
-    // modais
-    const saveModal = q("#os-save-modal");
-    const finalizeModal = q("#os-finalize-modal");
-    const signModal = q("#os-signature-modal");
-
-    // ========== TYPEAHEAD GENÉRICO ==========
-    const wrapForDropdown = (input) => {
-        if (!input) return null;
-        const parent = input.parentNode;
-        if (parent.classList.contains("relative")) return parent;
-
-        const wrapper = document.createElement("div");
-        wrapper.className = "relative";
-        parent.insertBefore(wrapper, input);
-        wrapper.appendChild(input);
-        return wrapper;
-    };
-
-    function setupTypeahead({
-                                input,
-                                hiddenIdInput,
-                                searchUrl,
-                                mapItem,
-                                onSelect,
-                                extraQuery = "",
-                                minChars = 2,
-                            }) {
-        if (!input) return;
-
-        const wrapper = wrapForDropdown(input);
-        if (!wrapper) return;
-
-        const dropdown = document.createElement("div");
-        dropdown.className =
-            "absolute z-30 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg max-h-60 overflow-auto hidden";
-        wrapper.appendChild(dropdown);
-
-        let abortController = null;
-
-        input.addEventListener("input", async () => {
-            const term = input.value.trim();
-            if (hiddenIdInput) hiddenIdInput.value = "";
-
-            if (term.length < minChars) {
-                dropdown.classList.add("hidden");
-                dropdown.innerHTML = "";
-                return;
+            // pt-BR -> 1.234,56
+            if (s.includes(",") && !s.includes(".")) {
+                s = s.replace(/\./g, "").replace(",", ".");
             }
 
-            if (abortController) abortController.abort();
-            abortController = new AbortController();
+            const n = Number(s);
+            return isNaN(n) ? 0 : n;
+        };
+
+        const formatCurrency = (n) =>
+            (n || 0).toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+
+        const debounce = (fn, delay = 300) => {
+            let t;
+            return (...args) => {
+                clearTimeout(t);
+                t = setTimeout(() => fn(...args), delay);
+            };
+        };
+
+        const postJson = async (url, body) => {
+            const res = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": csrf,
+                    Accept: "application/json",
+                },
+                body: JSON.stringify(body),
+            });
+            if (!res.ok) {
+                console.error("Erro POST", url, await res.text());
+                throw new Error("Falha POST " + url);
+            }
+            return await res.json();
+        };
+
+        const state = {
+            saving: false,
+        };
+
+    async function detectMissingCatalogs(payload) {
+        const missing = {
+            customer: null,
+            services: [],
+            parts: [],
+            equipments: [],
+            tech_rate: null,
+        };
+
+        // ---- CLIENTE (secondary_customer)
+        if (!payload.secondary_customer_id && (clientNameInput?.value || "").trim()) {
+            const name = (clientNameInput.value || "").trim();
+            const doc = (clientDocInput?.value || "").trim();
+            const email = (clientEmailInput?.value || "").trim().toLowerCase();
 
             try {
-                const res = await fetch(
-                    `${searchUrl}?q=${encodeURIComponent(
-                        term
-                    )}${extraQuery}`,
-                    {
-                        signal: abortController.signal,
-                        headers: {Accept: "application/json"},
+                const items = await searchCustomers(name);
+
+                const byDoc = doc
+                    ? items.find(c => (c.cpfCnpj || "").replace(/\D/g, "") === doc.replace(/\D/g, ""))
+                    : null;
+
+                const byEmail = email
+                    ? items.find(c => (c.email || "").trim().toLowerCase() === email)
+                    : null;
+
+                const byExactName = items.find(c => (c.name || "").trim().toLowerCase() === name.toLowerCase());
+
+                const found = byDoc || byEmail || byExactName;
+                if (!found?.id) {
+                    missing.customer = {
+                        name,
+                        cpfCnpj: doc || null,
+                        email: email || null,
+                        mobilePhone: clientPhoneInput?.value || null,
+                        address: clientAddressInput?.value || null,
+                        addressNumber: clientAddressNumberInput?.value || null,
+                        postalCode: clientZipInput?.value || null,
+                        cityName: clientCityInput?.value || null,
+                        state: clientStateInput?.value || null,
+                        province: clientProvinceInput?.value || null,
+                        complement: clientComplementInput?.value || null,
+                    };
+                }
+            } catch (e) {}
+        }
+
+        // ---- SERVIÇOS (service_items do catálogo)
+        (payload.services || []).forEach((s) => {
+            const label = (s.description || "").trim();
+            if (!s.service_item_id && label) {
+                missing.services.push({
+                    label,
+                    unit_price: s.unit_price || 0,
+                });
+            }
+        });
+
+        // ---- PEÇAS (parts do catálogo)
+        // precisa do payload.parts conter `code` (do collectParts)
+        (payload.parts || []).forEach((p) => {
+            const code = (p.code || "").trim();
+            const desc = (p.description || "").trim();
+            if (!p.part_id && (code || desc)) {
+                missing.parts.push({
+                    code: code || null,
+                    name: desc || code || "Peça",
+                    description: desc || null,
+                    unit_price: p.unit_price || 0,
+                    ncm_code: null,
+                    supplier_id: null,
+                    is_active: true,
+                });
+            }
+        });
+
+        // ---- EQUIPAMENTOS (equipments do catálogo)
+        (payload.equipments || []).forEach((e) => {
+            const name = (e.equipment_description || "").trim();
+            const serial = (e.serial_number || "").trim();
+            if (!e.equipment_id && (name || serial)) {
+                missing.equipments.push({
+                    code: (serial || null),                 // opcional
+                    name: name || "Equipamento",
+                    description: (e.notes || "").trim() || null,
+                    serial_number: serial || null,
+                    notes: (e.location || "").trim() || null,
+                });
+            }
+        });
+
+        const techId = payload.technician_id || null;
+        const uiRate = toNumber(laborHourValueInput?.value || 0);
+        const dbRate = toNumber(technicianIdInput?.dataset?.hourlyRate || 0);
+
+        if (techId && Math.abs(uiRate - dbRate) > 0.0001) {
+            missing.tech_rate = {
+                technician_id: techId,
+                old_rate: dbRate,
+                new_rate: uiRate,
+            };
+        }
+
+        missing.services = Array.from(
+            new Map(missing.services.map(x => [String(x.label || "").toLowerCase(), x])).values()
+        );
+
+        missing.parts = Array.from(
+            new Map(missing.parts.map(x => [`${x.code || ""}|${x.name || ""}`.toLowerCase(), x])).values()
+        );
+
+        missing.equipments = Array.from(
+            new Map(missing.equipments.map(x => [`${x.name || ""}|${x.serial_number || ""}`.toLowerCase(), x])).values()
+        );
+
+        const hasAny =
+            !!missing.customer ||
+            missing.services.length ||
+            missing.parts.length ||
+            missing.equipments.length ||
+            !!missing.tech_rate;
+
+        return hasAny ? missing : null;
+    }
+
+    function renderCatalogChecklist(missing) {
+        if (!catalogListEl) return;
+
+        const blocks = [];
+
+        const section = (title, itemsHtml) => `
+    <div class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+      <div class="text-xs font-semibold text-slate-800 mb-2">${title}</div>
+      <div class="space-y-2">${itemsHtml}</div>
+    </div>
+  `;
+
+        // cliente
+        if (missing.customer) {
+            blocks.push(section("Cliente", `
+      <label class="flex items-start gap-3">
+        <input type="checkbox" class="mt-1 h-4 w-4" data-kind="customer" checked>
+        <div class="text-sm">
+          <div class="font-medium text-slate-900">${missing.customer.name}</div>
+          <div class="text-xs text-slate-600">
+            ${missing.customer.cpfCnpj ? `Doc: ${missing.customer.cpfCnpj}` : "Sem documento"}
+            ${missing.customer.email ? ` • ${missing.customer.email}` : ""}
+          </div>
+        </div>
+      </label>
+    `));
+        }
+
+        // equipamentos
+        if (missing.equipments.length) {
+            blocks.push(section("Equipamentos", missing.equipments.map((e, i) => `
+      <label class="flex items-start gap-3">
+        <input type="checkbox" class="mt-1 h-4 w-4" data-kind="equipment" data-index="${i}" checked>
+        <div class="text-sm">
+          <div class="font-medium text-slate-900">${e.name}</div>
+          <div class="text-xs text-slate-600">${e.serial_number ? `Série: ${e.serial_number}` : "Sem série"}</div>
+        </div>
+      </label>
+    `).join("")));
+        }
+
+        // serviços
+        if (missing.services.length) {
+            blocks.push(section("Serviços", missing.services.map((s, i) => `
+      <label class="flex items-start gap-3">
+        <input type="checkbox" class="mt-1 h-4 w-4" data-kind="service" data-index="${i}" checked>
+        <div class="text-sm">
+          <div class="font-medium text-slate-900">${s.label}</div>
+          <div class="text-xs text-slate-600">R$ ${formatCurrency(toNumber(s.unit_price))}</div>
+        </div>
+      </label>
+    `).join("")));
+        }
+
+        // peças
+        if (missing.parts.length) {
+            blocks.push(section("Peças", missing.parts.map((p, i) => `
+      <label class="flex items-start gap-3">
+        <input type="checkbox" class="mt-1 h-4 w-4" data-kind="part" data-index="${i}" checked>
+        <div class="text-sm">
+          <div class="font-medium text-slate-900">${p.name}</div>
+          <div class="text-xs text-slate-600">
+            ${p.code ? `Código: ${p.code}` : "Sem código"} • R$ ${formatCurrency(toNumber(p.unit_price))}
+          </div>
+        </div>
+      </label>
+    `).join("")));
+        }
+
+        if (missing.tech_rate) {
+            blocks.push(section("Técnico (valor hora)", `
+    <label class="flex items-start gap-3">
+      <input type="checkbox" class="mt-1 h-4 w-4" data-kind="tech_rate" checked>
+      <div class="text-sm">
+        <div class="font-medium text-slate-900">Atualizar valor hora</div>
+        <div class="text-xs text-slate-600">
+          Cadastrado: R$ ${formatCurrency(missing.tech_rate.old_rate)} • Novo: R$ ${formatCurrency(missing.tech_rate.new_rate)}
+        </div>
+      </div>
+    </label>
+  `));
+        }
+
+        catalogListEl.innerHTML = blocks.join("");
+
+        if (!blocks.length) {
+            catalogListEl.innerHTML = `
+      <div class="text-sm text-slate-700">Nenhum cadastro pendente.</div>
+    `;
+        }
+    }
+
+    async function createSelectedCatalogs(missing) {
+        // lê checkboxes marcados
+        const checked = Array.from(catalogListEl.querySelectorAll("input[type=checkbox]:checked"));
+
+        const want = {
+            customer: checked.some(x => x.dataset.kind === "customer"),
+            equipments: checked.filter(x => x.dataset.kind === "equipment").map(x => Number(x.dataset.index)),
+            services: checked.filter(x => x.dataset.kind === "service").map(x => Number(x.dataset.index)),
+            parts: checked.filter(x => x.dataset.kind === "part").map(x => Number(x.dataset.index)),
+            tech_rate: checked.some(x => x.dataset.kind === "tech_rate"),
+        };
+
+        // loading
+        const original = catalogConfirmBtn.innerHTML;
+        catalogConfirmBtn.disabled = true;
+        catalogConfirmBtn.innerHTML = `
+            <span class="inline-flex items-center gap-2">
+              <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+              </svg>
+              Salvando cadastros...
+            </span>
+          `;
+
+        try {
+            // 1) cliente
+            if (want.customer && missing.customer && customerIdInput) {
+                const created = await postJson(ROUTES.customer, missing.customer);
+                const data = created.data || created;
+                if (data?.id) {
+                    customerIdInput.value = data.id;
+                }
+            }
+
+            // 2) equipamentos do catálogo (cria e joga o ID em cada bloco da OS)
+            if (want.equipments.length) {
+                for (const idx of want.equipments) {
+                    const e = missing.equipments[idx];
+                    const created = await postJson(ROUTES.equipment, e);
+                    const data = created.data || created;
+                    if (data?.id) {
+                        // seta no primeiro bloco da OS que bate (mesmo nome/serie) e ainda tá sem id
+                        const rows = Array.from(document.querySelectorAll('[data-row="equipment"]'));
+                        for (const row of rows) {
+                            const desc = row.querySelector(".js-equipment-desc")?.value?.trim() || "";
+                            const serial = row.querySelector(".js-equipment-serial")?.value?.trim() || "";
+                            const hid = row.querySelector(".js-equipment-id");
+                            if (hid && !hid.value && desc === e.name && (serial || "") === (e.serial_number || "")) {
+                                hid.value = data.id;
+                                break;
+                            }
+                        }
                     }
-                );
-                if (!res.ok) throw new Error("erro buscar");
+                }
+            }
 
-                const json = await res.json();
-                const data = Array.isArray(json) ? json : json.data || [];
-                const items = data.map(mapItem).filter(Boolean);
+            const norm = (str) =>
+                (str || "")
+                    .toString()
+                    .trim()
+                    .toLowerCase()
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "");
 
+            if (want.services.length) {
+                for (const idx of want.services) {
+                    const s = missing.services[idx];
+                    const created = await postJson(ROUTES.serviceItem, {
+                        name: s.label,
+                        description: s.label,
+                        unit_price: toNumber(s.unit_price || 0),
+                        service_type_id: null,
+                        is_active: true,
+                    });
+                    const data = created.data || created;
+                    if (data?.id) {
+                        const target = norm(s.label);
+
+                        const rows = Array.from(document.querySelectorAll('[data-row="service"]'));
+                        for (const row of rows) {
+                            const desc = norm(row.querySelector(".js-service-desc")?.value);
+                            const hid = row.querySelector(".js-service-id");
+
+                            if (hid && !hid.value && desc === target) {
+                                hid.value = data.id;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 4) peças do catálogo (cria e seta part_id nos rows)
+            if (want.parts.length) {
+                for (const idx of want.parts) {
+                    const p = missing.parts[idx];
+                    const created = await postJson(ROUTES.part, p);
+                    const data = created.data || created;
+                    if (data?.id) {
+                        const rows = Array.from(document.querySelectorAll('[data-row="part"]'));
+                        for (const row of rows) {
+                            const code = row.querySelector(".js-part-code")?.value?.trim() || "";
+                            const desc = row.querySelector(".js-part-desc")?.value?.trim() || "";
+                            const hid = row.querySelector(".js-part-id");
+                            // bate por code OU descrição
+                            if (hid && !hid.value && ((p.code && code === p.code) || (desc && desc === p.name))) {
+                                hid.value = data.id;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (want.tech_rate && missing.tech_rate?.technician_id) {
+                const id = missing.tech_rate.technician_id;
+                await fetch(`${ROUTES.employee}/${id}`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": csrf,
+                        Accept: "application/json",
+                    },
+                    body: JSON.stringify({
+                        full_name: technicianNameInput?.value?.trim() || "", // obrigatório
+                        hourly_rate: toNumber(laborHourValueInput?.value || 0),
+                        is_technician: true,
+                        is_active: true,
+                    }),
+                });
+                // atualiza o dataset local também
+                technicianIdInput.dataset.hourlyRate = String(missing.tech_rate.new_rate);
+            }
+
+        } finally {
+            catalogConfirmBtn.disabled = false;
+            catalogConfirmBtn.innerHTML = original;
+        }
+    }
+
+
+    // ========== CAMPOS PRINCIPAIS ==========
+        const orderIdInput = q("#service_order_id");
+        const orderNumberDisplay = q("#order_number_display");
+        const orderDateInput = q("#order_date");
+        const requesterNameInput = q("#requester_name");
+
+        const technicianNameInput = q("#service_responsible");
+        let technicianIdInput = q("#technician_id");
+        if (!technicianIdInput && technicianNameInput) {
+            technicianIdInput = document.createElement("input");
+            technicianIdInput.type = "hidden";
+            technicianIdInput.id = "technician_id";
+            technicianNameInput.parentNode.appendChild(technicianIdInput);
+        }
+
+        const clientNameInput = q("#os_client_name");
+        const clientDocInput = q("#cpfCnpj");
+        const clientEmailInput = q("#os_client_email");
+        const clientPhoneInput = q("#mobilePhone");
+        const clientAddressInput = q("#address");
+        const clientAddressNumberInput = q("#addressNumber");
+        const clientComplementInput = q("#complement");
+        const clientCityInput = q("#cityName");
+        const clientStateInput = q("#state");
+        const clientProvinceInput = q("#province");
+        const clientZipInput = q("#postalCode");
+        const ticketNumberInput = q("#ticket_number");
+
+        let customerIdInput = q("#secondary_customer_id");
+
+        if (!customerIdInput && clientNameInput) {
+            customerIdInput = document.createElement("input");
+            customerIdInput.type = "hidden";
+            customerIdInput.id = "secondary_customer_id";
+            clientNameInput.parentNode.appendChild(customerIdInput);
+        }
+
+        // listas dinâmicas
+        const equipmentListEl = q("#equipment-list");
+        const serviceListEl = q("#service-list");
+        const partListEl = q("#part-list");
+        const laborListEl = q("#labor-list");
+
+        // totais / blocos
+        const servicesSubtotalDisplay = q("#services-subtotal-display");
+        const partsSubtotalDisplay = q("#parts-subtotal-display");
+        const laborTotalAmountDisplay = q("#labor-total-amount-display");
+
+        const boxServicesValue = q("#box-services-value");
+        const boxPartsValue = q("#box-parts-value");
+        // pode ser que o id do box de mão de obra ainda esteja duplicado como box-parts-value
+        let boxLaborValue = q("#box-labor-value");
+        if (!boxLaborValue) {
+            // fallback tosco: pega o terceiro card de totais
+            const cards = document.querySelectorAll(
+                "#so-totals-block .rounded-2xl.bg-slate-50\\/80 span.font-semibold"
+            );
+            if (cards[2]) boxLaborValue = cards[2];
+        }
+
+        const discountInput = q("#discount");
+        const additionInput = q("#addition");
+        const grandTotalDisplay = q("#grand_total_display");
+
+        const footerServicesValue = q("#footer-services-value");
+        const footerPartsValue = q("#footer-parts-value");
+        const footerLaborValue = q("#footer-labor-value");
+        const footerGrandValue = q("#footer-grand-value");
+
+        const laborHourValueInput = q("#labor_hour_value");
+        const paymentConditionSel = q("#payment_condition");
+        const paymentNotesInput = q("#payment_notes");
+
+        const btnAddEquipment = q("#btn-add-equipment");
+        const btnAddService = q("#btn-add-service");
+        const btnAddPart = q("#btn-add-part");
+        const btnAddLabor = q("#btn-add-labor");
+        const btnSave = q("#btn-save-os");
+        const btnFinish = q("#btn-finish-os");
+
+        // modais
+        const saveModal = q("#os-save-modal");
+        const finalizeModal = q("#os-finalize-modal");
+        const signModal = q("#os-signature-modal");
+
+        const catalogModal = q("#os-catalog-modal");
+        const catalogListEl = q("#os-catalog-list");
+        const catalogConfirmBtn = q("#os-catalog-confirm");
+        const catalogCancelBtns = document.querySelectorAll("[data-os-catalog-cancel]");
+
+        function openCatalogModal() {
+            if (!catalogModal) return;
+            catalogModal.classList.remove("hidden");
+            catalogModal.classList.add("flex");
+        }
+
+        function closeCatalogModal() {
+            if (!catalogModal) return;
+            catalogModal.classList.add("hidden");
+            catalogModal.classList.remove("flex");
+        }
+
+        catalogCancelBtns.forEach((b) => b.addEventListener("click", closeCatalogModal));
+
+        // ========== TYPEAHEAD GENÉRICO ==========
+        const wrapForDropdown = (input) => {
+            if (!input) return null;
+            const parent = input.parentNode;
+            if (parent.classList.contains("relative")) return parent;
+
+            const wrapper = document.createElement("div");
+            wrapper.className = "relative";
+            parent.insertBefore(wrapper, input);
+            wrapper.appendChild(input);
+            return wrapper;
+        };
+
+        function setupTypeahead({
+                                    input,
+                                    hiddenIdInput,
+                                    searchUrl,
+                                    mapItem,
+                                    onSelect,
+                                    extraQuery = "",
+                                    minChars = 0,           // 👈 agora pode abrir sem digitar
+                                    initialLimit = 5,       // 👈 mostra 5 no foco
+                                }) {
+            if (!input) return;
+
+            const wrapper = wrapForDropdown(input);
+            if (!wrapper) return;
+
+            const dropdown = document.createElement("div");
+            dropdown.className =
+                "absolute z-30 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg max-h-60 overflow-auto hidden";
+            wrapper.appendChild(dropdown);
+
+            let abortController = null;
+
+            const render = (items) => {
                 dropdown.innerHTML = "";
                 if (!items.length) {
                     dropdown.classList.add("hidden");
@@ -226,13 +576,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     btn.className =
                         "w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex justify-between gap-2";
                     btn.innerHTML = `
-                        <span class="truncate">${item.label}</span>
-                        ${
+        <span class="truncate">${item.label}</span>
+        ${
                         item.sublabel
                             ? `<span class="ml-2 flex-shrink-0 text-xs text-slate-500">${item.sublabel}</span>`
                             : ""
                     }
-                    `;
+      `;
                     btn.addEventListener("click", () => {
                         if (hiddenIdInput) hiddenIdInput.value = item.id || "";
                         input.value = item.label || "";
@@ -244,274 +594,302 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 dropdown.classList.remove("hidden");
-            } catch (e) {
-                if (e.name !== "AbortError") console.error(e);
-            }
-        });
+            };
 
-        document.addEventListener("click", (ev) => {
-            if (!wrapper.contains(ev.target)) dropdown.classList.add("hidden");
-        });
-    }
+            const fetchItems = async (term) => {
+                if (abortController) abortController.abort();
+                abortController = new AbortController();
 
-    // ========== CLIENTE (search + preencher) ==========
-    // ========== CLIENTE (search + preencher + auto-create) ==========
-    async function searchCustomers(term) {
-        const url = new URL(ROUTES.customerSearch, window.location.origin);
-        url.searchParams.set("q", term);
-        url.searchParams.set("typeahead", "1"); // opcional
+                const qParam = term ?? "";
+                const url = `${searchUrl}?q=${encodeURIComponent(qParam)}&typeahead=1&limit=${initialLimit}${extraQuery}`;
 
-        const resp = await fetch(url.toString(), {
-            headers: {Accept: "application/json"},
-        });
+                const res = await fetch(url, {
+                    signal: abortController.signal,
+                    headers: { Accept: "application/json" },
+                });
 
-        if (!resp.ok) {
-            console.error("Erro ao buscar clientes:", await resp.text());
-            return [];
-        }
+                if (!res.ok) return [];
 
-        const json = await resp.json();
-        const data = Array.isArray(json) ? json : (json.data || []);
-        return data;
-    }
+                const json = await res.json();
+                const data = Array.isArray(json) ? json : json.data || [];
+                return data.map(mapItem).filter(Boolean);
+            };
 
-    let lastCustomerResults = [];
+            const openList = async () => {
+                const term = input.value.trim();
 
-    function applyCustomerToForm(c) {
-        if (!c) return;
+                if (hiddenIdInput) hiddenIdInput.value = ""; // digitou/abriu, invalida seleção anterior
 
-        if (clientNameInput) clientNameInput.value = c.name || "";
-        if (clientDocInput) clientDocInput.value = c.cpfCnpj || "";
-        if (clientEmailInput) clientEmailInput.value = c.email || "";
-        if (clientPhoneInput) clientPhoneInput.value = c.mobilePhone || "";
-
-        if (clientAddressInput) clientAddressInput.value = c.address || "";
-        if (clientAddressNumberInput) clientAddressNumberInput.value = c.addressNumber || "";
-        if (clientProvinceInput) clientProvinceInput.value = c.province || "";
-        if (clientComplementInput) clientComplementInput.value = c.complement || "";
-
-        if (clientCityInput) clientCityInput.value = c.cityName || "";
-        if (clientStateInput) clientStateInput.value = c.state || "";
-        if (clientZipInput) clientZipInput.value = c.postalCode || "";
-
-        // >>> AQUI: seta o id do cliente selecionado
-        if (customerIdInput) customerIdInput.value = c.id || "";
-    }
-
-    function renderCustomerResults(items) {
-        if (!clientResults) return;
-
-        if (!items.length) {
-            clientResults.classList.add("hidden");
-            clientResults.innerHTML = "";
-            return;
-        }
-
-        lastCustomerResults = items;
-        clientResults.innerHTML = items
-            .map((c, idx) => `
-            <button type="button"
-                    class="block w-full px-3 py-2 text-left hover:bg-slate-50"
-                    data-index="${idx}">
-                <div class="text-xs font-medium text-slate-900">${c.name || "-"}</div>
-                <div class="text-[11px] text-slate-500">
-                    ${(c.cpfCnpj || "")} ${(c.cityName || "")}/${c.state || ""}
-                </div>
-            </button>
-        `)
-            .join("");
-
-        clientResults.classList.remove("hidden");
-
-        clientResults.querySelectorAll("button[data-index]").forEach((btn) => {
-            btn.addEventListener("click", () => {
-                const idx = parseInt(btn.dataset.index, 10);
-                const c = lastCustomerResults[idx];
-
-                applyCustomerToForm(c);
-
-                clientResults.classList.add("hidden");
-                clientResults.innerHTML = "";
-            });
-        });
-    }
-
-    async function ensureCustomerIdOrCreate({allowCreate = false} = {}) {
-        if (!clientNameInput) return null;
-
-        const name = clientNameInput.value.trim();
-        if (!name) return null;
-
-        // se já selecionou um cliente existente
-        if (customerIdInput?.value) return customerIdInput.value;
-
-        const doc = (clientDocInput?.value || "").trim();
-        const email = (clientEmailInput?.value || "").trim().toLowerCase();
-
-        // 1) match forte por documento/email (anti-duplicado)
-        try {
-            const items = await searchCustomers(name);
-
-            const byDoc = doc
-                ? items.find(c => (c.cpfCnpj || "").replace(/\D/g, "") === doc.replace(/\D/g, ""))
-                : null;
-
-            const byEmail = email
-                ? items.find(c => (c.email || "").trim().toLowerCase() === email)
-                : null;
-
-            // 2) fallback: match exato por nome (fraco, mas evita duplicar quando só “arruma” o texto)
-            const normalized = name.toLowerCase();
-            const byExactName = items.find(c => (c.name || "").trim().toLowerCase() === normalized);
-
-            const found = byDoc || byEmail || byExactName;
-
-            if (found?.id) {
-                applyCustomerToForm(found);
-                return found.id;
-            }
-        } catch (e) {
-        }
-
-        // se não achou e não pode criar, para aqui
-        if (!allowCreate) return null;
-
-        // pedir confirmação simples antes de criar
-        const ok = confirm(`Cliente "${name}" não encontrado. Criar novo cadastro?`);
-        if (!ok) return null;
-
-        // 3) cria
-        const created = await postJson(ROUTES.customer, {
-            name,
-            cpfCnpj: doc || null,
-            email: email || null,
-            mobilePhone: clientPhoneInput?.value || null,
-            address: clientAddressInput?.value || null,
-            addressNumber: clientAddressNumberInput?.value || null,
-            postalCode: clientZipInput?.value || null,
-            cityName: clientCityInput?.value || null,
-            state: clientStateInput?.value || null,
-            province: clientProvinceInput?.value || null,
-            complement: clientComplementInput?.value || null,
-        });
-
-        const data = created.data || created;
-        if (data?.id) {
-            if (customerIdInput) customerIdInput.value = data.id;
-            return data.id;
-        }
-
-        return null;
-    }
-
-    if (clientNameInput && clientResults) {
-        const handleClientInput = debounce(async () => {
-            const term = clientNameInput.value.trim();
-
-            // qualquer digitação invalida o id (pra não salvar ID errado)
-            if (customerIdInput) customerIdInput.value = "";
-
-            if (term.length < 2) {
-                clientResults.classList.add("hidden");
-                clientResults.innerHTML = "";
-                return;
-            }
-
-            const items = await searchCustomers(term);
-            renderCustomerResults(items);
-        }, 250);
-
-        clientNameInput.addEventListener("input", handleClientInput);
-
-        document.addEventListener("click", (e) => {
-            if (!clientResults.contains(e.target) && e.target !== clientNameInput) {
-                clientResults.classList.add("hidden");
-            }
-        });
-    }
-
-    // ========== TÉCNICO (search + valor hora) ==========
-    function setupTechnicianLookup() {
-        if (!technicianNameInput) return;
-
-        setupTypeahead({
-            input: technicianNameInput,
-            hiddenIdInput: technicianIdInput,
-            searchUrl: ROUTES.employee,
-            extraQuery: "&is_technician=1&only_active=1&typeahead=1",
-            mapItem: (e) => ({
-                id: e.id,
-                label: e.full_name,
-                sublabel: e.hourly_rate ? `R$ ${formatCurrency(toNumber(e.hourly_rate))}/h` : "",
-                hourly_rate: e.hourly_rate,
-            }),
-            onSelect: (item) => {
-                if (laborHourValueInput && item.hourly_rate != null) {
-                    laborHourValueInput.value = item.hourly_rate;
-                    recalcTotals();
+                if (term.length < minChars) {
+                    const items = await fetchItems(""); // 👈 lista “top 5”
+                    render(items);
+                    return;
                 }
-            },
-        });
 
-        technicianNameInput.addEventListener("blur", debounce(async () => {
-            // se já escolheu da lista, não faz nada
-            if (technicianIdInput?.value) return;
+                const items = await fetchItems(term);
+                render(items);
+            };
 
-            const id = await ensureEntityId({
-                inputEl: technicianNameInput,
-                hiddenIdEl: technicianIdInput,
-                searchUrl: ROUTES.employee,
-                createUrl: ROUTES.employee,
-                buildCreateBody: (label) => ({
-                    full_name: label,
-                    email: null,
-                    phone: null,
-                    document_number: null,
-                    position: "Técnico",
-                    hourly_rate: toNumber(laborHourValueInput?.value || 0),
-                    is_technician: true,
-                    is_active: true,
+            // abre no foco e no click
+            input.addEventListener("focus", openList);
+            input.addEventListener("click", openList);
+
+            // filtra ao digitar
+            input.addEventListener(
+                "input",
+                debounce(async () => {
+                    await openList();
+                }, 200)
+            );
+
+            document.addEventListener("click", (ev) => {
+                if (!wrapper.contains(ev.target)) dropdown.classList.add("hidden");
+            });
+        }
+
+        // ========== CLIENTE (search + preencher) ==========
+        // ========== CLIENTE (search + preencher + auto-create) ==========
+        async function searchCustomers(term) {
+            const url = new URL(ROUTES.customerSearch, window.location.origin);
+            url.searchParams.set("q", term);
+            url.searchParams.set("typeahead", "1"); // opcional
+
+            const resp = await fetch(url.toString(), {
+                headers: {Accept: "application/json"},
+            });
+
+            if (!resp.ok) {
+                console.error("Erro ao buscar clientes:", await resp.text());
+                return [];
+            }
+
+            const json = await resp.json();
+            const data = Array.isArray(json) ? json : (json.data || []);
+            return data;
+        }
+
+        function applyCustomerToForm(c) {
+            if (!c) return;
+
+            if (clientNameInput) clientNameInput.value = c.name || "";
+            if (clientDocInput) clientDocInput.value = c.cpfCnpj || "";
+            if (clientEmailInput) clientEmailInput.value = c.email || "";
+            if (clientPhoneInput) clientPhoneInput.value = c.mobilePhone || "";
+
+            if (clientAddressInput) clientAddressInput.value = c.address || "";
+            if (clientAddressNumberInput) clientAddressNumberInput.value = c.addressNumber || "";
+            if (clientProvinceInput) clientProvinceInput.value = c.province || "";
+            if (clientComplementInput) clientComplementInput.value = c.complement || "";
+
+            if (clientCityInput) clientCityInput.value = c.cityName || "";
+            if (clientStateInput) clientStateInput.value = c.state || "";
+            if (clientZipInput) clientZipInput.value = c.postalCode || "";
+
+            // >>> AQUI: seta o id do cliente selecionado
+            if (customerIdInput) customerIdInput.value = c.id || "";
+        }
+
+        if (clientNameInput) {
+            setupTypeahead({
+                input: clientNameInput,
+                hiddenIdInput: customerIdInput,
+                searchUrl: ROUTES.customerSearch,
+                extraQuery: "&typeahead=1",
+                mapItem: (c) => ({
+                    id: c.id,
+                    label: c.name,
+                    sublabel: `${(c.cpfCnpj || "")} ${(c.cityName || "")}${c.state ? "/" + c.state : ""}`.trim(),
+                    raw: c,
                 }),
-                pickFirstMatch: (json) => {
-                    const data = Array.isArray(json) ? json : (json.data || []);
-                    const label = technicianNameInput.value.trim().toLowerCase();
-                    return data.find(e => (e.full_name || "").trim().toLowerCase() === label) || null;
-                }
+                onSelect: (item) => {
+                    applyCustomerToForm(item.raw);
+                },
             });
 
-            if (id) recalcTotals();
-        }, 350));
-    }
+            // se a pessoa digitar algo e trocar o texto, já invalida o id
+            clientNameInput.addEventListener("input", () => {
+                if (customerIdInput) customerIdInput.value = "";
+            });
+        }
 
-    // ========== BLOCS DINÂMICOS ==========
-    let equipmentCounter = 0;
-    let serviceCounter = 0;
-    let partCounter = 0;
-    let laborCounter = 0;
+        if (clientDocInput) {
+            setupTypeahead({
+                input: clientDocInput,
+                hiddenIdInput: customerIdInput,
+                searchUrl: ROUTES.customerSearch,
+                extraQuery: "&typeahead=1",
+                minChars: 3,
+                mapItem: (c) => ({
+                    id: c.id,
+                    label: c.cpfCnpj || c.document_number || "-",
+                    sublabel: c.name ? `${c.name}${c.cityName ? ` • ${c.cityName}/${c.state || ""}` : ""}` : "",
+                    raw: c,
+                }),
+                onSelect: (item) => {
+                    // item.raw tem o cliente completo
+                    applyCustomerToForm(item.raw);
+                },
+            });
 
-    async function fetchFirstItem(url) {
-        try {
-            const res = await fetch(url, {headers: {Accept: "application/json"}});
-            if (!res.ok) return null;
-            const json = await res.json();
-            const data = Array.isArray(json) ? json : json.data || [];
-            return data[0] || null;
-        } catch (e) {
-            console.error(e);
+            // se mexer no doc manualmente, invalida o id (igual nome)
+            clientDocInput.addEventListener("input", () => {
+                if (customerIdInput) customerIdInput.value = "";
+            });
+        }
+
+        async function ensureCustomerIdOrCreate({allowCreate = false} = {}) {
+            if (!clientNameInput) return null;
+
+            const name = clientNameInput.value.trim();
+            if (!name) return null;
+
+            // se já selecionou um cliente existente
+            if (customerIdInput?.value) return customerIdInput.value;
+
+            const doc = (clientDocInput?.value || "").trim();
+            const email = (clientEmailInput?.value || "").trim().toLowerCase();
+
+            // 1) match forte por documento/email (anti-duplicado)
+            try {
+                const items = await searchCustomers(name);
+
+                const byDoc = doc
+                    ? items.find(c => (c.cpfCnpj || "").replace(/\D/g, "") === doc.replace(/\D/g, ""))
+                    : null;
+
+                const byEmail = email
+                    ? items.find(c => (c.email || "").trim().toLowerCase() === email)
+                    : null;
+
+                // 2) fallback: match exato por nome (fraco, mas evita duplicar quando só “arruma” o texto)
+                const normalized = name.toLowerCase();
+                const byExactName = items.find(c => (c.name || "").trim().toLowerCase() === normalized);
+
+                const found = byDoc || byEmail || byExactName;
+
+                if (found?.id) {
+                    applyCustomerToForm(found);
+                    return found.id;
+                }
+            } catch (e) {
+            }
+
+            // se não achou e não pode criar, para aqui
+            if (!allowCreate) return null;
+
+            // pedir confirmação simples antes de criar
+            const ok = confirm(`Cliente "${name}" não encontrado. Criar novo cadastro?`);
+            if (!ok) return null;
+
+            // 3) cria
+            const created = await postJson(ROUTES.customer, {
+                name,
+                cpfCnpj: doc || null,
+                email: email || null,
+                mobilePhone: clientPhoneInput?.value || null,
+                address: clientAddressInput?.value || null,
+                addressNumber: clientAddressNumberInput?.value || null,
+                postalCode: clientZipInput?.value || null,
+                cityName: clientCityInput?.value || null,
+                state: clientStateInput?.value || null,
+                province: clientProvinceInput?.value || null,
+                complement: clientComplementInput?.value || null,
+            });
+
+            const data = created.data || created;
+            if (data?.id) {
+                if (customerIdInput) customerIdInput.value = data.id;
+                return data.id;
+            }
+
             return null;
         }
-    }
 
-    function addEquipmentBlock(initial = {}) {
-        if (!equipmentListEl) return;
+        // ========== TÉCNICO (search + valor hora) ==========
+        function setupTechnicianLookup() {
+            if (!technicianNameInput) return;
 
-        const wrap = document.createElement("div");
-        wrap.className =
-            "rounded-2xl bg-slate-50/80 border border-slate-100 p-4";
-        wrap.dataset.row = "equipment";
-        wrap.dataset.index = String(++equipmentCounter);
+            setupTypeahead({
+                input: technicianNameInput,
+                hiddenIdInput: technicianIdInput,
+                searchUrl: ROUTES.employee,
+                extraQuery: "&is_technician=1&only_active=1&typeahead=1",
+                mapItem: (e) => ({
+                    id: e.id,
+                    label: e.full_name,
+                    sublabel: e.hourly_rate ? `R$ ${formatCurrency(toNumber(e.hourly_rate))}/h` : "",
+                    hourly_rate: e.hourly_rate,
+                }),
+                onSelect: (item) => {
+                    if (laborHourValueInput && item.hourly_rate != null) {
+                        laborHourValueInput.value = item.hourly_rate;
+                        recalcTotals();
+                    }
+                    if (technicianIdInput) technicianIdInput.dataset.hourlyRate = String(item.hourly_rate ?? 0);
+                },
+            });
 
-        wrap.innerHTML = `
+            technicianNameInput.addEventListener("blur", debounce(async () => {
+                // se já escolheu da lista, não faz nada
+                if (technicianIdInput?.value) return;
+
+                const id = await ensureEntityId({
+                    inputEl: technicianNameInput,
+                    hiddenIdEl: technicianIdInput,
+                    searchUrl: ROUTES.employee,
+                    createUrl: ROUTES.employee,
+                    buildCreateBody: (label) => ({
+                        full_name: label,
+                        email: null,
+                        phone: null,
+                        document_number: null,
+                        position: "Técnico",
+                        hourly_rate: toNumber(laborHourValueInput?.value || 0),
+                        is_technician: true,
+                        is_active: true,
+                    }),
+                    pickFirstMatch: (json) => {
+                        const data = Array.isArray(json) ? json : (json.data || []);
+                        const label = technicianNameInput.value.trim().toLowerCase();
+                        return data.find(e => (e.full_name || "").trim().toLowerCase() === label) || null;
+                    }
+                });
+
+                if (technicianIdInput) technicianIdInput.dataset.hourlyRate = String(toNumber(laborHourValueInput?.value || 0));
+
+                if (id) recalcTotals();
+            }, 350));
+        }
+
+        // ========== BLOCS DINÂMICOS ==========
+        let equipmentCounter = 0;
+        let serviceCounter = 0;
+        let partCounter = 0;
+        let laborCounter = 0;
+
+        async function fetchFirstItem(url) {
+            try {
+                const res = await fetch(url, {headers: {Accept: "application/json"}});
+                if (!res.ok) return null;
+                const json = await res.json();
+                const data = Array.isArray(json) ? json : json.data || [];
+                return data[0] || null;
+            } catch (e) {
+                console.error(e);
+                return null;
+            }
+        }
+
+        function addEquipmentBlock(initial = {}) {
+            if (!equipmentListEl) return;
+
+            const wrap = document.createElement("div");
+            wrap.className =
+                "rounded-2xl bg-slate-50/80 border border-slate-100 p-4";
+            wrap.dataset.row = "equipment";
+            wrap.dataset.index = String(++equipmentCounter);
+
+            wrap.innerHTML = `
           <div class="flex items-center justify-between mb-3">
             <span class="text-sm font-medium text-slate-700">Equipamento</span>
             <button type="button" class="btn-remove-eq inline-flex items-center gap-1 rounded-2xl border border-red-100 bg-red-50/60 px-2.5 py-1 text-xs text-red-600 hover:bg-red-100">
@@ -547,99 +925,122 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `;
 
-        const btnRemove = wrap.querySelector(".btn-remove-eq");
-        const nameInput = wrap.querySelector(".js-equipment-desc");
-        const idInput = wrap.querySelector(".js-equipment-id");
-        const serialInput = wrap.querySelector(".js-equipment-serial");
-        const locInput = wrap.querySelector(".js-equipment-location");
-        const notesInput = wrap.querySelector(".js-equipment-notes");
+            const btnRemove = wrap.querySelector(".btn-remove-eq");
+            const nameInput = wrap.querySelector(".js-equipment-desc");
+            const idInput = wrap.querySelector(".js-equipment-id");
+            const serialInput = wrap.querySelector(".js-equipment-serial");
+            const locInput = wrap.querySelector(".js-equipment-location");
+            const notesInput = wrap.querySelector(".js-equipment-notes");
 
-        btnRemove.addEventListener("click", () => {
-            wrap.remove();
-        });
-
-        if (initial.equipment_description)
-            nameInput.value = initial.equipment_description;
-        if (initial.serial_number) serialInput.value = initial.serial_number;
-        if (initial.location) locInput.value = initial.location;
-        if (initial.notes) notesInput.value = initial.notes;
-        if (initial.equipment_id) idInput.value = initial.equipment_id;
-
-        // typeahead por nome do equipamento
-        setupTypeahead({
-            input: nameInput,
-            hiddenIdInput: idInput,
-            searchUrl: ROUTES.equipment,
-            mapItem: (e) => ({
-                id: e.id,
-                label: e.name,
-                sublabel: e.code || "",
-            }),
-            onSelect: (e) => {
-                if (!serialInput.value && e.serial_number)
-                    serialInput.value = e.serial_number;
-                if (!notesInput.value && e.description)
-                    notesInput.value = e.description;
-            },
-        });
-
-        // auto preencher por nome / série
-        const autoFillEquipment = async (term) => {
-            term = term.trim();
-            if (!term) return;
-            const eq = await fetchFirstItem(
-                `${ROUTES.equipment}?q=${encodeURIComponent(term)}`
-            );
-            if (!eq) return;
-            idInput.value = eq.id || "";
-            nameInput.value = eq.name || term;
-            if (!serialInput.value && eq.serial_number)
-                serialInput.value = eq.serial_number;
-            if (!notesInput.value && eq.description)
-                notesInput.value = eq.description;
-        };
-
-        nameInput.addEventListener("blur", debounce(async () => {
-            if (idInput.value) return;
-            const label = nameInput.value.trim();
-            if (!label) return;
-
-            await ensureEntityId({
-                inputEl: nameInput,
-                hiddenIdEl: idInput,
-                searchUrl: ROUTES.equipment,
-                createUrl: ROUTES.equipment,
-                buildCreateBody: (name) => ({
-                    code: serialInput.value.trim() || null,
-                    name,
-                    description: notesInput.value.trim() || null,
-                    serial_number: serialInput.value.trim() || null,
-                    notes: locInput.value.trim() || null,
-                }),
-                pickFirstMatch: (json) => {
-                    const data = Array.isArray(json) ? json : (json.data || []);
-                    const v = label.toLowerCase();
-                    return data.find(e => (e.name || "").trim().toLowerCase() === v) || null;
-                }
+            btnRemove.addEventListener("click", () => {
+                wrap.remove();
             });
-        }, 350));
 
-        serialInput.addEventListener("blur", () =>
-            autoFillEquipment(serialInput.value)
-        );
+            if (initial.equipment_description)
+                nameInput.value = initial.equipment_description;
+            if (initial.serial_number) serialInput.value = initial.serial_number;
+            if (initial.location) locInput.value = initial.location;
+            if (initial.notes) notesInput.value = initial.notes;
+            if (initial.equipment_id) idInput.value = initial.equipment_id;
 
-        equipmentListEl.appendChild(wrap);
-    }
+            setupTypeahead({
+                input: nameInput,
+                hiddenIdInput: idInput,
+                searchUrl: ROUTES.equipment,
+                minChars: 2,
+                mapItem: (e) => ({
+                    id: e.id,
+                    label: e.name,
+                    sublabel: e.serial_number ? `Série: ${e.serial_number}` : (e.code || ""),
+                    serial_number: e.serial_number,
+                    description: e.description,
+                    notes: e.notes,
+                }),
+                onSelect: (e) => {
+                    if (!serialInput.value && e.serial_number) serialInput.value = e.serial_number;
+                    if (!notesInput.value && e.description) notesInput.value = e.description;
+                },
+            });
 
-    function addServiceRow(initial = {}) {
-        if (!serviceListEl) return;
+            setupTypeahead({
+                input: serialInput,
+                hiddenIdInput: idInput,
+                searchUrl: ROUTES.equipment,
+                minChars: 2,
+                mapItem: (e) => ({
+                    id: e.id,
+                    label: e.serial_number || e.code || "-",
+                    sublabel: e.name || "",
+                    name: e.name,
+                    serial_number: e.serial_number,
+                    description: e.description,
+                    notes: e.notes,
+                }),
+                onSelect: (e) => {
+                    // ao selecionar pela série, preenche o nome também
+                    if (!nameInput.value && e.name) nameInput.value = e.name;
+                    if (e.serial_number) serialInput.value = e.serial_number;
+                    if (!notesInput.value && e.description) notesInput.value = e.description;
+                },
+            });
 
-        const row = document.createElement("div");
-        row.className = "grid grid-cols-12 gap-2 items-center";
-        row.dataset.row = "service";
-        row.dataset.index = String(++serviceCounter);
+            // auto preencher por nome / série
+            const autoFillEquipment = async (term) => {
+                term = term.trim();
+                if (!term) return;
+                const eq = await fetchFirstItem(
+                    `${ROUTES.equipment}?q=${encodeURIComponent(term)}`
+                );
+                if (!eq) return;
+                idInput.value = eq.id || "";
+                nameInput.value = eq.name || term;
+                if (!serialInput.value && eq.serial_number)
+                    serialInput.value = eq.serial_number;
+                if (!notesInput.value && eq.description)
+                    notesInput.value = eq.description;
+            };
 
-        row.innerHTML = `
+            nameInput.addEventListener("blur", debounce(async () => {
+                if (idInput.value) return;
+                const label = nameInput.value.trim();
+                if (!label) return;
+
+                await ensureEntityId({
+                    inputEl: nameInput,
+                    hiddenIdEl: idInput,
+                    searchUrl: ROUTES.equipment,
+                    createUrl: ROUTES.equipment,
+                    buildCreateBody: (name) => ({
+                        code: serialInput.value.trim() || null,
+                        name,
+                        description: notesInput.value.trim() || null,
+                        serial_number: serialInput.value.trim() || null,
+                        notes: locInput.value.trim() || null,
+                    }),
+                    pickFirstMatch: (json) => {
+                        const data = Array.isArray(json) ? json : (json.data || []);
+                        const v = label.toLowerCase();
+                        return data.find(e => (e.name || "").trim().toLowerCase() === v) || null;
+                    }
+                });
+            }, 350));
+
+            serialInput.addEventListener("blur", () =>
+                autoFillEquipment(serialInput.value)
+            );
+
+            equipmentListEl.appendChild(wrap);
+        }
+
+        function addServiceRow(initial = {}) {
+            if (!serviceListEl) return;
+
+            const row = document.createElement("div");
+            row.className = "grid grid-cols-12 gap-2 items-center";
+            row.dataset.row = "service";
+            row.dataset.index = String(++serviceCounter);
+
+            row.innerHTML = `
           <div class="col-span-2">
             <input type="number" min="0"
               class="js-service-qty w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-right"
@@ -651,8 +1052,8 @@ document.addEventListener("DOMContentLoaded", () => {
               placeholder="Descrição do serviço"
               value="${initial.description || ""}">
             <input type="hidden" class="js-service-id" value="${
-            initial.service_item_id || ""
-        }">
+                initial.service_item_id || ""
+            }">
           </div>
           <div class="col-span-2">
             <input
@@ -669,118 +1070,97 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `;
 
-        const qtyInput = row.querySelector(".js-service-qty");
-        const descInput = row.querySelector(".js-service-desc");
-        const unitInput = row.querySelector(".js-service-unit");
-        const totalSpan = row.querySelector(".js-service-total");
-        const idInput = row.querySelector(".js-service-id");
-        const btnRemove = row.querySelector(".btn-remove-service");
+            const qtyInput = row.querySelector(".js-service-qty");
+            const descInput = row.querySelector(".js-service-desc");
+            const unitInput = row.querySelector(".js-service-unit");
+            const totalSpan = row.querySelector(".js-service-total");
+            const idInput = row.querySelector(".js-service-id");
+            const btnRemove = row.querySelector(".btn-remove-service");
 
-        const recalcRow = () => {
-            const qv = toNumber(qtyInput.value || 0);
-            const p = toNumber(unitInput.value || 0);
-            const t = qv * p;
-            totalSpan.textContent = `R$ ${formatCurrency(t)}`;
-            recalcTotals();
-        };
+            const recalcRow = () => {
+                const qv = toNumber(qtyInput.value || 0);
+                const p = toNumber(unitInput.value || 0);
+                const t = qv * p;
+                totalSpan.textContent = `R$ ${formatCurrency(t)}`;
+                recalcTotals();
+            };
 
-        qtyInput.addEventListener("input", recalcRow);
-        unitInput.addEventListener("input", recalcRow);
+            qtyInput.addEventListener("input", recalcRow);
+            unitInput.addEventListener("input", recalcRow);
 
-        btnRemove.addEventListener("click", () => {
-            row.remove();
-            recalcTotals();
-        });
+            btnRemove.addEventListener("click", () => {
+                row.remove();
+                recalcTotals();
+            });
 
-        // typeahead serviços
-        setupTypeahead({
-            input: descInput,
-            hiddenIdInput: idInput,
-            searchUrl: ROUTES.serviceItem,
-            mapItem: (s) => ({
-                id: s.id,
-                label: s.name,
-                sublabel: s.unit_price
-                    ? `R$ ${formatCurrency(toNumber(s.unit_price))}`
-                    : "",
-            }),
-            onSelect: (s) => {
-                if (!unitInput.value && s.unit_price != null) {
-                    unitInput.value = s.unit_price;
+            setupTypeahead({
+                input: descInput,
+                hiddenIdInput: idInput,
+                searchUrl: ROUTES.serviceItem,
+                mapItem: (s) => ({
+                    id: s.id,
+                    label: s.name,
+                    sublabel: s.unit_price ? `R$ ${formatCurrency(toNumber(s.unit_price))}` : "",
+                    unit_price: s.unit_price,
+                }),
+                onSelect: (s) => {
+                    if (!unitInput.value && s.unit_price != null) unitInput.value = s.unit_price;
+                    recalcRow();
+                },
+            });
+
+            // auto preencher se achar pelo texto
+            const autoFillService = async (term) => {
+                term = (term || "").trim();
+                if (!term) return;
+
+                const svc = await fetchFirstItem(
+                    `${ROUTES.serviceItem}?q=${encodeURIComponent(term)}`
+                );
+                if (!svc) return;
+
+                idInput.value = svc.id || "";
+                descInput.value = svc.name || term;
+
+                if (!unitInput.value && svc.unit_price != null) {
+                    unitInput.value = svc.unit_price;
                 }
+
                 recalcRow();
-            },
-        });
+            };
 
-        // auto preencher se achar pelo texto
-        const autoFillService = async (term) => {
-            term = (term || "").trim();
-            if (!term) return;
+            descInput.addEventListener(
+                "blur",
+                debounce(async () => {
+                    if (idInput.value) return;
 
-            const svc = await fetchFirstItem(
-                `${ROUTES.serviceItem}?q=${encodeURIComponent(term)}`
+                    const term = descInput.value.trim();
+                    if (!term) return;
+
+                    // tenta achar, mas NÃO cria
+                    const svc = await fetchFirstItem(`${ROUTES.serviceItem}?q=${encodeURIComponent(term)}&typeahead=1`);
+                    if (svc?.id) {
+                        idInput.value = svc.id;
+                        descInput.value = svc.name || term;
+                        if (!unitInput.value && svc.unit_price != null) unitInput.value = svc.unit_price;
+                        recalcRow();
+                    }
+                }, 250)
             );
-            if (!svc) return;
 
-            idInput.value = svc.id || "";
-            descInput.value = svc.name || term;
+            descInput.addEventListener(
+                "change",
+                debounce(() => {
+                    if (!idInput.value) autoFillService(descInput.value);
+                }, 250)
+            );
 
-            if (!unitInput.value && svc.unit_price != null) {
-                unitInput.value = svc.unit_price;
-            }
-
+            // adiciona na lista e calcula
+            serviceListEl.appendChild(row);
             recalcRow();
-        };
+        }
 
-        // ao sair do campo, tenta achar igual. se não achar, cria (evita duplicar)
-        descInput.addEventListener(
-            "blur",
-            debounce(async () => {
-                if (idInput.value) return;
-
-                const label = descInput.value.trim();
-                if (!label) return;
-
-                const newId = await ensureEntityId({
-                    inputEl: descInput,
-                    hiddenIdEl: idInput,
-                    searchUrl: ROUTES.serviceItem,
-                    createUrl: ROUTES.serviceItem,
-                    buildCreateBody: (name) => ({
-                        name,
-                        description: name,
-                        unit_price: toNumber(unitInput.value || 0),
-                        service_type_id: null,
-                        is_active: true,
-                    }),
-                    pickFirstMatch: (json) => {
-                        const data = Array.isArray(json) ? json : (json.data || []);
-                        const v = label.toLowerCase();
-                        return (
-                            data.find((s) => (s.name || "").trim().toLowerCase() === v) ||
-                            null
-                        );
-                    },
-                });
-
-                if (newId) recalcRow();
-            }, 350)
-        );
-
-        // se quiser: quando o usuário digitar e sair do campo sem blur (ex: tab), tenta preencher
-        descInput.addEventListener(
-            "change",
-            debounce(() => {
-                if (!idInput.value) autoFillService(descInput.value);
-            }, 250)
-        );
-
-        // adiciona na lista e calcula
-        serviceListEl.appendChild(row);
-        recalcRow();
-    }
-
-    function addPartRow(initial = {}) {
+        function addPartRow(initial = {}) {
             if (!partListEl) return;
 
             const row = document.createElement("div");
@@ -849,6 +1229,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 recalcTotals();
             });
 
+            // TYPEAHEAD por NOME
             setupTypeahead({
                 input: descInput,
                 hiddenIdInput: idInput,
@@ -857,12 +1238,33 @@ document.addEventListener("DOMContentLoaded", () => {
                     id: p.id,
                     label: p.name,
                     sublabel: p.code || "",
+                    code: p.code,
+                    unit_price: p.unit_price,
                 }),
                 onSelect: (p) => {
                     if (!codeInput.value && p.code) codeInput.value = p.code;
-                    if (!unitInput.value && p.unit_price != null) {
-                        unitInput.value = p.unit_price;
-                    }
+                    if (!unitInput.value && p.unit_price != null) unitInput.value = p.unit_price;
+                    recalcRow();
+                },
+            });
+
+// TYPEAHEAD por CÓDIGO
+            setupTypeahead({
+                input: codeInput,
+                hiddenIdInput: idInput,
+                searchUrl: ROUTES.part,
+                mapItem: (p) => ({
+                    id: p.id,
+                    label: p.code || p.name,      // 👈 mostra código como principal
+                    sublabel: p.name || "",
+                    name: p.name,
+                    code: p.code,
+                    unit_price: p.unit_price,
+                }),
+                onSelect: (p) => {
+                    if (p.code) codeInput.value = p.code;
+                    if (!descInput.value && p.name) descInput.value = p.name;
+                    if (!unitInput.value && p.unit_price != null) unitInput.value = p.unit_price;
                     recalcRow();
                 },
             });
@@ -1016,14 +1418,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     const total = qty * unit;
                     return {
                         part_id: row.querySelector(".js-part-id")?.value || null,
-                        code:
-                            row
-                                .querySelector(".js-part-code")
-                                ?.value?.trim() || "",
-                        description:
-                            row
-                                .querySelector(".js-part-desc")
-                                ?.value?.trim() || "",
+                        code: row.querySelector(".js-part-code")?.value?.trim() || "",
+                        description: row.querySelector(".js-part-desc")?.value?.trim() || "",
                         quantity: qty,
                         unit_price: unit,
                         total,
@@ -1182,7 +1578,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 requester_phone: clientPhoneInput?.value || null,
                 ticket_number: ticketNumberInput?.value || null,
 
-                // ✅ bater com migration
                 address_line1: clientAddressInput?.value || null,
                 address_line2: [
                     (clientAddressNumberInput?.value || "").trim(),
@@ -1207,11 +1602,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 addition_amount: addition,
                 grand_total: grand,
 
-                // ✅ nomes alinhados com o backend (fica “camel” ou “snake”, mas tem que bater com controller)
-                equipments,
-                serviceItems: serviceItems,
-                partItems: partItems,
-                laborEntries: laborEntries,
+                // ✅ AQUI O FIX:
+                equipments: equipments,
+                services: serviceItems,
+                parts: partItems,
+                labor_entries: laborEntries,
             };
         }
 
@@ -1335,112 +1730,33 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // ========== SALVAR CADASTROS AUXILIARES ==========
-        async function saveCatalogsFromOs(payload, opts) {
-            const tasks = [];
+        let pendingAfterCatalog = null;
+// { status: "draft"|"pending", opts: {...}, redirectTo: string|null, openSignature: bool }
 
-            // Cliente (secondary_customer)
-            if (opts.saveCustomer && !payload.secondary_customer_id) {
-                if (clientNameInput && clientNameInput.value.trim()) {
-                    tasks.push(
-                        postJson(ROUTES.customer, {
-                            name: clientNameInput.value.trim(),
-                            cpfCnpj: clientDocInput?.value || null,
-                            email: clientEmailInput?.value || null,
-                            mobilePhone: clientPhoneInput?.value || null,
-                            address: clientAddressInput?.value || null,
-                            addressNumber: clientAddressNumberInput?.value || null,
-                            postalCode: clientZipInput?.value || null,
-                            cityName: clientCityInput?.value || null,
-                            state: clientStateInput?.value || null,
-                            province: clientProvinceInput?.value || null,
-                            complement: clientComplementInput?.value || null,
-                        })
-                    );
-                }
+        async function runCatalogPipelineAndContinue(status, opts, after) {
+            // after: { redirectTo?: string, openSignature?: boolean }
+
+            const payloadPreview = await buildPayload(status);
+            const missing = await detectMissingCatalogs(payloadPreview);
+
+            if (!missing) {
+                // segue normal
+                const result = await submitServiceOrder(status);
+                if (!result) return;
+
+                // (depois a gente remove o saveCatalogsFromOs, pq agora é tudo aqui)
+                if (after?.openSignature) openSignatureModal();
+                if (after?.redirectTo) window.location.href = after.redirectTo;
+                return;
             }
 
-            // Técnico (Employee)
-            if (opts.saveTechnician) {
-                if (!payload.technician_id && technicianNameInput?.value.trim()) {
-                    tasks.push(
-                        postJson(ROUTES.employee, {
-                            full_name: technicianNameInput.value.trim(),
-                            email: null,
-                            phone: null,
-                            document_number: null,
-                            position: "Técnico",
-                            hourly_rate: payload.labor_hour_value || 0,
-                            is_technician: true,
-                            is_active: true,
-                        })
-                    );
-                }
-            }
+            // tem pendências → abre modal e espera confirmar
+            pendingAfterCatalog = { status, opts, after };
+            renderCatalogChecklist(missing);
+            openCatalogModal();
 
-            // Serviços
-            if (opts.saveServices && Array.isArray(payload.service_items)) {
-                payload.service_items.forEach((srv) => {
-                    if (!srv.service_item_id && srv.description) {
-                        tasks.push(
-                            postJson(ROUTES.serviceItem, {
-                                name: srv.description,
-                                description: srv.description,
-                                unit_price: srv.unit_price || 0,
-                                service_type_id: null,
-                                is_active: true,
-                            })
-                        );
-                    }
-                });
-            }
-
-            // Peças
-            if (opts.saveParts && Array.isArray(payload.part_items)) {
-                payload.part_items.forEach((p) => {
-                    if (!p.part_id && (p.code || p.description)) {
-                        tasks.push(
-                            postJson(ROUTES.part, {
-                                code: p.code || null,
-                                name: p.description || p.code || "Peça",
-                                description: p.description || null,
-                                ncm_code: null,
-                                unit_price: p.unit_price || 0,
-                                supplier_id: null,
-                                is_active: true,
-                            })
-                        );
-                    }
-                });
-            }
-
-            // Equipamentos
-            if (opts.saveEquipments && Array.isArray(payload.equipments)) {
-                payload.equipments.forEach((e) => {
-                    if (!e.equipment_id && (e.equipment_description || e.serial_number)) {
-                        tasks.push(
-                            postJson(ROUTES.equipment, {
-                                code: e.serial_number || null,
-                                name: e.equipment_description || "Equipamento",
-                                description: e.notes || null,
-                                serial_number: e.serial_number || null,
-                                notes: e.location || null,
-                            })
-                        );
-                    }
-                });
-            }
-
-            if (!tasks.length) return;
-
-            try {
-                await Promise.all(tasks);
-                console.log("Cadastros auxiliares salvos.");
-            } catch (e) {
-                console.error(e);
-                alert(
-                    "Alguns cadastros auxiliares não puderam ser salvos. Veja o console."
-                );
-            }
+            // guarda missing no modal
+            catalogModal._missing = missing;
         }
 
         // ========== MODAIS: SALVAR / FINALIZAR ==========
@@ -1473,15 +1789,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         saveEquipments: q("#save_equipments")?.checked || false,
                     };
 
-                    const result = await submitServiceOrder("draft");
-                    if (!result) return;
-
-                    await saveCatalogsFromOs(result.payload, opts);
-
                     saveModal.classList.add("hidden");
                     saveModal.classList.remove("flex");
 
-                    window.location.href = "/service-orders/service-order";
+                    await runCatalogPipelineAndContinue("draft", opts, {
+                        redirectTo: "/service-orders/service-order",
+                    });
                 });
             }
         }
@@ -1518,27 +1831,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     saveEquipments: q("#final_save_equipments")?.checked || false,
                 };
 
-                // ao finalizar, deixo status "pending" por enquanto
-                const result = await submitServiceOrder("pending");
-                if (!result) return;
+                finalizeModal.classList.add("hidden");
+                finalizeModal.classList.remove("flex");
 
-                await saveCatalogsFromOs(result.payload, opts);
-
-                if (action === "tablet") {
-                    finalizeModal.classList.add("hidden");
-                    finalizeModal.classList.remove("flex");
-                    openSignatureModal();
-                } else if (action === "email") {
-                    finalizeModal.classList.add("hidden");
-                    finalizeModal.classList.remove("flex");
-                    alert(
-                        "OS enviada para fluxo de assinatura por e-mail (integração depois)."
-                    );
-                } else if (action === "new") {
-                    finalizeModal.classList.add("hidden");
-                    finalizeModal.classList.remove("flex");
-                    window.location.href = "/service-orders/create";
-                }
+                await runCatalogPipelineAndContinue("pending", opts, {
+                    openSignature: action === "tablet",
+                    redirectTo: action === "new" ? "/service-orders/service-order/create" : null,
+                });
             }
 
             const btnEmail = q("#os-finalize-email");
@@ -1610,20 +1909,38 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                const dataUrl = signatureCanvas.toDataURL('image/png');
+                // loading no botão
+                const originalHtml = signatureSave.innerHTML;
+                signatureSave.disabled = true;
+                signatureSave.innerHTML = `
+      <span class="inline-flex items-center gap-2">
+        <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+        </svg>
+        Salvando...
+      </span>
+    `;
 
-                const clientNameEl = document.querySelector('#os_client_name');
-                const clientEmailEl = document.querySelector('#os_client_email');
+                await new Promise(requestAnimationFrame);
+                await new Promise((r) => setTimeout(r, 50));
 
-                const body = {
-                    image_base64: dataUrl,
-                    client_name: clientNameEl?.value || null,
-                    client_email: clientEmailEl?.value || null,
-                    technician_id: technicianIdInput?.value || null,
+                const restoreBtn = () => {
+                    signatureSave.disabled = false;
+                    signatureSave.innerHTML = originalHtml;
                 };
 
                 try {
-                    // 1) salva a imagem da assinatura
+                    const dataUrl = signatureCanvas.toDataURL('image/png');
+
+                    const body = {
+                        image_base64: dataUrl,
+                        client_name: clientNameInput?.value || null,
+                        client_email: clientEmailInput?.value || null,
+                        technician_id: technicianIdInput?.value || null,
+                    };
+
+                    // 1) salva assinatura
                     const resp = await fetch(`/service-orders/${serviceOrderId}/client-signature`, {
                         method: 'POST',
                         headers: {
@@ -1636,30 +1953,58 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     if (!resp.ok) {
                         console.error('Erro ao salvar assinatura:', await resp.text());
+                        restoreBtn();
                         alert('Erro ao salvar assinatura do cliente.');
                         return;
                     }
 
-                    const json = await resp.json();
-                    console.log('Assinatura salva:', json);
-
-                    // 2) após a assinatura, marcar OS como APROVADA
+                    // 2) aprova OS
                     const approveResult = await submitServiceOrder("approved");
                     if (!approveResult) {
-                        alert('Assinatura salva, mas houve erro ao aprovar a OS. Verifique na listagem de OS.');
+                        restoreBtn();
+                        alert('Assinatura salva, mas houve erro ao aprovar a OS.');
                         return;
                     }
 
-                    alert('Assinatura salva e OS aprovada com sucesso.');
+                    await new Promise((r) => setTimeout(r, 3000));
+
                     closeSignatureModal();
+                    window.location.href = "/service-orders/service-order";
+
                 } catch (e) {
                     console.error(e);
+                    restoreBtn();
                     alert('Erro inesperado ao salvar assinatura.');
                 }
             });
         }
 
-        function initSignaturePad() {
+    if (catalogConfirmBtn) {
+        catalogConfirmBtn.addEventListener("click", async () => {
+            const missing = catalogModal?._missing;
+            if (!missing || !pendingAfterCatalog) {
+                closeCatalogModal();
+                return;
+            }
+
+            // cria antes
+            await createSelectedCatalogs(missing);
+
+            closeCatalogModal();
+
+            // agora salva OS (com IDs preenchidos)
+            const { status, after } = pendingAfterCatalog;
+            pendingAfterCatalog = null;
+
+            const result = await submitServiceOrder(status);
+            if (!result) return;
+
+            if (after?.openSignature) openSignatureModal();
+            if (after?.redirectTo) window.location.href = after.redirectTo;
+        });
+    }
+
+    function initSignaturePad() {
             if (!signatureCanvas || signatureInitDone) return;
 
             signatureCtx = signatureCanvas.getContext('2d');
@@ -1809,6 +2154,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
         recalcTotals();
     }
-
 )
-    ;
+;
