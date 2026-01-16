@@ -2,16 +2,6 @@
     <input type="hidden" id="part_id" name="part_id">
 
     <div class="space-y-6">
-        <div class="section-title">
-            <span class="dot">
-                <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none">
-                    <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm7 7a7 7 0 0 0-14 0"
-                          stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                </svg>
-            </span>
-            Informações da peça
-        </div>
-
         <div class="grid gap-4 sm:grid-cols-3">
             <x-input col="" set="" id="code" name="code" type="text"
                      label="Código interno"
@@ -25,10 +15,8 @@
                 <label for="supplier_id" class="block text-sm font-medium text-slate-700 mb-1">
                     Fornecedor
                 </label>
-                <select id="supplier_id" name="supplier_id"
-                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 hover:border-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 outline-none">
+                <select id="supplier_id" name="supplier_id" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 hover:border-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 outline-none">
                     <option value="">Selecione...</option>
-                    {{-- popular via backend ou JS --}}
                 </select>
             </div>
         </div>

@@ -37,11 +37,17 @@
                     type="button"
                     id="btn-add-equipment"
                     class="inline-flex items-center justify-center rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow hover:bg-blue-800">
-                    <svg class="h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                         fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
                     Adicionar equipamento
+                </button>
+                <button
+                    class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow hover:bg-slate-50">
+                    Exportar
+                </button>
+                <button id="toggle-header"
+                        class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow hover:bg-slate-50"
+                        aria-expanded="true" aria-controls="header-collapsible" type="button"
+                        title="Expandir/contrair cabeçalho">
+                    <i id="toggle-icon" class="fa-solid fa-up-right-and-down-left-from-center"></i>
                 </button>
             </div>
 
