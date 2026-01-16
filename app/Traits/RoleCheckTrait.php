@@ -12,28 +12,56 @@ trait RoleCheckTrait
         return Auth::check() && Auth::user()->hasRole($role);
     }
 
-    private function customerSistappID()
+    /**
+     * Retorna o customer_sistapp_id do usuário logado
+     * seja ele cliente (customerLogin) ou funcionário (employeeCustomerLogin).
+     */
+    private function customerSistappID(): string
     {
-        return Auth::user()->customerLogin->customer_sistapp_id;
-    }
+        $user = Auth::user();
 
-    private function employeeSistappID()
-    {
-        return Auth::user()->employeeCustomerLogin->customer_sistapp_id;
+        $tenantId =
+            optional($user->customerLogin)->customer_sistapp_id
+            ?? optional($user->employeeCustomerLogin)->customer_sistapp_id;
+
+        if (!$tenantId) {
+            abort(403, 'Usuário sem vínculo de cliente/funcionário (customer_sistapp_id não encontrado).');
+        }
+
+        return $tenantId;
     }
 
     private function trialEnds()
     {
-        return $this->userHasRole('admin')
-            ? Carbon::now()->addDays(14)
-            : Auth::user()->customerLogin->trial_ends_at;
+        // se funcionário, você provavelmente quer herdar do cliente (decide regra aqui)
+        if ($this->userHasRole('admin')) {
+            return Carbon::now()->addDays(14);
+        }
+
+        $user = Auth::user();
+
+        // cliente direto
+        if ($user->customerLogin) {
+            return $user->customerLogin->trial_ends_at;
+        }
+
+        // funcionário -> pega do "tenant" (ajuste se tiver esse campo disponível em CustomerEmployeeUser)
+        return optional($user->employeeCustomerLogin)->trial_ends_at;
     }
 
     private function subscription()
     {
-        return $this->userHasRole('admin')
-            ? true
-            : Auth::user()->customerLogin->subscription;
+        if ($this->userHasRole('admin')) {
+            return true;
+        }
+
+        $user = Auth::user();
+
+        if ($user->customerLogin) {
+            return (bool) $user->customerLogin->subscription;
+        }
+
+        return (bool) optional($user->employeeCustomerLogin)->subscription;
     }
 
     private function userAuth()

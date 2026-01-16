@@ -8,6 +8,7 @@ use App\Traits\CrudResponse;
 use App\Traits\RoleCheckTrait;
 use App\Traits\WebIndex;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ServiceTypeController extends Controller
 {
@@ -50,7 +51,7 @@ class ServiceTypeController extends Controller
         ]);
 
         $validated['is_active'] = (bool)($validated['is_active'] ?? true);
-        $validated['customer_sistapp_id'] = $this->employeeSistappID();
+        $validated['customer_sistapp_id'] = $this->customerSistappID();
 
         return $this->trait("store", $this->serviceType->create($validated));
     }
