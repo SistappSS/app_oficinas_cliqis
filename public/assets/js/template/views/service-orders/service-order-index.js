@@ -1,7 +1,7 @@
 // assets/js/template/views/service-orders/service-order-index.js
 
 document.addEventListener("DOMContentLoaded", () => {
-    const searchInput   = document.querySelector("#search");
+    const searchInput = document.querySelector("#search");
     const statusButtons = document.querySelectorAll("[data-status-filter]");
 
     const state = {
@@ -47,13 +47,13 @@ function debounce(fn, delay = 300) {
 }
 
 async function loadOrders(state, pageUrl) {
-    const tbody       = document.querySelector("#tbody");
+    const tbody = document.querySelector("#tbody");
     const searchInput = document.querySelector("#search");
 
     if (!tbody) return;
 
     const baseUrl = pageUrl || "/service-orders/service-order-api";
-    const url     = new URL(baseUrl, window.location.origin);
+    const url = new URL(baseUrl, window.location.origin);
 
     const term = (searchInput?.value || "").trim();
     if (term) url.searchParams.set("q", term);
@@ -61,7 +61,7 @@ async function loadOrders(state, pageUrl) {
 
     try {
         const resp = await fetch(url.toString(), {
-            headers: { Accept: "application/json" },
+            headers: {Accept: "application/json"},
         });
 
         if (!resp.ok) {
@@ -75,7 +75,7 @@ async function loadOrders(state, pageUrl) {
             return;
         }
 
-        const json  = await resp.json();
+        const json = await resp.json();
         const items = json.data || json;
 
         if (!Array.isArray(items) || !items.length) {
@@ -89,9 +89,6 @@ async function loadOrders(state, pageUrl) {
         }
 
         tbody.innerHTML = items.map(renderRow).join("");
-
-        // depois de renderizar, liga os menus e ações
-        bindRowActions();
     } catch (e) {
         console.error(e);
         tbody.innerHTML = `
@@ -104,13 +101,24 @@ async function loadOrders(state, pageUrl) {
 }
 
 function renderRow(os) {
+    function formatDatePtBR(value) {
+        if (!value) return "-";
+        const d = new Date(value);
+        if (isNaN(d.getTime())) return value;
+
+        const date = d.toLocaleDateString("pt-BR");
+        const time = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        return `${date} ás ${time}`;
+    }
+
     const status = os.status || "draft";
+    const label  = os.status_label || status;
 
     const badgeMap = {
-        draft:     "bg-slate-100 text-slate-700",
-        pending:   "bg-amber-50 text-amber-700",
-        approved:  "bg-emerald-50 text-emerald-700",
-        rejected:  "bg-rose-50 text-rose-700",
+        draft: "bg-slate-100 text-slate-700",
+        pending: "bg-amber-50 text-amber-700",
+        approved: "bg-emerald-50 text-emerald-700",
+        rejected: "bg-rose-50 text-rose-700",
         completed: "bg-sky-50 text-sky-700",
     };
 
@@ -121,33 +129,29 @@ function renderRow(os) {
         os.client_name ||
         "-";
 
-    const total     = Number(os.grand_total || 0).toFixed(2);
-    const orderDate = os.order_date || "-";
-    const ticket    = os.ticket_number || "-";
+    const total = Number(os.grand_total || 0).toFixed(2);
+    const orderDate = formatDatePtBR(os.order_date || os.created_at);
 
     return `
-<tr class="hover:bg-slate-50">
+        <tr class="hover:bg-slate-50">
     <td class="px-6 py-3 text-left whitespace-nowrap">
         ${os.order_number || "-"}
     </td>
     <td class="px-3 py-3 text-left">
         ${customerName}
     </td>
-    <td class="px-3 py-3 text-left whitespace-nowrap">
-        ${orderDate}
-    </td>
-    <td class="px-3 py-3 text-left">
-        ${ticket}
-    </td>
-    <td class="px-3 py-3 text-right whitespace-nowrap">
+    <td class="px-3 py-3 text-center whitespace-nowrap">
         R$ ${total}
     </td>
     <td class="px-3 py-3 text-center">
         <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${badgeClass}">
-            ${status}
+            ${label}
         </span>
     </td>
 
+    <td class="px-3 py-3 text-center whitespace-nowrap">
+        ${orderDate}
+    </td>
     <td class="px-6 py-3 text-center whitespace-nowrap">
         <div class="relative inline-block text-left">
             <button type="button"
@@ -169,6 +173,15 @@ function renderRow(os) {
                                 data-id="${os.id}">
                             Visualizar OS
                         </button>
+                    </li>
+                    <li>
+                      <button type="button" class="block w-full px-3 py-2 text-left bg-transparent rounded-none hover:bg-slate-50 focus:outline-none" data-download data-id="${os.id}">Baixar PDF</button>
+                    </li>
+                    <li>
+                      <button type="button" class="block w-full px-3 py-2 text-left bg-transparent rounded-none hover:bg-slate-50 focus:outline-none" data-email data-to="${os.secondary_customer.email}" data-number="${os.order_number}" data-id="${os.id}">Enviar por e-mail</button>
+                    </li>
+                    <li>
+                      <button type="button" class="block w-full px-3 py-2 text-left bg-transparent rounded-none hover:bg-slate-50 focus:outline-none" data-dup data-id="${os.id}">Duplicar OS</button>
                     </li>
                     <li>
                         <button type="button"
@@ -193,90 +206,335 @@ function renderRow(os) {
 </tr>`;
 }
 
-/**
- * Liga menus dropdown e ações de view/edit/delete
- */
-function bindRowActions() {
-    if (window.__osMenuBound) return;
-    window.__osMenuBound = true;
 
-    const triggers = document.querySelectorAll("[data-menu-trigger]");
-    const menus    = document.querySelectorAll("[data-menu]");
+function closeAllMenus() {
+    document.querySelectorAll("[data-menu]").forEach((m) => m.classList.add("hidden"));
+}
 
-    const closeAllMenus = () => {
-        menus.forEach((m) => m.classList.add("hidden"));
-    };
+document.addEventListener("click", async (e) => {
+    const trigger = e.target.closest("[data-menu-trigger]");
+    const actionView = e.target.closest("[data-view]");
+    const actionEdit = e.target.closest("[data-edit]");
+    const actionDel = e.target.closest("[data-del]");
+    const menuEl = e.target.closest("[data-menu]");
+    const actionPdf = e.target.closest("[data-pdf]");
+    const actionDownload = e.target.closest("[data-download]");
+    const actionEmail = e.target.closest("[data-email]");
+    const actionDup = e.target.closest("[data-dup]");
+
+    // clicou fora de qualquer menu/trigger -> fecha
+    if (!trigger && !menuEl) closeAllMenus();
 
     // abrir/fechar menu
-    triggers.forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const id   = btn.dataset.id;
-            const menu = document.querySelector(`#menu-${id}`);
-            if (!menu) return;
+    if (trigger) {
+        e.preventDefault();
 
-            const isHidden = menu.classList.contains("hidden");
-            closeAllMenus();
-            if (isHidden) menu.classList.remove("hidden");
-        });
-    });
+        const id = trigger.dataset.id;
+        const menu = document.querySelector(`#menu-${id}`);
+        if (!menu) return;
 
-    // fechar ao clicar fora
-    document.addEventListener("click", () => closeAllMenus());
+        const isHidden = menu.classList.contains("hidden");
+        closeAllMenus();
+        if (isHidden) menu.classList.remove("hidden");
+        return;
+    }
 
     // ações
-    document.querySelectorAll("[data-view]").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-            e.preventDefault();
-            const id = btn.dataset.id;
-            if (!id) return;
-            window.location.href = `/service-orders/${id}`;
+    if (actionView) {
+        e.preventDefault();
+        closeAllMenus();
+        const id = actionView.dataset.id;
+        if (id) window.open(`/service-orders/${id}/pdf`, "_blank");
+        return;
+    }
+
+    if (actionEdit) {
+        e.preventDefault();
+        closeAllMenus();
+        const id = actionEdit.dataset.id;
+        if (id) window.location.href = `/service-orders/service-order/${id}/edit`;
+        return;
+    }
+
+    if (actionDel) {
+        e.preventDefault();
+        closeAllMenus();
+
+        const id = actionDel.dataset.id;
+        const tr = actionDel.closest("tr");
+        const osNumber = tr?.querySelector("td")?.textContent?.trim() || "";
+        const client = tr?.querySelectorAll("td")[1]?.textContent?.trim() || "";
+
+        if (id) openDeleteDialog(id, osNumber && client ? `OS ${osNumber} • ${client}` : "");
+        return;
+    }
+
+    if (actionPdf) {
+        e.preventDefault(); closeAllMenus();
+        const id = actionPdf.dataset.id;
+        window.open(`/service-orders/${id}/pdf`, "_blank");
+        return;
+    }
+
+    if (actionDownload) {
+        e.preventDefault(); closeAllMenus();
+        const id = actionDownload.dataset.id;
+        window.open(`/service-orders/${id}/pdf/download`, "_blank");
+        return;
+    }
+
+    if (actionEmail) {
+        e.preventDefault();
+        closeAllMenus();
+
+        const id = actionEmail.dataset.id;
+        if (!id) return;
+
+        // defaults
+        openEmailDialog({
+            id,
+            to: actionEmail.dataset.to || "", // opcional
+            subject: `Ordem de Serviço #${actionEmail.dataset.number || ""}`.trim(),
+            message: `Olá! Segue em anexo a Ordem de Serviço para conferência.\n\nQualquer dúvida, me chame.`,
         });
+
+        return;
+    }
+
+    if (actionDup) {
+        e.preventDefault();
+        closeAllMenus();
+        const id = actionDup.dataset.id;
+        duplicateOs(id);
+        return;
+    }
+});
+
+async function duplicateOs(id) {
+    if (!id) return;
+
+    const resp = await fetch(`/service-orders/${id}/duplicate`, {
+        method: "POST",
+        headers: {
+            "Accept": "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+            "X-CSRF-TOKEN": getCsrfToken(),
+        },
     });
 
-    document.querySelectorAll("[data-edit]").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-            e.preventDefault();
-            const id = btn.dataset.id;
-            if (!id) return;
+    const json = await resp.json().catch(() => null);
 
-            // usa o parâmetro de rota {serviceOrder}
-            window.location.href = `/service-orders/service-order/create/${id}`;
+    if (!resp.ok) {
+        console.error("duplicate error:", json || (await resp.text()));
+        return;
+    }
+
+    const newId = json?.id;
+    if (!newId) {
+        console.error("duplicate: id não veio no JSON", json);
+        return;
+    }
+
+    // aqui sim vai pra tela de editar (create com id)
+    window.location.href = `/service-orders/service-order/create/${newId}`;
+}
+
+// ===== Modal delete (dialog) =====
+const dlgDelete = document.querySelector("#confirm-delete");
+const btnDelYes = document.querySelector("#confirm-delete-yes");
+const btnDelNo  = document.querySelector("#confirm-delete-no");
+
+let deleteTargetId = null;
+let deleting = false;
+
+const btnDelX = document.querySelector("#confirm-delete-no-x");
+btnDelX?.addEventListener("click", () => closeDeleteDialog());
+
+function openDeleteDialog(id, metaText = "") {
+    if (!dlgDelete) return;
+    deleteTargetId = id;
+
+    const meta = document.querySelector("#confirm-delete-meta");
+    if (meta) {
+        if (metaText) { meta.textContent = metaText; meta.classList.remove("hidden"); }
+        else { meta.textContent = ""; meta.classList.add("hidden"); }
+    }
+
+    dlgDelete.showModal();
+}
+
+function closeDeleteDialog() {
+    if (!dlgDelete) return;
+    deleteTargetId = null;
+    dlgDelete.close();
+}
+
+btnDelNo?.addEventListener("click", () => closeDeleteDialog());
+
+// se apertar ESC, garante reset
+dlgDelete?.addEventListener("close", () => {
+    deleteTargetId = null;
+    deleting = false;
+    if (btnDelYes) {
+        btnDelYes.disabled = false;
+        btnDelYes.innerHTML = "Excluir";
+    }
+});
+
+// confirma exclusão
+btnDelYes?.addEventListener("click", async () => {
+    if (!deleteTargetId || deleting) return;
+    deleting = true;
+
+    const original = btnDelYes.innerHTML;
+    btnDelYes.disabled = true;
+    btnDelYes.innerHTML = `
+    <span class="inline-flex items-center gap-2">
+      <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+      </svg>
+      Excluindo...
+    </span>
+  `;
+
+    try {
+        const resp = await fetch(`/service-orders/service-order-api/${deleteTargetId}`, {
+            method: "DELETE",
+            headers: {
+                Accept: "application/json",
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRF-TOKEN": getCsrfToken(),
+            },
         });
-    });
 
-    document.querySelectorAll("[data-del]").forEach((btn) => {
-        btn.addEventListener("click", async (e) => {
-            e.preventDefault();
-            const id = btn.dataset.id;
-            if (!id) return;
+        if (!resp.ok) {
+            console.error("Erro ao excluir OS:", await resp.text());
+            alert("Não foi possível excluir esta OS.");
+            return;
+        }
 
-            if (!confirm("Deseja realmente excluir esta OS?")) return;
+        await new Promise((r) => setTimeout(r, 2500));
 
-            try {
-                const resp = await fetch(`/service-orders/service-order-api/${id}`, {
-                    method: "DELETE",
-                    headers: {
-                        "Accept": "application/json",
-                        "X-Requested-With": "XMLHttpRequest",
-                        "X-CSRF-TOKEN": getCsrfToken(),
-                    },
-                });
+        closeDeleteDialog();
+        await loadOrders({ status: getCurrentStatusFilter() });
+    } catch (err) {
+        console.error(err);
+        alert("Erro inesperado ao excluir OS.");
+    } finally {
+        btnDelYes.disabled = false;
+        btnDelYes.innerHTML = original;
+        deleting = false;
+    }
+});
 
-                if (!resp.ok) {
-                    console.error("Erro ao excluir OS:", await resp.text());
-                    alert("Não foi possível excluir esta OS.");
-                    return;
-                }
+// ===== Modal email =====
+const dlgMail = document.querySelector("#send-email");
+const btnMailYes = document.querySelector("#send-email-yes");
+const btnMailNo  = document.querySelector("#send-email-no");
 
-                // recarrega lista após excluir
-                loadOrders({ status: getCurrentStatusFilter() });
-            } catch (err) {
-                console.error(err);
-                alert("Erro inesperado ao excluir OS.");
-            }
+const inMailTo = document.querySelector("#mail_to");
+const inMailSubject = document.querySelector("#mail_subject");
+const inMailMessage = document.querySelector("#mail_message");
+
+let mailTargetId = null;
+let mailSending = false;
+
+function openEmailDialog({ id, to, subject, message }) {
+    mailTargetId = id;
+
+    if (inMailTo) inMailTo.value = to || "";
+    if (inMailSubject) inMailSubject.value = subject || "";
+    if (inMailMessage) inMailMessage.value = message || "";
+
+    dlgMail?.showModal();
+}
+
+function closeEmailDialog() {
+    mailTargetId = null;
+    dlgMail?.close();
+}
+
+btnMailNo?.addEventListener("click", () => closeEmailDialog());
+
+dlgMail?.addEventListener("close", () => {
+    mailTargetId = null;
+    mailSending = false;
+    if (btnMailYes) {
+        btnMailYes.disabled = false;
+        btnMailYes.innerHTML = "Enviar";
+    }
+});
+
+btnMailYes?.addEventListener("click", async () => {
+    if (!mailTargetId || mailSending) return;
+    mailSending = true;
+
+    const original = btnMailYes.innerHTML;
+    btnMailYes.disabled = true;
+    btnMailYes.innerHTML = "Enviando...";
+
+    const payload = {
+        to: (inMailTo?.value || "").trim() || null,
+        subject: (inMailSubject?.value || "").trim() || null,
+        message: (inMailMessage?.value || "").trim() || null,
+    };
+
+    try {
+        const resp = await fetch(`/service-orders/${mailTargetId}/email`, {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": getCsrfToken(),
+            },
+            body: JSON.stringify(payload),
         });
-    });
+
+        if (!resp.ok) {
+            const txt = await resp.text();
+            showEmailFeedback("error", "Falha ao enviar", "Verifique o e-mail e tente novamente.");
+            console.error(txt);
+            return;
+        }
+
+        showEmailFeedback("success", "Enviado!", "E-mail enviado com sucesso.");
+    } catch (err) {
+        console.error(err);
+        alert("Erro inesperado ao enviar e-mail.");
+    } finally {
+        btnMailYes.disabled = false;
+        btnMailYes.innerHTML = original;
+        mailSending = false;
+    }
+});
+
+function showEmailFeedback(type, title, msg) {
+    const box = document.querySelector("#email-feedback");
+    const t = document.querySelector("#email-feedback-title");
+    const m = document.querySelector("#email-feedback-msg");
+    if (!box || !t || !m) return;
+
+    // type: "success" | "error"
+    if (type === "success") {
+        box.style.display = "block";
+        box.style.background = "#ecfdf5";
+        box.style.border = "1px solid #a7f3d0";
+        box.style.color = "#065f46";
+    } else {
+        box.style.display = "block";
+        box.style.background = "#fff1f2";
+        box.style.border = "1px solid #fecdd3";
+        box.style.color = "#9f1239";
+    }
+
+    t.textContent = title;
+    m.textContent = msg || "";
+}
+
+function clearEmailFeedback() {
+    const box = document.querySelector("#email-feedback");
+    if (box) box.style.display = "none";
 }
 
 function getCurrentStatusFilter() {

@@ -68,7 +68,7 @@ class PartController extends Controller
             'is_active'   => ['boolean'],
         ]);
 
-        $validated['customer_sistapp_id'] = $this->employeeSistappID();
+        $validated['customer_sistapp_id'] = $this->customerSistappID();
 
         return $this->trait("store", $this->part->create($validated));
     }

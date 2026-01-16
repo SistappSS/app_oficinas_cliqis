@@ -164,7 +164,7 @@ class EmployeeController extends Controller
     {
         $validated = $request->validate([
             'department_id'   => ['nullable', 'uuid'],
-            'full_name'       => ['required', 'string', 'max:255'],
+            'full_name' => ['sometimes', 'string', 'max:255'],
             'email'           => ['nullable', 'email', 'max:255'],
             'phone'           => ['nullable', 'string', 'max:30'],
             'document_number' => ['nullable', 'string', 'max:20'],
@@ -174,6 +174,10 @@ class EmployeeController extends Controller
             'is_active'       => ['sometimes', 'boolean'],
             'user_id'         => ['nullable', 'uuid'],
         ]);
+
+        if (!array_key_exists('full_name', $validated)) {
+            unset($validated['full_name']);
+        }
 
         $validated['is_technician'] = (bool)($validated['is_technician'] ?? false);
         $validated['is_active']     = (bool)($validated['is_active'] ?? true);

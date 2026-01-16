@@ -12,9 +12,12 @@ use App\Models\ServiceOrders\ServiceOrderServiceItems\ServiceOrderServiceItem;
 use App\Support\CustomerContext;
 use App\Traits\RoleCheckTrait;
 use App\Traits\WebIndex;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class ServiceOrderController extends Controller
 {
@@ -114,7 +117,13 @@ class ServiceOrderController extends Controller
 
         $data = $q->paginate(20);
 
+        $data->getCollection()->transform(function ($os) {
+            $os->status_label = $os->status_label;
+            return $os;
+        });
+
         return response()->json($data);
+
     }
 
     public function show(string $id)
@@ -156,9 +165,6 @@ class ServiceOrderController extends Controller
         ]);
     }
 
-    // =========================================================
-    // MÉTODO CENTRAL DE SALVAR (CREATE + UPDATE)
-    // =========================================================
     protected function saveOrder(Request $request, ?string $id = null)
     {
         $validated = $request->validate([
@@ -466,7 +472,8 @@ class ServiceOrderController extends Controller
             ]);
         });
     }
-    protected function generateNextNumber(): string
+
+    public function generateNextNumber(): string
     {
         $last = ServiceOrder::orderByDesc('created_at')->value('order_number');
 
@@ -478,5 +485,145 @@ class ServiceOrderController extends Controller
         $next = $int + 1;
 
         return str_pad((string) $next, 6, '0', STR_PAD_LEFT);
+    }
+
+    public function pdf(ServiceOrder $serviceOrder)
+    {
+        $serviceOrder->load([
+            'secondaryCustomer',   // se existir na model
+            'technician',          // se existir na model
+            'equipments.equipment',
+            'serviceItems.serviceItem',
+            'partItems.part',
+            'laborEntries.employee',
+            'completion', // se existir
+        ]);
+
+        $data = [
+            'os' => $serviceOrder,
+        ];
+
+        $pdf = Pdf::loadView('layouts.templates.pdf.service_order', $data)
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->stream("OS-{$serviceOrder->order_number}.pdf");
+    }
+
+    public function pdfDownload(ServiceOrder $serviceOrder)
+    {
+        $serviceOrder->load([
+            'secondaryCustomer',
+            'technician',
+            'equipments.equipment',
+            'serviceItems.serviceItem',
+            'partItems.part',
+            'laborEntries.employee',
+            'completion',
+        ]);
+
+        $pdf = Pdf::loadView('layouts.templates.pdf.service_order', ['os' => $serviceOrder])
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->download("OS-{$serviceOrder->order_number}.pdf");
+    }
+
+    public function sendPdfEmail(Request $request, ServiceOrder $serviceOrder)
+    {
+        $request->validate([
+            'to' => ['nullable', 'email'],
+            'subject' => ['nullable', 'string', 'max:255'],
+            'message' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $os = $serviceOrder->load([
+            'secondaryCustomer',
+            'equipments.equipment',
+            'serviceItems.serviceItem',
+            'partItems.part',
+            'laborEntries.employee',
+        ]);
+
+        $to = $request->input('to')
+            ?? optional($os->secondaryCustomer)->email
+            ?? $os->requester_email;
+
+        if (!$to) {
+            return response()->json(['message' => 'E-mail do cliente não informado.'], 422);
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('layouts.templates.pdf.service_order', compact('os'));
+        $fileName = "OS-{$os->order_number}.pdf";
+
+        Mail::to($to)->send(new \App\Mail\ServiceOrderPdfMail(
+            $os,
+            $request->input('subject') ?? "Ordem de Serviço #{$os->order_number}",
+            $request->input('message') ?? null,
+            $pdf->output(),
+            $fileName
+        ));
+
+        return response()->json(['message' => 'E-mail enviado com sucesso.']);
+    }
+
+    public function duplicate(string $id)
+    {
+        $original = ServiceOrder::with([
+            'equipments',
+            'serviceItems',
+            'partItems',
+            'laborEntries',
+        ])->findOrFail($id);
+
+        return DB::transaction(function () use ($original) {
+
+            $copy = $original->replicate([
+                'id',
+                'order_number',
+                'created_at',
+                'updated_at',
+            ]);
+
+            $copy->id = (string) Str::uuid();
+
+            $copy->order_number = $this->generateNextNumber($original->customer_sistapp_id);
+
+            $copy->status = 'draft';
+            $copy->order_date = now()->toDateString();
+
+            $copy->save();
+
+            foreach ($original->equipments as $e) {
+                $new = $e->replicate(['id','service_order_id','created_at','updated_at']);
+                $new->id = (string) Str::uuid();
+                $new->service_order_id = $copy->id;
+                $new->save();
+            }
+
+            foreach ($original->serviceItems as $s) {
+                $new = $s->replicate(['id','service_order_id','created_at','updated_at']);
+                $new->id = (string) Str::uuid();
+                $new->service_order_id = $copy->id;
+                $new->save();
+            }
+
+            foreach ($original->partItems as $p) {
+                $new = $p->replicate(['id','service_order_id','created_at','updated_at']);
+                $new->id = (string) Str::uuid();
+                $new->service_order_id = $copy->id;
+                $new->save();
+            }
+
+            foreach ($original->laborEntries as $l) {
+                $new = $l->replicate(['id','service_order_id','created_at','updated_at']);
+                $new->id = (string) Str::uuid();
+                $new->service_order_id = $copy->id;
+                $new->save();
+            }
+
+            return response()->json([
+                'ok' => true,
+                'id' => $copy->id,
+            ]);
+        });
     }
 }
