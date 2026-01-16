@@ -491,12 +491,11 @@
         </div>
 
         {{-- Modal salvar cadastros --}}
-        <div id="os-save-modal"
-             class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+        <div id="os-save-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm">
             <div class="w-full max-w-md rounded-2xl bg-white shadow-xl">
                 <div class="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
                     <h2 class="text-sm font-semibold text-slate-900">
-                        Salvar dados nos cadastros?
+                        Salvar ordem de serviço como rascunho?
                     </h2>
                     <button type="button" data-os-save-cancel
                             class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
@@ -506,36 +505,8 @@
 
                 <div class="px-5 py-4 space-y-4 text-sm">
                     <p class="text-slate-600">
-                        Além de salvar a OS, você deseja aproveitar as informações digitadas
-                        para criar/atualizar cadastros?
+                        A ordem de serviço será salva como rascunho, sem assinatura do cliente. Deseja continuar?
                     </p>
-
-                    <div class="space-y-2">
-                        <label class="flex items-start gap-2 text-sm text-slate-700">
-                            <input type="checkbox" class="mt-1" id="save_customer">
-                            <span>Cliente (cliente / razão social, contato, endereço)</span>
-                        </label>
-
-                        <label class="flex items-start gap-2 text-sm text-slate-700">
-                            <input type="checkbox" class="mt-1" id="save_technician">
-                            <span>Técnico (funcionário responsável)</span>
-                        </label>
-
-                        <label class="flex items-start gap-2 text-sm text-slate-700">
-                            <input type="checkbox" class="mt-1" id="save_services">
-                            <span>Serviços (descrição, valor unitário)</span>
-                        </label>
-
-                        <label class="flex items-start gap-2 text-sm text-slate-700">
-                            <input type="checkbox" class="mt-1" id="save_parts">
-                            <span>Peças (código, descrição, valor unitário)</span>
-                        </label>
-
-                        <label class="flex items-start gap-2 text-sm text-slate-700">
-                            <input type="checkbox" class="mt-1" id="save_equipments">
-                            <span>Equipamentos atendidos</span>
-                        </label>
-                    </div>
                 </div>
 
                 <div class="flex justify-end gap-2 border-t border-slate-100 px-5 py-3">
@@ -570,11 +541,11 @@
                         Escolha como deseja finalizar esta ordem de serviço.
                     </p>
 
-                    <div class="grid gap-3 sm:grid-cols-3">
+                    <div class="grid gap-3 sm:grid-cols-1">
                         <button type="button" id="os-finalize-email"
                                 class="flex flex-col items-start gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs hover:border-brand-300 hover:bg-brand-50/60 disabled:opacity-60 disabled:cursor-not-allowed">
                             <span class="font-semibold text-slate-800">Enviar para e-mail</span>
-                            <span class="text-[11px] text-slate-500">Link de assinatura por e-mail do cliente.</span>
+                            <span class="text-[11px] text-slate-500">Link de assinatura digital por e-mail do cliente.</span>
                         </button>
 
                         <button type="button" id="os-finalize-tablet"
@@ -586,36 +557,8 @@
                         <button type="button" id="os-finalize-new"
                                 class="flex flex-col items-start gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs hover:border-brand-300 hover:bg-brand-50/60">
                             <span class="font-semibold text-slate-800">Gerar nova OS</span>
-                            <span class="text-[11px] text-slate-500">Após finalizar, ir para nova OS em branco.</span>
+                            <span class="text-[11px] text-slate-500">Salva a OS como rascunho e redireciona para uma nova OS em branco.</span>
                         </button>
-                    </div>
-
-                    <div class="border-t border-slate-100 pt-3 mt-3">
-                        <p class="text-xs font-semibold text-slate-700 mb-2">
-                            Aproveitar dados desta OS para cadastros:
-                        </p>
-                        <div class="grid gap-2 sm:grid-cols-2">
-                            <label class="flex items-start gap-2 text-sm text-slate-700">
-                                <input type="checkbox" class="mt-1" id="final_save_customer">
-                                <span>Cliente</span>
-                            </label>
-                            <label class="flex items-start gap-2 text-sm text-slate-700">
-                                <input type="checkbox" class="mt-1" id="final_save_technician">
-                                <span>Técnico</span>
-                            </label>
-                            <label class="flex items-start gap-2 text-sm text-slate-700">
-                                <input type="checkbox" class="mt-1" id="final_save_services">
-                                <span>Serviços</span>
-                            </label>
-                            <label class="flex items-start gap-2 text-sm text-slate-700">
-                                <input type="checkbox" class="mt-1" id="final_save_parts">
-                                <span>Peças</span>
-                            </label>
-                            <label class="flex items-start gap-2 text-sm text-slate-700">
-                                <input type="checkbox" class="mt-1" id="final_save_equipments">
-                                <span>Equipamentos</span>
-                            </label>
-                        </div>
                     </div>
                 </div>
 

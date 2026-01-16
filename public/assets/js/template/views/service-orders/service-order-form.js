@@ -205,7 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     )}${extraQuery}`,
                     {
                         signal: abortController.signal,
-                        headers: { Accept: "application/json" },
+                        headers: {Accept: "application/json"},
                     }
                 );
                 if (!res.ok) throw new Error("erro buscar");
@@ -262,7 +262,7 @@ document.addEventListener("DOMContentLoaded", () => {
         url.searchParams.set("typeahead", "1"); // opcional
 
         const resp = await fetch(url.toString(), {
-            headers: { Accept: "application/json" },
+            headers: {Accept: "application/json"},
         });
 
         if (!resp.ok) {
@@ -336,32 +336,55 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    async function ensureCustomerIdOrCreate() {
+    async function ensureCustomerIdOrCreate({allowCreate = false} = {}) {
         if (!clientNameInput) return null;
 
         const name = clientNameInput.value.trim();
         if (!name) return null;
 
-        // se já veio de seleção
+        // se já selecionou um cliente existente
         if (customerIdInput?.value) return customerIdInput.value;
 
-        // tenta achar igual pra não duplicar
+        const doc = (clientDocInput?.value || "").trim();
+        const email = (clientEmailInput?.value || "").trim().toLowerCase();
+
+        // 1) match forte por documento/email (anti-duplicado)
         try {
             const items = await searchCustomers(name);
+
+            const byDoc = doc
+                ? items.find(c => (c.cpfCnpj || "").replace(/\D/g, "") === doc.replace(/\D/g, ""))
+                : null;
+
+            const byEmail = email
+                ? items.find(c => (c.email || "").trim().toLowerCase() === email)
+                : null;
+
+            // 2) fallback: match exato por nome (fraco, mas evita duplicar quando só “arruma” o texto)
             const normalized = name.toLowerCase();
-            const found = items.find(c => (c.name || "").trim().toLowerCase() === normalized);
+            const byExactName = items.find(c => (c.name || "").trim().toLowerCase() === normalized);
+
+            const found = byDoc || byEmail || byExactName;
 
             if (found?.id) {
                 applyCustomerToForm(found);
                 return found.id;
             }
-        } catch (e) {}
+        } catch (e) {
+        }
 
-        // cria
+        // se não achou e não pode criar, para aqui
+        if (!allowCreate) return null;
+
+        // pedir confirmação simples antes de criar
+        const ok = confirm(`Cliente "${name}" não encontrado. Criar novo cadastro?`);
+        if (!ok) return null;
+
+        // 3) cria
         const created = await postJson(ROUTES.customer, {
-            name: name,
-            cpfCnpj: clientDocInput?.value || null,
-            email: clientEmailInput?.value || null,
+            name,
+            cpfCnpj: doc || null,
+            email: email || null,
             mobilePhone: clientPhoneInput?.value || null,
             address: clientAddressInput?.value || null,
             addressNumber: clientAddressNumberInput?.value || null,
@@ -399,15 +422,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 250);
 
         clientNameInput.addEventListener("input", handleClientInput);
-
-        // >>> blur = auto-create (se não selecionou)
-        clientNameInput.addEventListener("blur", debounce(async () => {
-            // dá um tempo pro click no dropdown acontecer antes do blur
-            setTimeout(async () => {
-                if (customerIdInput?.value) return;
-                await ensureCustomerIdOrCreate();
-            }, 120);
-        }, 200));
 
         document.addEventListener("click", (e) => {
             if (!clientResults.contains(e.target) && e.target !== clientNameInput) {
@@ -477,7 +491,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function fetchFirstItem(url) {
         try {
-            const res = await fetch(url, { headers: { Accept: "application/json" } });
+            const res = await fetch(url, {headers: {Accept: "application/json"}});
             if (!res.ok) return null;
             const json = await res.json();
             const data = Array.isArray(json) ? json : json.data || [];
@@ -698,63 +712,83 @@ document.addEventListener("DOMContentLoaded", () => {
             },
         });
 
+        // auto preencher se achar pelo texto
         const autoFillService = async (term) => {
-            term = term.trim();
+            term = (term || "").trim();
             if (!term) return;
+
             const svc = await fetchFirstItem(
                 `${ROUTES.serviceItem}?q=${encodeURIComponent(term)}`
             );
             if (!svc) return;
+
             idInput.value = svc.id || "";
             descInput.value = svc.name || term;
+
             if (!unitInput.value && svc.unit_price != null) {
                 unitInput.value = svc.unit_price;
             }
+
             recalcRow();
         };
 
-        descInput.addEventListener("blur", debounce(async () => {
-            if (idInput.value) return;
-            const label = descInput.value.trim();
-            if (!label) return;
+        // ao sair do campo, tenta achar igual. se não achar, cria (evita duplicar)
+        descInput.addEventListener(
+            "blur",
+            debounce(async () => {
+                if (idInput.value) return;
 
-            const newId = await ensureEntityId({
-                inputEl: descInput,
-                hiddenIdEl: idInput,
-                searchUrl: ROUTES.part,
-                createUrl: ROUTES.part,
-                buildCreateBody: (name) => ({
-                    code: codeInput.value.trim() || null,
-                    name,
-                    description: name,
-                    ncm_code: null,
-                    unit_price: toNumber(unitInput.value || 0),
-                    supplier_id: null,
-                    is_active: true,
-                }),
-                pickFirstMatch: (json) => {
-                    const data = Array.isArray(json) ? json : (json.data || []);
-                    const v = label.toLowerCase();
-                    return data.find(p => (p.name || "").trim().toLowerCase() === v) || null;
-                }
-            });
+                const label = descInput.value.trim();
+                if (!label) return;
 
-            if (newId) recalcRow();
-        }, 350));
+                const newId = await ensureEntityId({
+                    inputEl: descInput,
+                    hiddenIdEl: idInput,
+                    searchUrl: ROUTES.serviceItem,
+                    createUrl: ROUTES.serviceItem,
+                    buildCreateBody: (name) => ({
+                        name,
+                        description: name,
+                        unit_price: toNumber(unitInput.value || 0),
+                        service_type_id: null,
+                        is_active: true,
+                    }),
+                    pickFirstMatch: (json) => {
+                        const data = Array.isArray(json) ? json : (json.data || []);
+                        const v = label.toLowerCase();
+                        return (
+                            data.find((s) => (s.name || "").trim().toLowerCase() === v) ||
+                            null
+                        );
+                    },
+                });
 
+                if (newId) recalcRow();
+            }, 350)
+        );
+
+        // se quiser: quando o usuário digitar e sair do campo sem blur (ex: tab), tenta preencher
+        descInput.addEventListener(
+            "change",
+            debounce(() => {
+                if (!idInput.value) autoFillService(descInput.value);
+            }, 250)
+        );
+
+        // adiciona na lista e calcula
         serviceListEl.appendChild(row);
         recalcRow();
     }
 
     function addPartRow(initial = {}) {
-        if (!partListEl) return;
+            if (!partListEl) return;
 
-        const row = document.createElement("div");
-        row.className = "grid grid-cols-12 gap-2 items-center";
-        row.dataset.row = "part";
-        row.dataset.index = String(++partCounter);
+            const row = document.createElement("div");
+            row.className = "grid grid-cols-12 gap-2 items-center";
+            row.dataset.row = "part";
+            row.dataset.index = String(++partCounter);
 
-        row.innerHTML = `
+            row.innerHTML = `
           <div class="col-span-2">
             <input
               class="js-part-code w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm"
@@ -767,8 +801,8 @@ document.addEventListener("DOMContentLoaded", () => {
               placeholder="Descrição"
               value="${initial.description || ""}">
             <input type="hidden" class="js-part-id" value="${
-            initial.part_id || ""
-        }">
+                initial.part_id || ""
+            }">
           </div>
           <div class="col-span-1">
             <input
@@ -791,84 +825,84 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `;
 
-        const codeInput = row.querySelector(".js-part-code");
-        const descInput = row.querySelector(".js-part-desc");
-        const qtyInput = row.querySelector(".js-part-qty");
-        const unitInput = row.querySelector(".js-part-unit");
-        const totalSpan = row.querySelector(".js-part-total");
-        const idInput = row.querySelector(".js-part-id");
-        const btnRemove = row.querySelector(".btn-remove-part");
+            const codeInput = row.querySelector(".js-part-code");
+            const descInput = row.querySelector(".js-part-desc");
+            const qtyInput = row.querySelector(".js-part-qty");
+            const unitInput = row.querySelector(".js-part-unit");
+            const totalSpan = row.querySelector(".js-part-total");
+            const idInput = row.querySelector(".js-part-id");
+            const btnRemove = row.querySelector(".btn-remove-part");
 
-        const recalcRow = () => {
-            const qv = toNumber(qtyInput.value || 0);
-            const p = toNumber(unitInput.value || 0);
-            const t = qv * p;
-            totalSpan.textContent = `R$ ${formatCurrency(t)}`;
-            recalcTotals();
-        };
+            const recalcRow = () => {
+                const qv = toNumber(qtyInput.value || 0);
+                const p = toNumber(unitInput.value || 0);
+                const t = qv * p;
+                totalSpan.textContent = `R$ ${formatCurrency(t)}`;
+                recalcTotals();
+            };
 
-        qtyInput.addEventListener("input", recalcRow);
-        unitInput.addEventListener("input", recalcRow);
+            qtyInput.addEventListener("input", recalcRow);
+            unitInput.addEventListener("input", recalcRow);
 
-        btnRemove.addEventListener("click", () => {
-            row.remove();
-            recalcTotals();
-        });
+            btnRemove.addEventListener("click", () => {
+                row.remove();
+                recalcTotals();
+            });
 
-        setupTypeahead({
-            input: descInput,
-            hiddenIdInput: idInput,
-            searchUrl: ROUTES.part,
-            mapItem: (p) => ({
-                id: p.id,
-                label: p.name,
-                sublabel: p.code || "",
-            }),
-            onSelect: (p) => {
-                if (!codeInput.value && p.code) codeInput.value = p.code;
-                if (!unitInput.value && p.unit_price != null) {
-                    unitInput.value = p.unit_price;
+            setupTypeahead({
+                input: descInput,
+                hiddenIdInput: idInput,
+                searchUrl: ROUTES.part,
+                mapItem: (p) => ({
+                    id: p.id,
+                    label: p.name,
+                    sublabel: p.code || "",
+                }),
+                onSelect: (p) => {
+                    if (!codeInput.value && p.code) codeInput.value = p.code;
+                    if (!unitInput.value && p.unit_price != null) {
+                        unitInput.value = p.unit_price;
+                    }
+                    recalcRow();
+                },
+            });
+
+            const autoFillPart = async (term) => {
+                term = term.trim();
+                if (!term) return;
+                const part = await fetchFirstItem(
+                    `${ROUTES.part}?q=${encodeURIComponent(term)}`
+                );
+                if (!part) return;
+                idInput.value = part.id || "";
+                descInput.value = part.name || term;
+                codeInput.value = part.code || codeInput.value || term;
+                if (!unitInput.value && part.unit_price != null) {
+                    unitInput.value = part.unit_price;
                 }
                 recalcRow();
-            },
-        });
+            };
 
-        const autoFillPart = async (term) => {
-            term = term.trim();
-            if (!term) return;
-            const part = await fetchFirstItem(
-                `${ROUTES.part}?q=${encodeURIComponent(term)}`
+            codeInput.addEventListener("blur", () =>
+                autoFillPart(codeInput.value)
             );
-            if (!part) return;
-            idInput.value = part.id || "";
-            descInput.value = part.name || term;
-            codeInput.value = part.code || codeInput.value || term;
-            if (!unitInput.value && part.unit_price != null) {
-                unitInput.value = part.unit_price;
-            }
+            descInput.addEventListener("blur", () =>
+                autoFillPart(descInput.value)
+            );
+
+            partListEl.appendChild(row);
             recalcRow();
-        };
+        }
 
-        codeInput.addEventListener("blur", () =>
-            autoFillPart(codeInput.value)
-        );
-        descInput.addEventListener("blur", () =>
-            autoFillPart(descInput.value)
-        );
+        function addLaborRow(initial = {}) {
+            if (!laborListEl) return;
 
-        partListEl.appendChild(row);
-        recalcRow();
-    }
+            const row = document.createElement("div");
+            row.className = "grid grid-cols-12 gap-2 items-center";
+            row.dataset.row = "labor";
+            row.dataset.index = String(++laborCounter);
 
-    function addLaborRow(initial = {}) {
-        if (!laborListEl) return;
-
-        const row = document.createElement("div");
-        row.className = "grid grid-cols-12 gap-2 items-center";
-        row.dataset.row = "labor";
-        row.dataset.index = String(++laborCounter);
-
-        row.innerHTML = `
+            row.innerHTML = `
           <div class="col-span-2">
             <input type="time"
               class="js-labor-start w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm"
@@ -890,881 +924,891 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `;
 
-        const startInput = row.querySelector(".js-labor-start");
-        const endInput = row.querySelector(".js-labor-end");
-        const btnRemove = row.querySelector(".btn-remove-labor");
+            const startInput = row.querySelector(".js-labor-start");
+            const endInput = row.querySelector(".js-labor-end");
+            const btnRemove = row.querySelector(".btn-remove-labor");
 
-        const recomputeHours = () => recalcTotals();
+            const recomputeHours = () => recalcTotals();
 
-        startInput.addEventListener("change", recomputeHours);
-        endInput.addEventListener("change", recomputeHours);
+            startInput.addEventListener("change", recomputeHours);
+            endInput.addEventListener("change", recomputeHours);
 
-        btnRemove.addEventListener("click", () => {
-            row.remove();
-            recalcTotals();
-        });
-
-        laborListEl.appendChild(row);
-        recalcTotals();
-    }
-
-    // ========== COLLECT ==========
-    const collectEquipments = () =>
-        Array.from(document.querySelectorAll('[data-row="equipment"]'))
-            .map((row) => ({
-                equipment_id:
-                    row.querySelector(".js-equipment-id")?.value || null,
-                equipment_description:
-                    row
-                        .querySelector(".js-equipment-desc")
-                        ?.value?.trim() || "",
-                serial_number:
-                    row
-                        .querySelector(".js-equipment-serial")
-                        ?.value?.trim() || "",
-                location:
-                    row
-                        .querySelector(".js-equipment-location")
-                        ?.value?.trim() || "",
-                notes:
-                    row
-                        .querySelector(".js-equipment-notes")
-                        ?.value?.trim() || "",
-            }))
-            .filter(
-                (e) =>
-                    e.equipment_id ||
-                    e.equipment_description ||
-                    e.serial_number ||
-                    e.location ||
-                    e.notes
-            );
-
-    const collectServices = () =>
-        Array.from(document.querySelectorAll('[data-row="service"]'))
-            .map((row) => {
-                const qty = toNumber(
-                    row.querySelector(".js-service-qty")?.value || 0
-                );
-                const unit = toNumber(
-                    row.querySelector(".js-service-unit")?.value || 0
-                );
-                const total = qty * unit;
-                return {
-                    service_item_id:
-                        row.querySelector(".js-service-id")?.value || null,
-                    description:
-                        row
-                            .querySelector(".js-service-desc")
-                            ?.value?.trim() || "",
-                    quantity: qty,
-                    unit_price: unit,
-                    total,
-                };
-            })
-            .filter(
-                (s) =>
-                    s.description ||
-                    s.quantity ||
-                    s.unit_price ||
-                    s.service_item_id
-            );
-
-    const collectParts = () =>
-        Array.from(document.querySelectorAll('[data-row="part"]'))
-            .map((row) => {
-                const qty = toNumber(
-                    row.querySelector(".js-part-qty")?.value || 0
-                );
-                const unit = toNumber(
-                    row.querySelector(".js-part-unit")?.value || 0
-                );
-                const total = qty * unit;
-                return {
-                    part_id: row.querySelector(".js-part-id")?.value || null,
-                    code:
-                        row
-                            .querySelector(".js-part-code")
-                            ?.value?.trim() || "",
-                    description:
-                        row
-                            .querySelector(".js-part-desc")
-                            ?.value?.trim() || "",
-                    quantity: qty,
-                    unit_price: unit,
-                    total,
-                };
-            })
-            .filter(
-                (p) =>
-                    p.description ||
-                    p.code ||
-                    p.quantity ||
-                    p.unit_price ||
-                    p.part_id
-            );
-
-    const collectLaborEntries = () =>
-        Array.from(document.querySelectorAll('[data-row="labor"]'))
-            .map((row) => {
-                const start =
-                    row.querySelector(".js-labor-start")?.value || "";
-                const end = row.querySelector(".js-labor-end")?.value || "";
-                const desc =
-                    row.querySelector(".js-labor-desc")?.value?.trim() || "";
-
-                let hours = 0;
-                if (start && end) {
-                    const [sh, sm] = start.split(":").map(Number);
-                    const [eh, em] = end.split(":").map(Number);
-                    const startMinutes = sh * 60 + sm;
-                    const endMinutes = eh * 60 + em;
-                    if (endMinutes > startMinutes) {
-                        hours = (endMinutes - startMinutes) / 60;
-                    }
-                }
-
-                return {
-                    employee_id: technicianIdInput?.value || null,
-                    started_at: start
-                        ? `${orderDateInput?.value || ""} ${start}:00`
-                        : null,
-                    ended_at: end
-                        ? `${orderDateInput?.value || ""} ${end}:00`
-                        : null,
-                    hours,
-                    description: desc,
-                };
-            })
-            .filter((l) => l.started_at || l.ended_at || l.description);
-
-    // ========== TOTALIZAÇÃO ==========
-    function recalcTotals() {
-        const services = collectServices();
-        const parts = collectParts();
-        const labor = collectLaborEntries();
-
-        const servicesSubtotal = services.reduce(
-            (sum, s) => sum + (s.total || 0),
-            0
-        );
-        const partsSubtotal = parts.reduce(
-            (sum, p) => sum + (p.total || 0),
-            0
-        );
-
-        const totalHours = labor.reduce((sum, l) => sum + (l.hours || 0), 0);
-        const hourValue = toNumber(laborHourValueInput?.value || 0);
-        const laborTotal = totalHours * hourValue;
-
-        const discount = toNumber(discountInput?.value || 0);
-        const addition = toNumber(additionInput?.value || 0);
-
-        const grand =
-            servicesSubtotal + partsSubtotal + laborTotal - discount + addition;
-
-        if (servicesSubtotalDisplay)
-            servicesSubtotalDisplay.textContent = `R$ ${formatCurrency(
-                servicesSubtotal
-            )}`;
-        if (partsSubtotalDisplay)
-            partsSubtotalDisplay.textContent = `R$ ${formatCurrency(
-                partsSubtotal
-            )}`;
-        if (laborTotalAmountDisplay)
-            laborTotalAmountDisplay.textContent = `R$ ${formatCurrency(
-                laborTotal
-            )}`;
-
-        if (boxServicesValue)
-            boxServicesValue.textContent = `R$ ${formatCurrency(
-                servicesSubtotal
-            )}`;
-        if (boxPartsValue)
-            boxPartsValue.textContent = `R$ ${formatCurrency(partsSubtotal)}`;
-        if (boxLaborValue)
-            boxLaborValue.textContent = `R$ ${formatCurrency(laborTotal)}`;
-        if (grandTotalDisplay)
-            grandTotalDisplay.textContent = `R$ ${formatCurrency(grand)}`;
-
-        if (footerServicesValue)
-            footerServicesValue.textContent = `R$ ${formatCurrency(
-                servicesSubtotal
-            )}`;
-        if (footerPartsValue)
-            footerPartsValue.textContent = `R$ ${formatCurrency(
-                partsSubtotal
-            )}`;
-        if (footerLaborValue)
-            footerLaborValue.textContent = `R$ ${formatCurrency(laborTotal)}`;
-        if (footerGrandValue)
-            footerGrandValue.textContent = `R$ ${formatCurrency(grand)}`;
-    }
-
-    if (discountInput) discountInput.addEventListener("input", recalcTotals);
-    if (additionInput) additionInput.addEventListener("input", recalcTotals);
-    if (laborHourValueInput)
-        laborHourValueInput.addEventListener("input", recalcTotals);
-
-    // ========== PAYLOAD OS ==========
-    async function buildPayload(status) {
-        const equipments = collectEquipments();
-        const serviceItems = collectServices();
-        const partItems = collectParts();
-        const laborEntries = collectLaborEntries();
-
-        const servicesSubtotal = serviceItems.reduce(
-            (sum, s) => sum + (s.total || 0),
-            0
-        );
-        const partsSubtotal = partItems.reduce(
-            (sum, p) => sum + (p.total || 0),
-            0
-        );
-        const totalHours = laborEntries.reduce(
-            (sum, l) => sum + (l.hours || 0),
-            0
-        );
-        const laborRate = toNumber(laborHourValueInput?.value || 0);
-        const laborTotal = totalHours * laborRate;
-
-        const discount = toNumber(discountInput?.value || 0);
-        const addition = toNumber(additionInput?.value || 0);
-        const grand =
-            servicesSubtotal + partsSubtotal + laborTotal - discount + addition;
-
-        return {
-            id: orderIdInput?.value || null,
-            status: status || "draft",
-
-            order_date: orderDateInput?.value || null,
-
-            technician_id: technicianIdInput?.value || null,
-            opened_by_employee_id: technicianIdInput?.value || null,
-
-            secondary_customer_id: customerIdInput?.value || null,
-
-            requester_name: requesterNameInput?.value || null,
-            requester_email: null,
-            requester_phone: clientPhoneInput?.value || null,
-            ticket_number: ticketNumberInput?.value || null,
-
-            address: clientAddressInput?.value || null,
-            addressNumber: clientAddressNumberInput?.value || null,
-            complement: clientComplementInput?.value || null,
-            province: clientProvinceInput?.value || null,
-            city: clientCityInput?.value || null,
-            state: clientStateInput?.value || null,
-            zip_code: clientZipInput?.value || null,
-
-            labor_hour_value: laborRate,
-            labor_total_hours: totalHours,
-            labor_total_amount: laborTotal,
-
-            payment_condition: paymentConditionSel?.value || null,
-            notes: paymentNotesInput?.value || null,
-
-            services_subtotal: servicesSubtotal,
-            parts_subtotal: partsSubtotal,
-            discount_amount: discount,
-            addition_amount: addition,
-            grand_total: grand,
-
-            equipments,
-            service_items: serviceItems,
-            part_items: partItems,
-            labor_entries: laborEntries,
-        };
-    }
-
-    function ensureTechnicianSelected() {
-        const name = technicianNameInput?.value?.trim() || "";
-        const id = technicianIdInput?.value || "";
-
-        if (!name) {
-            alert("Selecione um técnico.");
-            technicianNameInput?.focus();
-            return false;
-        }
-
-        // se digitou algo e não selecionou da lista
-        if (!id) {
-            alert("Selecione um técnico na lista (não só digite).");
-            technicianNameInput?.focus();
-            return false;
-        }
-
-        return true;
-    }
-
-    async function ensureTechnicianIdOrCreate() {
-        const name = technicianNameInput?.value?.trim() || "";
-        if (!name) {
-            alert("Informe o técnico.");
-            technicianNameInput?.focus();
-            return null;
-        }
-
-        if (technicianIdInput?.value) return technicianIdInput.value;
-
-        // cria se não existe
-        const id = await ensureEntityId({
-            inputEl: technicianNameInput,
-            hiddenIdEl: technicianIdInput,
-            searchUrl: ROUTES.employee,
-            createUrl: ROUTES.employee,
-            buildCreateBody: (label) => ({
-                full_name: label,
-                email: null,
-                phone: null,
-                document_number: null,
-                position: "Técnico",
-                hourly_rate: toNumber(laborHourValueInput?.value || 0),
-                is_technician: true,
-                is_active: true,
-            }),
-            pickFirstMatch: (json) => {
-                const data = Array.isArray(json) ? json : (json.data || []);
-                const label = technicianNameInput.value.trim().toLowerCase();
-                return data.find(e => (e.full_name || "").trim().toLowerCase() === label) || null;
-            }
-        });
-
-        if (!id) {
-            alert("Não foi possível criar/selecionar o técnico.");
-            return null;
-        }
-
-        return id;
-    }
-
-    async function submitServiceOrder(status) {
-        if (state.saving) return null;
-        state.saving = true;
-
-        try {
-            const techId = await ensureTechnicianIdOrCreate();
-            if (!techId) return null;
-
-            const payload = await buildPayload(status);
-            const id = payload.id;
-            const isUpdate = !!id;
-
-            const url = isUpdate
-                ? `${ROUTES.serviceOrder}/${id}`
-                : ROUTES.serviceOrder;
-            const method = isUpdate ? "PUT" : "POST";
-
-            const res = await fetch(url, {
-                method,
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": csrf,
-                    Accept: "application/json",
-                },
-                body: JSON.stringify(payload),
+            btnRemove.addEventListener("click", () => {
+                row.remove();
+                recalcTotals();
             });
 
-            if (!res.ok) {
-                console.error("Falha ao salvar OS", await res.text());
-                alert("Erro ao salvar OS.");
+            laborListEl.appendChild(row);
+            recalcTotals();
+        }
+
+        // ========== COLLECT ==========
+        const collectEquipments = () =>
+            Array.from(document.querySelectorAll('[data-row="equipment"]'))
+                .map((row) => ({
+                    equipment_id:
+                        row.querySelector(".js-equipment-id")?.value || null,
+                    equipment_description:
+                        row
+                            .querySelector(".js-equipment-desc")
+                            ?.value?.trim() || "",
+                    serial_number:
+                        row
+                            .querySelector(".js-equipment-serial")
+                            ?.value?.trim() || "",
+                    location:
+                        row
+                            .querySelector(".js-equipment-location")
+                            ?.value?.trim() || "",
+                    notes:
+                        row
+                            .querySelector(".js-equipment-notes")
+                            ?.value?.trim() || "",
+                }))
+                .filter(
+                    (e) =>
+                        e.equipment_id ||
+                        e.equipment_description ||
+                        e.serial_number ||
+                        e.location ||
+                        e.notes
+                );
+
+        const collectServices = () =>
+            Array.from(document.querySelectorAll('[data-row="service"]'))
+                .map((row) => {
+                    const qty = toNumber(
+                        row.querySelector(".js-service-qty")?.value || 0
+                    );
+                    const unit = toNumber(
+                        row.querySelector(".js-service-unit")?.value || 0
+                    );
+                    const total = qty * unit;
+                    return {
+                        service_item_id:
+                            row.querySelector(".js-service-id")?.value || null,
+                        description:
+                            row
+                                .querySelector(".js-service-desc")
+                                ?.value?.trim() || "",
+                        quantity: qty,
+                        unit_price: unit,
+                        total,
+                    };
+                })
+                .filter(
+                    (s) =>
+                        s.description ||
+                        s.quantity ||
+                        s.unit_price ||
+                        s.service_item_id
+                );
+
+        const collectParts = () =>
+            Array.from(document.querySelectorAll('[data-row="part"]'))
+                .map((row) => {
+                    const qty = toNumber(
+                        row.querySelector(".js-part-qty")?.value || 0
+                    );
+                    const unit = toNumber(
+                        row.querySelector(".js-part-unit")?.value || 0
+                    );
+                    const total = qty * unit;
+                    return {
+                        part_id: row.querySelector(".js-part-id")?.value || null,
+                        code:
+                            row
+                                .querySelector(".js-part-code")
+                                ?.value?.trim() || "",
+                        description:
+                            row
+                                .querySelector(".js-part-desc")
+                                ?.value?.trim() || "",
+                        quantity: qty,
+                        unit_price: unit,
+                        total,
+                    };
+                })
+                .filter(
+                    (p) =>
+                        p.description ||
+                        p.code ||
+                        p.quantity ||
+                        p.unit_price ||
+                        p.part_id
+                );
+
+        const collectLaborEntries = () =>
+            Array.from(document.querySelectorAll('[data-row="labor"]'))
+                .map((row) => {
+                    const start =
+                        row.querySelector(".js-labor-start")?.value || "";
+                    const end = row.querySelector(".js-labor-end")?.value || "";
+                    const desc =
+                        row.querySelector(".js-labor-desc")?.value?.trim() || "";
+
+                    let hours = 0;
+                    const rate = toNumber(laborHourValueInput?.value || 0);
+
+                    if (start && end) {
+                        const [sh, sm] = start.split(":").map(Number);
+                        const [eh, em] = end.split(":").map(Number);
+                        const startMinutes = sh * 60 + sm;
+                        const endMinutes = eh * 60 + em;
+                        if (endMinutes > startMinutes) {
+                            hours = (endMinutes - startMinutes) / 60;
+                        }
+                    }
+
+                    return {
+                        employee_id: technicianIdInput?.value || null,
+                        started_at: start ? `${orderDateInput?.value || ""} ${start}:00` : null,
+                        ended_at: end ? `${orderDateInput?.value || ""} ${end}:00` : null,
+                        hours,
+                        rate,
+                        total: hours * rate,
+                        description: desc,
+                    };
+                })
+                .filter((l) => l.started_at || l.ended_at || l.description);
+
+        // ========== TOTALIZAÇÃO ==========
+        function recalcTotals() {
+            const services = collectServices();
+            const parts = collectParts();
+            const labor = collectLaborEntries();
+
+            const servicesSubtotal = services.reduce(
+                (sum, s) => sum + (s.total || 0),
+                0
+            );
+            const partsSubtotal = parts.reduce(
+                (sum, p) => sum + (p.total || 0),
+                0
+            );
+
+            const totalHours = labor.reduce((sum, l) => sum + (l.hours || 0), 0);
+            const hourValue = toNumber(laborHourValueInput?.value || 0);
+            const laborTotal = totalHours * hourValue;
+
+            const discount = toNumber(discountInput?.value || 0);
+            const addition = toNumber(additionInput?.value || 0);
+
+            const grand =
+                servicesSubtotal + partsSubtotal + laborTotal - discount + addition;
+
+            if (servicesSubtotalDisplay)
+                servicesSubtotalDisplay.textContent = `R$ ${formatCurrency(
+                    servicesSubtotal
+                )}`;
+            if (partsSubtotalDisplay)
+                partsSubtotalDisplay.textContent = `R$ ${formatCurrency(
+                    partsSubtotal
+                )}`;
+            if (laborTotalAmountDisplay)
+                laborTotalAmountDisplay.textContent = `R$ ${formatCurrency(
+                    laborTotal
+                )}`;
+
+            if (boxServicesValue)
+                boxServicesValue.textContent = `R$ ${formatCurrency(
+                    servicesSubtotal
+                )}`;
+            if (boxPartsValue)
+                boxPartsValue.textContent = `R$ ${formatCurrency(partsSubtotal)}`;
+            if (boxLaborValue)
+                boxLaborValue.textContent = `R$ ${formatCurrency(laborTotal)}`;
+            if (grandTotalDisplay)
+                grandTotalDisplay.textContent = `R$ ${formatCurrency(grand)}`;
+
+            if (footerServicesValue)
+                footerServicesValue.textContent = `R$ ${formatCurrency(
+                    servicesSubtotal
+                )}`;
+            if (footerPartsValue)
+                footerPartsValue.textContent = `R$ ${formatCurrency(
+                    partsSubtotal
+                )}`;
+            if (footerLaborValue)
+                footerLaborValue.textContent = `R$ ${formatCurrency(laborTotal)}`;
+            if (footerGrandValue)
+                footerGrandValue.textContent = `R$ ${formatCurrency(grand)}`;
+        }
+
+        if (discountInput) discountInput.addEventListener("input", recalcTotals);
+        if (additionInput) additionInput.addEventListener("input", recalcTotals);
+        if (laborHourValueInput)
+            laborHourValueInput.addEventListener("input", recalcTotals);
+
+        // ========== PAYLOAD OS ==========
+        async function buildPayload(status) {
+            const equipments = collectEquipments();
+            const serviceItems = collectServices();
+            const partItems = collectParts();
+            const laborEntries = collectLaborEntries();
+
+            const servicesSubtotal = serviceItems.reduce(
+                (sum, s) => sum + (s.total || 0),
+                0
+            );
+            const partsSubtotal = partItems.reduce(
+                (sum, p) => sum + (p.total || 0),
+                0
+            );
+            const totalHours = laborEntries.reduce(
+                (sum, l) => sum + (l.hours || 0),
+                0
+            );
+            const laborRate = toNumber(laborHourValueInput?.value || 0);
+            const laborTotal = totalHours * laborRate;
+
+            const discount = toNumber(discountInput?.value || 0);
+            const addition = toNumber(additionInput?.value || 0);
+            const grand =
+                servicesSubtotal + partsSubtotal + laborTotal - discount + addition;
+
+            return {
+                id: orderIdInput?.value || null,
+                status: status || "draft",
+                order_date: orderDateInput?.value || null,
+
+                technician_id: technicianIdInput?.value || null,
+                opened_by_employee_id: technicianIdInput?.value || null,
+
+                secondary_customer_id: customerIdInput?.value || null,
+
+                requester_name: requesterNameInput?.value || null,
+                requester_email: null,
+                requester_phone: clientPhoneInput?.value || null,
+                ticket_number: ticketNumberInput?.value || null,
+
+                // ✅ bater com migration
+                address_line1: clientAddressInput?.value || null,
+                address_line2: [
+                    (clientAddressNumberInput?.value || "").trim(),
+                    (clientComplementInput?.value || "").trim(),
+                    (clientProvinceInput?.value || "").trim(),
+                ].filter(Boolean).join(" - ") || null,
+
+                city: clientCityInput?.value || null,
+                state: clientStateInput?.value || null,
+                zip_code: clientZipInput?.value || null,
+
+                labor_hour_value: laborRate,
+                labor_total_hours: totalHours,
+                labor_total_amount: laborTotal,
+
+                payment_condition: paymentConditionSel?.value || null,
+                notes: paymentNotesInput?.value || null,
+
+                services_subtotal: servicesSubtotal,
+                parts_subtotal: partsSubtotal,
+                discount_amount: discount,
+                addition_amount: addition,
+                grand_total: grand,
+
+                // ✅ nomes alinhados com o backend (fica “camel” ou “snake”, mas tem que bater com controller)
+                equipments,
+                serviceItems: serviceItems,
+                partItems: partItems,
+                laborEntries: laborEntries,
+            };
+        }
+
+        function ensureTechnicianSelected() {
+            const name = technicianNameInput?.value?.trim() || "";
+            const id = technicianIdInput?.value || "";
+
+            if (!name) {
+                alert("Selecione um técnico.");
+                technicianNameInput?.focus();
+                return false;
+            }
+
+            // se digitou algo e não selecionou da lista
+            if (!id) {
+                alert("Selecione um técnico na lista (não só digite).");
+                technicianNameInput?.focus();
+                return false;
+            }
+
+            return true;
+        }
+
+        async function ensureTechnicianIdOrCreate() {
+            const name = technicianNameInput?.value?.trim() || "";
+            if (!name) {
+                alert("Informe o técnico.");
+                technicianNameInput?.focus();
                 return null;
             }
 
-            const json = await res.json();
-            const data = json.data || json;
+            if (technicianIdInput?.value) return technicianIdInput.value;
 
-            if (data.id && orderIdInput && !orderIdInput.value) {
-                orderIdInput.value = data.id;
+            // cria se não existe
+            const id = await ensureEntityId({
+                inputEl: technicianNameInput,
+                hiddenIdEl: technicianIdInput,
+                searchUrl: ROUTES.employee,
+                createUrl: ROUTES.employee,
+                buildCreateBody: (label) => ({
+                    full_name: label,
+                    email: null,
+                    phone: null,
+                    document_number: null,
+                    position: "Técnico",
+                    hourly_rate: toNumber(laborHourValueInput?.value || 0),
+                    is_technician: true,
+                    is_active: true,
+                }),
+                pickFirstMatch: (json) => {
+                    const data = Array.isArray(json) ? json : (json.data || []);
+                    const label = technicianNameInput.value.trim().toLowerCase();
+                    return data.find(e => (e.full_name || "").trim().toLowerCase() === label) || null;
+                }
+            });
+
+            if (!id) {
+                alert("Não foi possível criar/selecionar o técnico.");
+                return null;
             }
-            if (data.order_number && orderNumberDisplay) {
-                orderNumberDisplay.value = data.order_number;
-            }
 
-            console.log("OS salva:", json);
-            return { payload, data };
-        } catch (e) {
-            console.error(e);
-            alert("Erro inesperado ao salvar OS.");
-            return null;
-        } finally {
-            state.saving = false;
-            recalcTotals();
-        }
-    }
-
-    // ========== SALVAR CADASTROS AUXILIARES ==========
-    async function saveCatalogsFromOs(payload, opts) {
-        const tasks = [];
-
-        // Cliente (secondary_customer)
-        if (opts.saveCustomer && !payload.secondary_customer_id) {
-            if (clientNameInput && clientNameInput.value.trim()) {
-                tasks.push(
-                    postJson(ROUTES.customer, {
-                        name: clientNameInput.value.trim(),
-                        cpfCnpj: clientDocInput?.value || null,
-                        email: clientEmailInput?.value || null,
-                        mobilePhone: clientPhoneInput?.value || null,
-                        address: clientAddressInput?.value || null,
-                        addressNumber: clientAddressNumberInput?.value || null,
-                        postalCode: clientZipInput?.value || null,
-                        cityName: clientCityInput?.value || null,
-                        state: clientStateInput?.value || null,
-                        province: clientProvinceInput?.value || null,
-                        complement: clientComplementInput?.value || null,
-                    })
-                );
-            }
+            return id;
         }
 
-        // Técnico (Employee)
-        if (opts.saveTechnician) {
-            if (!payload.technician_id && technicianNameInput?.value.trim()) {
-                tasks.push(
-                    postJson(ROUTES.employee, {
-                        full_name: technicianNameInput.value.trim(),
-                        email: null,
-                        phone: null,
-                        document_number: null,
-                        position: "Técnico",
-                        hourly_rate: payload.labor_hour_value || 0,
-                        is_technician: true,
-                        is_active: true,
-                    })
-                );
+        async function submitServiceOrder(status) {
+            if (state.saving) return null;
+            state.saving = true;
+
+            try {
+                const techId = await ensureTechnicianIdOrCreate();
+                if (!techId) return null;
+
+                const custId = await ensureCustomerIdOrCreate({allowCreate: true});
+                if (custId && customerIdInput) customerIdInput.value = custId;
+
+                const payload = await buildPayload(status);
+                const id = payload.id;
+                const isUpdate = !!id;
+
+                const url = isUpdate
+                    ? `${ROUTES.serviceOrder}/${id}`
+                    : ROUTES.serviceOrder;
+                const method = isUpdate ? "PUT" : "POST";
+
+                const res = await fetch(url, {
+                    method,
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": csrf,
+                        Accept: "application/json",
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                if (!res.ok) {
+                    console.error("Falha ao salvar OS", await res.text());
+                    alert("Erro ao salvar OS.");
+                    return null;
+                }
+
+                const json = await res.json();
+                const data = json.data || json;
+
+                if (data.id && orderIdInput && !orderIdInput.value) {
+                    orderIdInput.value = data.id;
+                }
+                if (data.order_number && orderNumberDisplay) {
+                    orderNumberDisplay.value = data.order_number;
+                }
+
+                console.log("OS salva:", json);
+                return {payload, data};
+            } catch (e) {
+                console.error(e);
+                alert("Erro inesperado ao salvar OS.");
+                return null;
+            } finally {
+                state.saving = false;
+                recalcTotals();
             }
         }
 
-        // Serviços
-        if (opts.saveServices && Array.isArray(payload.service_items)) {
-            payload.service_items.forEach((srv) => {
-                if (!srv.service_item_id && srv.description) {
+        // ========== SALVAR CADASTROS AUXILIARES ==========
+        async function saveCatalogsFromOs(payload, opts) {
+            const tasks = [];
+
+            // Cliente (secondary_customer)
+            if (opts.saveCustomer && !payload.secondary_customer_id) {
+                if (clientNameInput && clientNameInput.value.trim()) {
                     tasks.push(
-                        postJson(ROUTES.serviceItem, {
-                            name: srv.description,
-                            description: srv.description,
-                            unit_price: srv.unit_price || 0,
-                            service_type_id: null,
+                        postJson(ROUTES.customer, {
+                            name: clientNameInput.value.trim(),
+                            cpfCnpj: clientDocInput?.value || null,
+                            email: clientEmailInput?.value || null,
+                            mobilePhone: clientPhoneInput?.value || null,
+                            address: clientAddressInput?.value || null,
+                            addressNumber: clientAddressNumberInput?.value || null,
+                            postalCode: clientZipInput?.value || null,
+                            cityName: clientCityInput?.value || null,
+                            state: clientStateInput?.value || null,
+                            province: clientProvinceInput?.value || null,
+                            complement: clientComplementInput?.value || null,
+                        })
+                    );
+                }
+            }
+
+            // Técnico (Employee)
+            if (opts.saveTechnician) {
+                if (!payload.technician_id && technicianNameInput?.value.trim()) {
+                    tasks.push(
+                        postJson(ROUTES.employee, {
+                            full_name: technicianNameInput.value.trim(),
+                            email: null,
+                            phone: null,
+                            document_number: null,
+                            position: "Técnico",
+                            hourly_rate: payload.labor_hour_value || 0,
+                            is_technician: true,
                             is_active: true,
                         })
                     );
                 }
+            }
+
+            // Serviços
+            if (opts.saveServices && Array.isArray(payload.service_items)) {
+                payload.service_items.forEach((srv) => {
+                    if (!srv.service_item_id && srv.description) {
+                        tasks.push(
+                            postJson(ROUTES.serviceItem, {
+                                name: srv.description,
+                                description: srv.description,
+                                unit_price: srv.unit_price || 0,
+                                service_type_id: null,
+                                is_active: true,
+                            })
+                        );
+                    }
+                });
+            }
+
+            // Peças
+            if (opts.saveParts && Array.isArray(payload.part_items)) {
+                payload.part_items.forEach((p) => {
+                    if (!p.part_id && (p.code || p.description)) {
+                        tasks.push(
+                            postJson(ROUTES.part, {
+                                code: p.code || null,
+                                name: p.description || p.code || "Peça",
+                                description: p.description || null,
+                                ncm_code: null,
+                                unit_price: p.unit_price || 0,
+                                supplier_id: null,
+                                is_active: true,
+                            })
+                        );
+                    }
+                });
+            }
+
+            // Equipamentos
+            if (opts.saveEquipments && Array.isArray(payload.equipments)) {
+                payload.equipments.forEach((e) => {
+                    if (!e.equipment_id && (e.equipment_description || e.serial_number)) {
+                        tasks.push(
+                            postJson(ROUTES.equipment, {
+                                code: e.serial_number || null,
+                                name: e.equipment_description || "Equipamento",
+                                description: e.notes || null,
+                                serial_number: e.serial_number || null,
+                                notes: e.location || null,
+                            })
+                        );
+                    }
+                });
+            }
+
+            if (!tasks.length) return;
+
+            try {
+                await Promise.all(tasks);
+                console.log("Cadastros auxiliares salvos.");
+            } catch (e) {
+                console.error(e);
+                alert(
+                    "Alguns cadastros auxiliares não puderam ser salvos. Veja o console."
+                );
+            }
+        }
+
+        // ========== MODAIS: SALVAR / FINALIZAR ==========
+        if (btnSave && saveModal) {
+            btnSave.addEventListener("click", (e) => {
+                e.preventDefault();
+                if (!ensureTechnicianSelected()) return;
+                saveModal.classList.remove("hidden");
+                saveModal.classList.add("flex");
             });
-        }
 
-        // Peças
-        if (opts.saveParts && Array.isArray(payload.part_items)) {
-            payload.part_items.forEach((p) => {
-                if (!p.part_id && (p.code || p.description)) {
-                    tasks.push(
-                        postJson(ROUTES.part, {
-                            code: p.code || null,
-                            name: p.description || p.code || "Peça",
-                            description: p.description || null,
-                            ncm_code: null,
-                            unit_price: p.unit_price || 0,
-                            supplier_id: null,
-                            is_active: true,
-                        })
-                    );
-                }
-            });
-        }
+            document
+                .querySelectorAll("[data-os-save-cancel]")
+                .forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        saveModal.classList.add("hidden");
+                        saveModal.classList.remove("flex");
+                    });
+                });
 
-        // Equipamentos
-        if (opts.saveEquipments && Array.isArray(payload.equipments)) {
-            payload.equipments.forEach((e) => {
-                if (!e.equipment_id && (e.equipment_description || e.serial_number)) {
-                    tasks.push(
-                        postJson(ROUTES.equipment, {
-                            code: e.serial_number || null,
-                            name: e.equipment_description || "Equipamento",
-                            description: e.notes || null,
-                            serial_number: e.serial_number || null,
-                            notes: e.location || null,
-                        })
-                    );
-                }
-            });
-        }
+            const confirmBtn = q("#os-save-confirm");
 
-        if (!tasks.length) return;
+            if (confirmBtn) {
+                confirmBtn.addEventListener("click", async () => {
+                    const opts = {
+                        saveCustomer: q("#save_customer")?.checked || false,
+                        saveTechnician: q("#save_technician")?.checked || false,
+                        saveServices: q("#save_services")?.checked || false,
+                        saveParts: q("#save_parts")?.checked || false,
+                        saveEquipments: q("#save_equipments")?.checked || false,
+                    };
 
-        try {
-            await Promise.all(tasks);
-            console.log("Cadastros auxiliares salvos.");
-        } catch (e) {
-            console.error(e);
-            alert(
-                "Alguns cadastros auxiliares não puderam ser salvos. Veja o console."
-            );
-        }
-    }
+                    const result = await submitServiceOrder("draft");
+                    if (!result) return;
 
-    // ========== MODAIS: SALVAR / FINALIZAR ==========
-    if (btnSave && saveModal) {
-        btnSave.addEventListener("click", (e) => {
-            e.preventDefault();
-            if (!ensureTechnicianSelected()) return;
-            saveModal.classList.remove("hidden");
-            saveModal.classList.add("flex");
-        });
+                    await saveCatalogsFromOs(result.payload, opts);
 
-        document
-            .querySelectorAll("[data-os-save-cancel]")
-            .forEach((btn) => {
-                btn.addEventListener("click", () => {
                     saveModal.classList.add("hidden");
                     saveModal.classList.remove("flex");
+
+                    window.location.href = "/service-orders/service-order";
                 });
+            }
+        }
+
+        if (btnFinish && finalizeModal) {
+            btnFinish.addEventListener("click", (e) => {
+                e.preventDefault();
+                if (!ensureTechnicianSelected()) return;
+
+                const hasEmail =
+                    clientEmailInput && clientEmailInput.value.trim() !== "";
+                const emailBtn = q("#os-finalize-email");
+                if (emailBtn) emailBtn.disabled = !hasEmail;
+
+                finalizeModal.classList.remove("hidden");
+                finalizeModal.classList.add("flex");
             });
 
-        const confirmBtn = q("#os-save-confirm");
+            document
+                .querySelectorAll("[data-os-finalize-cancel]")
+                .forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        finalizeModal.classList.add("hidden");
+                        finalizeModal.classList.remove("flex");
+                    });
+                });
 
-        if (confirmBtn) {
-            confirmBtn.addEventListener("click", async () => {
+            async function handleFinalize(action) {
                 const opts = {
-                    saveCustomer: q("#save_customer")?.checked || false,
-                    saveTechnician: q("#save_technician")?.checked || false,
-                    saveServices: q("#save_services")?.checked || false,
-                    saveParts: q("#save_parts")?.checked || false,
-                    saveEquipments: q("#save_equipments")?.checked || false,
+                    saveCustomer: q("#final_save_customer")?.checked || false,
+                    saveTechnician: q("#final_save_technician")?.checked || false,
+                    saveServices: q("#final_save_services")?.checked || false,
+                    saveParts: q("#final_save_parts")?.checked || false,
+                    saveEquipments: q("#final_save_equipments")?.checked || false,
                 };
 
-                const result = await submitServiceOrder("draft");
+                // ao finalizar, deixo status "pending" por enquanto
+                const result = await submitServiceOrder("pending");
                 if (!result) return;
 
                 await saveCatalogsFromOs(result.payload, opts);
 
-                saveModal.classList.add("hidden");
-                saveModal.classList.remove("flex");
-
-                window.location.href = "/service-orders/service-order";
-            });
-        }
-    }
-
-    if (btnFinish && finalizeModal) {
-        btnFinish.addEventListener("click", (e) => {
-            e.preventDefault();
-            if (!ensureTechnicianSelected()) return;
-
-            const hasEmail =
-                clientEmailInput && clientEmailInput.value.trim() !== "";
-            const emailBtn = q("#os-finalize-email");
-            if (emailBtn) emailBtn.disabled = !hasEmail;
-
-            finalizeModal.classList.remove("hidden");
-            finalizeModal.classList.add("flex");
-        });
-
-        document
-            .querySelectorAll("[data-os-finalize-cancel]")
-            .forEach((btn) => {
-                btn.addEventListener("click", () => {
+                if (action === "tablet") {
                     finalizeModal.classList.add("hidden");
                     finalizeModal.classList.remove("flex");
-                });
-            });
-
-        async function handleFinalize(action) {
-            const opts = {
-                saveCustomer: q("#final_save_customer")?.checked || false,
-                saveTechnician: q("#final_save_technician")?.checked || false,
-                saveServices: q("#final_save_services")?.checked || false,
-                saveParts: q("#final_save_parts")?.checked || false,
-                saveEquipments: q("#final_save_equipments")?.checked || false,
-            };
-
-            // ao finalizar, deixo status "pending" por enquanto
-            const result = await submitServiceOrder("pending");
-            if (!result) return;
-
-            await saveCatalogsFromOs(result.payload, opts);
-
-            if (action === "tablet") {
-                finalizeModal.classList.add("hidden");
-                finalizeModal.classList.remove("flex");
-                openSignatureModal();
-            } else if (action === "email") {
-                finalizeModal.classList.add("hidden");
-                finalizeModal.classList.remove("flex");
-                alert(
-                    "OS enviada para fluxo de assinatura por e-mail (integração depois)."
-                );
-            } else if (action === "new") {
-                finalizeModal.classList.add("hidden");
-                finalizeModal.classList.remove("flex");
-                window.location.href = "/service-orders/create";
+                    openSignatureModal();
+                } else if (action === "email") {
+                    finalizeModal.classList.add("hidden");
+                    finalizeModal.classList.remove("flex");
+                    alert(
+                        "OS enviada para fluxo de assinatura por e-mail (integração depois)."
+                    );
+                } else if (action === "new") {
+                    finalizeModal.classList.add("hidden");
+                    finalizeModal.classList.remove("flex");
+                    window.location.href = "/service-orders/create";
+                }
             }
+
+            const btnEmail = q("#os-finalize-email");
+            const btnTablet = q("#os-finalize-tablet");
+            const btnNew = q("#os-finalize-new");
+
+            if (btnEmail)
+                btnEmail.addEventListener("click", () => handleFinalize("email"));
+            if (btnTablet)
+                btnTablet.addEventListener("click", () => handleFinalize("tablet"));
+            if (btnNew)
+                btnNew.addEventListener("click", () => handleFinalize("new"));
         }
 
-        const btnEmail = q("#os-finalize-email");
-        const btnTablet = q("#os-finalize-tablet");
-        const btnNew = q("#os-finalize-new");
+        // ========== ASSINATURA ==========
+        // ====== ASSINATURA ======
+        const signatureModal = q('#os-signature-modal');
+        const signatureCanvas = q('#signature-pad');
+        const signatureClear = q('#signature-clear');
+        const signatureClose = q('#signature-close');
+        const signatureSave = q('#signature-save');
 
-        if (btnEmail)
-            btnEmail.addEventListener("click", () => handleFinalize("email"));
-        if (btnTablet)
-            btnTablet.addEventListener("click", () => handleFinalize("tablet"));
-        if (btnNew)
-            btnNew.addEventListener("click", () => handleFinalize("new"));
-    }
+        let signatureCtx;
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let signatureInitDone = false;
 
-    // ========== ASSINATURA ==========
-    // ====== ASSINATURA ======
-    const signatureModal  = q('#os-signature-modal');
-    const signatureCanvas = q('#signature-pad');
-    const signatureClear  = q('#signature-clear');
-    const signatureClose  = q('#signature-close');
-    const signatureSave   = q('#signature-save');
+        function openSignatureModal() {
+            if (!signatureModal) return;
 
-    let signatureCtx;
-    let isDrawing         = false;
-    let lastX             = 0;
-    let lastY             = 0;
-    let signatureInitDone = false;
+            initSignaturePad();
 
-    function openSignatureModal() {
-        if (!signatureModal) return;
+            signatureModal.classList.remove('hidden');
+            signatureModal.classList.add('flex');
 
-        initSignaturePad();
+            // ajusta o canvas depois que o modal aparece
+            setTimeout(() => {
+                if (signatureCanvas && signatureCanvas._resizeCanvas) {
+                    signatureCanvas._resizeCanvas();
+                }
+            }, 10);
+        }
 
-        signatureModal.classList.remove('hidden');
-        signatureModal.classList.add('flex');
+        function closeSignatureModal() {
+            if (!signatureModal) return;
+            signatureModal.classList.add('hidden');
+            signatureModal.classList.remove('flex');
+        }
 
-        // ajusta o canvas depois que o modal aparece
-        setTimeout(() => {
-            if (signatureCanvas && signatureCanvas._resizeCanvas) {
-                signatureCanvas._resizeCanvas();
-            }
-        }, 10);
-    }
+        if (signatureClose) {
+            signatureClose.addEventListener('click', closeSignatureModal);
+        }
 
-    function closeSignatureModal() {
-        if (!signatureModal) return;
-        signatureModal.classList.add('hidden');
-        signatureModal.classList.remove('flex');
-    }
+        if (signatureClear) {
+            signatureClear.addEventListener('click', () => {
+                if (!signatureCtx || !signatureCanvas) return;
+                signatureCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+            });
+        }
 
-    if (signatureClose) {
-        signatureClose.addEventListener('click', closeSignatureModal);
-    }
+        if (signatureSave) {
+            signatureSave.addEventListener('click', async () => {
+                if (!signatureCanvas || !signatureCtx) return;
 
-    if (signatureClear) {
-        signatureClear.addEventListener('click', () => {
-            if (!signatureCtx || !signatureCanvas) return;
-            signatureCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
-        });
-    }
+                const serviceOrderId = orderIdInput?.value || null;
+                if (!serviceOrderId) {
+                    alert('Salve a OS antes de registrar a assinatura.');
+                    return;
+                }
 
-    if (signatureSave) {
-        signatureSave.addEventListener('click', async () => {
-            if (!signatureCanvas || !signatureCtx) return;
+                const dataUrl = signatureCanvas.toDataURL('image/png');
 
-            const serviceOrderId = orderIdInput?.value || null;
-            if (!serviceOrderId) {
-                alert('Salve a OS antes de registrar a assinatura.');
-                return;
-            }
+                const clientNameEl = document.querySelector('#os_client_name');
+                const clientEmailEl = document.querySelector('#os_client_email');
 
-            const dataUrl = signatureCanvas.toDataURL('image/png');
+                const body = {
+                    image_base64: dataUrl,
+                    client_name: clientNameEl?.value || null,
+                    client_email: clientEmailEl?.value || null,
+                    technician_id: technicianIdInput?.value || null,
+                };
 
-            const clientNameEl  = document.querySelector('#os_client_name');
-            const clientEmailEl = document.querySelector('#os_client_email');
+                try {
+                    // 1) salva a imagem da assinatura
+                    const resp = await fetch(`/service-orders/${serviceOrderId}/client-signature`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrf,
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify(body),
+                    });
 
-            const body = {
-                image_base64: dataUrl,
-                client_name:  clientNameEl?.value || null,
-                client_email: clientEmailEl?.value || null,
-                technician_id: technicianIdInput?.value || null,
+                    if (!resp.ok) {
+                        console.error('Erro ao salvar assinatura:', await resp.text());
+                        alert('Erro ao salvar assinatura do cliente.');
+                        return;
+                    }
+
+                    const json = await resp.json();
+                    console.log('Assinatura salva:', json);
+
+                    // 2) após a assinatura, marcar OS como APROVADA
+                    const approveResult = await submitServiceOrder("approved");
+                    if (!approveResult) {
+                        alert('Assinatura salva, mas houve erro ao aprovar a OS. Verifique na listagem de OS.');
+                        return;
+                    }
+
+                    alert('Assinatura salva e OS aprovada com sucesso.');
+                    closeSignatureModal();
+                } catch (e) {
+                    console.error(e);
+                    alert('Erro inesperado ao salvar assinatura.');
+                }
+            });
+        }
+
+        function initSignaturePad() {
+            if (!signatureCanvas || signatureInitDone) return;
+
+            signatureCtx = signatureCanvas.getContext('2d');
+            signatureInitDone = true;
+
+            const resizeCanvas = () => {
+                const rect = signatureCanvas.getBoundingClientRect();
+                if (rect.width === 0 || rect.height === 0) return;
+
+                signatureCanvas.width = rect.width;
+                signatureCanvas.height = rect.height;
+                signatureCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
             };
 
+            signatureCanvas._resizeCanvas = resizeCanvas;
+
+            const getPos = (evt) => {
+                const rect = signatureCanvas.getBoundingClientRect();
+                let x, y;
+
+                if (evt.touches && evt.touches.length) {
+                    x = evt.touches[0].clientX - rect.left;
+                    y = evt.touches[0].clientY - rect.top;
+                } else {
+                    x = evt.clientX - rect.left;
+                    y = evt.clientY - rect.top;
+                }
+                return {x, y};
+            };
+
+            const startDraw = (evt) => {
+                evt.preventDefault?.();
+                isDrawing = true;
+                const {x, y} = getPos(evt);
+                lastX = x;
+                lastY = y;
+            };
+
+            const draw = (evt) => {
+                if (!isDrawing) return;
+                evt.preventDefault?.();
+                const {x, y} = getPos(evt);
+
+                signatureCtx.lineWidth = 2;
+                signatureCtx.lineCap = 'round';
+                signatureCtx.strokeStyle = '#111827';
+                signatureCtx.beginPath();
+                signatureCtx.moveTo(lastX, lastY);
+                signatureCtx.lineTo(x, y);
+                signatureCtx.stroke();
+
+                lastX = x;
+                lastY = y;
+            };
+
+            const stopDraw = (evt) => {
+                evt?.preventDefault?.();
+                isDrawing = false;
+            };
+
+            // mouse
+            signatureCanvas.addEventListener('mousedown', startDraw);
+            signatureCanvas.addEventListener('mousemove', draw);
+            signatureCanvas.addEventListener('mouseup', stopDraw);
+            signatureCanvas.addEventListener('mouseleave', stopDraw);
+
+            // touch
+            signatureCanvas.addEventListener('touchstart', startDraw, {passive: false});
+            signatureCanvas.addEventListener('touchmove', draw, {passive: false});
+            signatureCanvas.addEventListener('touchend', stopDraw, {passive: false});
+            signatureCanvas.addEventListener('touchcancel', stopDraw, {passive: false});
+
+            window.addEventListener('resize', () => {
+                if (signatureCanvas._resizeCanvas) signatureCanvas._resizeCanvas();
+            });
+        }
+
+        async function ensureEntityId({
+                                          inputEl,
+                                          hiddenIdEl,
+                                          searchUrl,
+                                          createUrl,
+                                          buildCreateBody,
+                                          pickFirstMatch, // (json) => item|null
+                                          minChars = 2,
+                                      }) {
+            if (!inputEl) return null;
+
+            const label = inputEl.value.trim();
+            const currentId = hiddenIdEl?.value || "";
+
+            if (currentId) return currentId;          // já selecionado
+            if (!label || label.length < minChars) return null;
+
+            // 1) tenta achar "igual" via search (pra evitar duplicar)
             try {
-                // 1) salva a imagem da assinatura
-                const resp = await fetch(`/service-orders/${serviceOrderId}/client-signature`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrf,
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify(body),
+                const res = await fetch(`${searchUrl}?q=${encodeURIComponent(label)}&typeahead=1`, {
+                    headers: {Accept: "application/json"},
                 });
-
-                if (!resp.ok) {
-                    console.error('Erro ao salvar assinatura:', await resp.text());
-                    alert('Erro ao salvar assinatura do cliente.');
-                    return;
+                if (res.ok) {
+                    const json = await res.json();
+                    const found = pickFirstMatch ? pickFirstMatch(json) : null;
+                    if (found?.id) {
+                        if (hiddenIdEl) hiddenIdEl.value = found.id;
+                        // garante nome bonitinho
+                        if (found.full_name) inputEl.value = found.full_name;
+                        if (found.name) inputEl.value = found.name;
+                        return found.id;
+                    }
                 }
-
-                const json = await resp.json();
-                console.log('Assinatura salva:', json);
-
-                // 2) após a assinatura, marcar OS como APROVADA
-                const approveResult = await submitServiceOrder("approved");
-                if (!approveResult) {
-                    alert('Assinatura salva, mas houve erro ao aprovar a OS. Verifique na listagem de OS.');
-                    return;
-                }
-
-                alert('Assinatura salva e OS aprovada com sucesso.');
-                closeSignatureModal();
             } catch (e) {
-                console.error(e);
-                alert('Erro inesperado ao salvar assinatura.');
+                // ignora e segue pra criar
             }
-        });
-    }
 
-    function initSignaturePad() {
-        if (!signatureCanvas || signatureInitDone) return;
+            // 2) cria
+            const body = buildCreateBody(label);
+            const created = await postJson(createUrl, body);
+            const createdData = created.data || created;
 
-        signatureCtx = signatureCanvas.getContext('2d');
-        signatureInitDone = true;
-
-        const resizeCanvas = () => {
-            const rect = signatureCanvas.getBoundingClientRect();
-            if (rect.width === 0 || rect.height === 0) return;
-
-            signatureCanvas.width  = rect.width;
-            signatureCanvas.height = rect.height;
-            signatureCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
-        };
-
-        signatureCanvas._resizeCanvas = resizeCanvas;
-
-        const getPos = (evt) => {
-            const rect = signatureCanvas.getBoundingClientRect();
-            let x, y;
-
-            if (evt.touches && evt.touches.length) {
-                x = evt.touches[0].clientX - rect.left;
-                y = evt.touches[0].clientY - rect.top;
-            } else {
-                x = evt.clientX - rect.left;
-                y = evt.clientY - rect.top;
+            if (createdData?.id) {
+                if (hiddenIdEl) hiddenIdEl.value = createdData.id;
+                // normaliza label
+                if (createdData.full_name) inputEl.value = createdData.full_name;
+                if (createdData.name) inputEl.value = createdData.name;
+                return createdData.id;
             }
-            return { x, y };
-        };
 
-        const startDraw = (evt) => {
-            evt.preventDefault?.();
-            isDrawing = true;
-            const { x, y } = getPos(evt);
-            lastX = x;
-            lastY = y;
-        };
-
-        const draw = (evt) => {
-            if (!isDrawing) return;
-            evt.preventDefault?.();
-            const { x, y } = getPos(evt);
-
-            signatureCtx.lineWidth = 2;
-            signatureCtx.lineCap   = 'round';
-            signatureCtx.strokeStyle = '#111827';
-            signatureCtx.beginPath();
-            signatureCtx.moveTo(lastX, lastY);
-            signatureCtx.lineTo(x, y);
-            signatureCtx.stroke();
-
-            lastX = x;
-            lastY = y;
-        };
-
-        const stopDraw = (evt) => {
-            evt?.preventDefault?.();
-            isDrawing = false;
-        };
-
-        // mouse
-        signatureCanvas.addEventListener('mousedown', startDraw);
-        signatureCanvas.addEventListener('mousemove', draw);
-        signatureCanvas.addEventListener('mouseup', stopDraw);
-        signatureCanvas.addEventListener('mouseleave', stopDraw);
-
-        // touch
-        signatureCanvas.addEventListener('touchstart', startDraw, { passive: false });
-        signatureCanvas.addEventListener('touchmove', draw, { passive: false });
-        signatureCanvas.addEventListener('touchend', stopDraw, { passive: false });
-        signatureCanvas.addEventListener('touchcancel', stopDraw, { passive: false });
-
-        window.addEventListener('resize', () => {
-            if (signatureCanvas._resizeCanvas) signatureCanvas._resizeCanvas();
-        });
-    }
-
-    async function ensureEntityId({
-                                      inputEl,
-                                      hiddenIdEl,
-                                      searchUrl,
-                                      createUrl,
-                                      buildCreateBody,
-                                      pickFirstMatch, // (json) => item|null
-                                      minChars = 2,
-                                  }) {
-        if (!inputEl) return null;
-
-        const label = inputEl.value.trim();
-        const currentId = hiddenIdEl?.value || "";
-
-        if (currentId) return currentId;          // já selecionado
-        if (!label || label.length < minChars) return null;
-
-        // 1) tenta achar "igual" via search (pra evitar duplicar)
-        try {
-            const res = await fetch(`${searchUrl}?q=${encodeURIComponent(label)}&typeahead=1`, {
-                headers: { Accept: "application/json" },
-            });
-            if (res.ok) {
-                const json = await res.json();
-                const found = pickFirstMatch ? pickFirstMatch(json) : null;
-                if (found?.id) {
-                    if (hiddenIdEl) hiddenIdEl.value = found.id;
-                    // garante nome bonitinho
-                    if (found.full_name) inputEl.value = found.full_name;
-                    if (found.name) inputEl.value = found.name;
-                    return found.id;
-                }
-            }
-        } catch (e) {
-            // ignora e segue pra criar
+            return null;
         }
 
-        // 2) cria
-        const body = buildCreateBody(label);
-        const created = await postJson(createUrl, body);
-        const createdData = created.data || created;
+        // ========== INIT ==========
+        setupTechnicianLookup();
 
-        if (createdData?.id) {
-            if (hiddenIdEl) hiddenIdEl.value = createdData.id;
-            // normaliza label
-            if (createdData.full_name) inputEl.value = createdData.full_name;
-            if (createdData.name) inputEl.value = createdData.name;
-            return createdData.id;
-        }
+        if (equipmentListEl && !equipmentListEl.children.length) addEquipmentBlock();
+        if (serviceListEl && !serviceListEl.children.length) addServiceRow();
+        if (partListEl && !partListEl.children.length) addPartRow();
+        if (laborListEl && !laborListEl.children.length) addLaborRow();
 
-        return null;
+        if (btnAddEquipment)
+            btnAddEquipment.addEventListener("click", () => addEquipmentBlock());
+        if (btnAddService)
+            btnAddService.addEventListener("click", () => addServiceRow());
+        if (btnAddPart)
+            btnAddPart.addEventListener("click", () => addPartRow());
+        if (btnAddLabor)
+            btnAddLabor.addEventListener("click", () => addLaborRow());
+
+        recalcTotals();
     }
 
-    // ========== INIT ==========
-    setupTechnicianLookup();
-
-    if (equipmentListEl && !equipmentListEl.children.length) addEquipmentBlock();
-    if (serviceListEl && !serviceListEl.children.length) addServiceRow();
-    if (partListEl && !partListEl.children.length) addPartRow();
-    if (laborListEl && !laborListEl.children.length) addLaborRow();
-
-    if (btnAddEquipment)
-        btnAddEquipment.addEventListener("click", () => addEquipmentBlock());
-    if (btnAddService)
-        btnAddService.addEventListener("click", () => addServiceRow());
-    if (btnAddPart)
-        btnAddPart.addEventListener("click", () => addPartRow());
-    if (btnAddLabor)
-        btnAddLabor.addEventListener("click", () => addLaborRow());
-
-    recalcTotals();
-});
+)
+    ;

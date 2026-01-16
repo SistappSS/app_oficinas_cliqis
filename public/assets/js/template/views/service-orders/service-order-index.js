@@ -197,6 +197,9 @@ function renderRow(os) {
  * Liga menus dropdown e ações de view/edit/delete
  */
 function bindRowActions() {
+    if (window.__osMenuBound) return;
+    window.__osMenuBound = true;
+
     const triggers = document.querySelectorAll("[data-menu-trigger]");
     const menus    = document.querySelectorAll("[data-menu]");
 
@@ -219,7 +222,7 @@ function bindRowActions() {
     });
 
     // fechar ao clicar fora
-    document.addEventListener("click", () => closeAllMenus(), { once: true });
+    document.addEventListener("click", () => closeAllMenus());
 
     // ações
     document.querySelectorAll("[data-view]").forEach((btn) => {
