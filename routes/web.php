@@ -199,7 +199,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
     Route::group(['prefix' => 'service-orders'], function () {
         // Service Orders
         Route::get('/service-order', [ServiceOrderController::class, 'view'])->name('service-order.view');
-        Route::get('/service-order/create/{serviceOrder?}', [ServiceOrderController::class, 'create'])->name('service-order.create');
+        Route::get('/service-order/create/{id?}', [ServiceOrderController::class, 'create'])->name('service-order.create');
         Route::get('/service-order/{serviceOrder}/edit', [ServiceOrderController::class, 'edit'])->name('service-order.edit');
         Route::resource('/service-order-api', ServiceOrderController::class);
 
