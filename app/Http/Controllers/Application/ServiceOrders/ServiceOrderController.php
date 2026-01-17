@@ -33,28 +33,30 @@ class ServiceOrderController extends Controller
         return $this->webRoute('app.service_orders.service_order_index', 'service_order');
     }
 
-    public function create(?ServiceOrder $serviceOrder = null)
+    public function create(?string $id = null)
     {
-        if ($serviceOrder) {
-            $serviceOrder->load([
+        $serviceOrder = $id
+            ? ServiceOrder::with([
                 'equipments',
                 'serviceItems',
-                'partItems',
+                'partItems.part',
                 'laborEntries',
                 'technician',
                 'secondaryCustomer',
-            ]);
+            ])->findOrFail($id)
+            : null;
 
-            $displayOrderNumber = $serviceOrder->order_number;
-            $defaultTechnician  = $serviceOrder->technician;
-        } else {
-            $displayOrderNumber = $this->generateNextNumber();
-            $defaultTechnician = Employee::where('user_id', auth()->id())->first();
-        }
+        $displayOrderNumber = $serviceOrder
+            ? $serviceOrder->order_number
+            : $this->generateNextNumber();
+
+        $defaultTechnician = $serviceOrder
+            ? $serviceOrder->technician
+            : Employee::where('user_id', auth()->id())->first();
 
         return view('app.service_orders.service_order_create', [
-            'serviceOrder'        => $serviceOrder,
-            'displayOrderNumber'  => $displayOrderNumber,
+            'serviceOrder'       => $serviceOrder,
+            'displayOrderNumber' => $displayOrderNumber,
             'defaultTechnician'  => $defaultTechnician,
         ]);
     }
@@ -219,6 +221,8 @@ class ServiceOrderController extends Controller
             'labor_entries.*.ended_at'    => ['nullable', 'date'],
             'labor_entries.*.hours'       => ['nullable', 'numeric'],
             'labor_entries.*.rate'        => ['nullable', 'numeric'],
+            'labor_entries.*.executed_service_item_ids' => ['nullable','array'],
+            'labor_entries.*.executed_service_item_ids.*' => ['string'],
         ]);
 
         $status  = $validated['status'] ?? 'draft';
@@ -237,6 +241,16 @@ class ServiceOrderController extends Controller
             $validated['parts'],
             $validated['labor_entries']
         );
+
+        $all = $labors
+            ->pluck('executed_service_item_ids')
+            ->filter()
+            ->flatten()
+            ->values();
+
+        if ($all->count() !== $all->unique()->count()) {
+            return response()->json(['message' => 'Não é permitido repetir o mesmo serviço em mais de um registro de hora.'], 422);
+        }
 
         return DB::transaction(function () use (
             $id,
@@ -418,6 +432,7 @@ class ServiceOrderController extends Controller
                     'hours'       => $hours,
                     'rate'        => $rate,
                     'total'       => $tot,
+                    'executed_service_item_ids' => $row['executed_service_item_ids'] ?? null,
                 ];
 
                 if (!empty($row['id'])) {

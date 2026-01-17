@@ -48,11 +48,11 @@
                             <span class="opacity-90">OS</span>
                             <span class="mx-1 opacity-60">•</span>
                             <span class="opacity-90">
-                                #{{ $serviceOrder->code ?? ($nextOrderNumber ?? '000001') }}
+                                #{{ $serviceOrder->order_number ?? $displayOrderNumber ?? '' }}
                             </span>
                         </div>
                         <h1 class="mt-3 text-2xl md:text-3xl font-extrabold tracking-tight">
-                            {{ isset($serviceOrder) ? 'Editar ordem de serviço' : 'Nova ordem de serviço' }}
+                            {{ isset($serviceOrder) ? 'Duplicando ordem de serviço' : 'Nova ordem de serviço' }}
                         </h1>
                         <p class="mt-1 text-sm md:text-base text-sky-50/90">
                             Preencha e finalize. Mobile-first.
@@ -62,7 +62,18 @@
                     <div class="flex flex-col items-end gap-2">
                         <span
                             class="inline-flex items-center rounded-full bg-white/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide">
-                            {{ $serviceOrder->status_label ?? 'rascunho' }}
+                            @php
+                                $statusLabel = match($serviceOrder->status ?? 'draft') {
+                                  'draft' => 'rascunho',
+                                  'pending' => 'pendente',
+                                  'approved' => 'aprovada',
+                                  'rejected' => 'rejeitada',
+                                  'completed' => 'concluída',
+                                  default => $serviceOrder->status ?? 'rascunho',
+                                };
+                            @endphp
+
+                            {{ $statusLabel }}
                         </span>
                     </div>
                 </div>
@@ -91,7 +102,7 @@
                         <label class="block text-sm text-slate-600 mb-1">Data</label>
                         <input id="order_date" type="date"
                                class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900"
-                               value="{{ now()->format('Y-m-d') }}"/>
+                               value="{{ old('order_date', $serviceOrder?->order_date?->format('Y-m-d') ?? now()->format('Y-m-d')) }}"/>
                     </div>
                 </div>
 
@@ -188,7 +199,7 @@
                             </label>
                             <input id="addressNumber" name="addressNumber"
                                    class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
-                                   placeholder="000" value="{{ old('address', $serviceOrder->address ?? '') }}"/>
+                                   placeholder="000" value="{{ old('addressNumber', $serviceOrder->addressNumber ?? '') }}"/>
                         </div>
                         <div>
                             <label class="block text-sm text-slate-600 mb-1">
@@ -197,7 +208,7 @@
                             <input id="complement" name="complement"
                                    class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
                                    placeholder="Apartamento X"
-                                   value="{{ old('address', $serviceOrder->address ?? '') }}"/>
+                                   value="{{ old('complement', $serviceOrder->complement ?? '') }}"/>
                         </div>
                     </div>
 
@@ -417,7 +428,7 @@
                             name="discount"
                             class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-right text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
                             placeholder="0,00"
-                            value="{{ old('discount', $serviceOrder->discount ?? '') }}"
+                            value="{{ old('discount', $serviceOrder->discount_amount ?? 0) }}"
                         />
                     </div>
                     <div>
@@ -431,7 +442,7 @@
                             name="addition"
                             class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-right text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
                             placeholder="0,00"
-                            value="{{ old('addition', $serviceOrder->addition ?? '') }}"
+                            value="{{ old('addition', $serviceOrder->addition_amount ?? 0) }}"
                         />
                     </div>
                     <div class="rounded-2xl bg-slate-900 text-white px-5 py-3 flex items-center justify-between">
@@ -646,5 +657,8 @@
     <script src="{{asset('assets/js/common/mask_input.js')}}"></script>
     <script type="module" src="{{asset('assets/js/common/cep.js')}}"></script>
 
+    <script>
+        window.__SO__ = @json($serviceOrder);
+    </script>
     <script type="module" src="{{ asset('assets/js/template/views/service-orders/service-order-form.js') }}"></script>
 @endpush

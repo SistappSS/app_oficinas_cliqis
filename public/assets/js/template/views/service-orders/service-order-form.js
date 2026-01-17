@@ -1,5 +1,3 @@
-// assets/js/template/views/service-orders/service-order-form.js
-
 document.addEventListener("DOMContentLoaded", () => {
         const csrf =
             document.querySelector('meta[name="csrf-token"]')?.content || "";
@@ -66,146 +64,147 @@ document.addEventListener("DOMContentLoaded", () => {
             saving: false,
         };
 
-    async function detectMissingCatalogs(payload) {
-        const missing = {
-            customer: null,
-            services: [],
-            parts: [],
-            equipments: [],
-            tech_rate: null,
-        };
-
-        // ---- CLIENTE (secondary_customer)
-        if (!payload.secondary_customer_id && (clientNameInput?.value || "").trim()) {
-            const name = (clientNameInput.value || "").trim();
-            const doc = (clientDocInput?.value || "").trim();
-            const email = (clientEmailInput?.value || "").trim().toLowerCase();
-
-            try {
-                const items = await searchCustomers(name);
-
-                const byDoc = doc
-                    ? items.find(c => (c.cpfCnpj || "").replace(/\D/g, "") === doc.replace(/\D/g, ""))
-                    : null;
-
-                const byEmail = email
-                    ? items.find(c => (c.email || "").trim().toLowerCase() === email)
-                    : null;
-
-                const byExactName = items.find(c => (c.name || "").trim().toLowerCase() === name.toLowerCase());
-
-                const found = byDoc || byEmail || byExactName;
-                if (!found?.id) {
-                    missing.customer = {
-                        name,
-                        cpfCnpj: doc || null,
-                        email: email || null,
-                        mobilePhone: clientPhoneInput?.value || null,
-                        address: clientAddressInput?.value || null,
-                        addressNumber: clientAddressNumberInput?.value || null,
-                        postalCode: clientZipInput?.value || null,
-                        cityName: clientCityInput?.value || null,
-                        state: clientStateInput?.value || null,
-                        province: clientProvinceInput?.value || null,
-                        complement: clientComplementInput?.value || null,
-                    };
-                }
-            } catch (e) {}
-        }
-
-        // ---- SERVIÇOS (service_items do catálogo)
-        (payload.services || []).forEach((s) => {
-            const label = (s.description || "").trim();
-            if (!s.service_item_id && label) {
-                missing.services.push({
-                    label,
-                    unit_price: s.unit_price || 0,
-                });
-            }
-        });
-
-        // ---- PEÇAS (parts do catálogo)
-        // precisa do payload.parts conter `code` (do collectParts)
-        (payload.parts || []).forEach((p) => {
-            const code = (p.code || "").trim();
-            const desc = (p.description || "").trim();
-            if (!p.part_id && (code || desc)) {
-                missing.parts.push({
-                    code: code || null,
-                    name: desc || code || "Peça",
-                    description: desc || null,
-                    unit_price: p.unit_price || 0,
-                    ncm_code: null,
-                    supplier_id: null,
-                    is_active: true,
-                });
-            }
-        });
-
-        // ---- EQUIPAMENTOS (equipments do catálogo)
-        (payload.equipments || []).forEach((e) => {
-            const name = (e.equipment_description || "").trim();
-            const serial = (e.serial_number || "").trim();
-            if (!e.equipment_id && (name || serial)) {
-                missing.equipments.push({
-                    code: (serial || null),                 // opcional
-                    name: name || "Equipamento",
-                    description: (e.notes || "").trim() || null,
-                    serial_number: serial || null,
-                    notes: (e.location || "").trim() || null,
-                });
-            }
-        });
-
-        const techId = payload.technician_id || null;
-        const uiRate = toNumber(laborHourValueInput?.value || 0);
-        const dbRate = toNumber(technicianIdInput?.dataset?.hourlyRate || 0);
-
-        if (techId && Math.abs(uiRate - dbRate) > 0.0001) {
-            missing.tech_rate = {
-                technician_id: techId,
-                old_rate: dbRate,
-                new_rate: uiRate,
+        async function detectMissingCatalogs(payload) {
+            const missing = {
+                customer: null,
+                services: [],
+                parts: [],
+                equipments: [],
+                tech_rate: null,
             };
+
+            // ---- CLIENTE (secondary_customer)
+            if (!payload.secondary_customer_id && (clientNameInput?.value || "").trim()) {
+                const name = (clientNameInput.value || "").trim();
+                const doc = (clientDocInput?.value || "").trim();
+                const email = (clientEmailInput?.value || "").trim().toLowerCase();
+
+                try {
+                    const items = await searchCustomers(name);
+
+                    const byDoc = doc
+                        ? items.find(c => (c.cpfCnpj || "").replace(/\D/g, "") === doc.replace(/\D/g, ""))
+                        : null;
+
+                    const byEmail = email
+                        ? items.find(c => (c.email || "").trim().toLowerCase() === email)
+                        : null;
+
+                    const byExactName = items.find(c => (c.name || "").trim().toLowerCase() === name.toLowerCase());
+
+                    const found = byDoc || byEmail || byExactName;
+                    if (!found?.id) {
+                        missing.customer = {
+                            name,
+                            cpfCnpj: doc || null,
+                            email: email || null,
+                            mobilePhone: clientPhoneInput?.value || null,
+                            address: clientAddressInput?.value || null,
+                            addressNumber: clientAddressNumberInput?.value || null,
+                            postalCode: clientZipInput?.value || null,
+                            cityName: clientCityInput?.value || null,
+                            state: clientStateInput?.value || null,
+                            province: clientProvinceInput?.value || null,
+                            complement: clientComplementInput?.value || null,
+                        };
+                    }
+                } catch (e) {
+                }
+            }
+
+            // ---- SERVIÇOS (service_items do catálogo)
+            (payload.services || []).forEach((s) => {
+                const label = (s.description || "").trim();
+                if (!s.service_item_id && label) {
+                    missing.services.push({
+                        label,
+                        unit_price: s.unit_price || 0,
+                    });
+                }
+            });
+
+            // ---- PEÇAS (parts do catálogo)
+            // precisa do payload.parts conter `code` (do collectParts)
+            (payload.parts || []).forEach((p) => {
+                const code = (p.code || "").trim();
+                const desc = (p.description || "").trim();
+                if (!p.part_id && (code || desc)) {
+                    missing.parts.push({
+                        code: code || null,
+                        name: desc || code || "Peça",
+                        description: desc || null,
+                        unit_price: p.unit_price || 0,
+                        ncm_code: null,
+                        supplier_id: null,
+                        is_active: true,
+                    });
+                }
+            });
+
+            // ---- EQUIPAMENTOS (equipments do catálogo)
+            (payload.equipments || []).forEach((e) => {
+                const name = (e.equipment_description || "").trim();
+                const serial = (e.serial_number || "").trim();
+                if (!e.equipment_id && (name || serial)) {
+                    missing.equipments.push({
+                        code: (serial || null),                 // opcional
+                        name: name || "Equipamento",
+                        description: (e.notes || "").trim() || null,
+                        serial_number: serial || null,
+                        notes: (e.location || "").trim() || null,
+                    });
+                }
+            });
+
+            const techId = payload.technician_id || null;
+            const uiRate = toNumber(laborHourValueInput?.value || 0);
+            const dbRate = toNumber(technicianIdInput?.dataset?.hourlyRate || 0);
+
+            if (techId && Math.abs(uiRate - dbRate) > 0.0001) {
+                missing.tech_rate = {
+                    technician_id: techId,
+                    old_rate: dbRate,
+                    new_rate: uiRate,
+                };
+            }
+
+            missing.services = Array.from(
+                new Map(missing.services.map(x => [String(x.label || "").toLowerCase(), x])).values()
+            );
+
+            missing.parts = Array.from(
+                new Map(missing.parts.map(x => [`${x.code || ""}|${x.name || ""}`.toLowerCase(), x])).values()
+            );
+
+            missing.equipments = Array.from(
+                new Map(missing.equipments.map(x => [`${x.name || ""}|${x.serial_number || ""}`.toLowerCase(), x])).values()
+            );
+
+            const hasAny =
+                !!missing.customer ||
+                missing.services.length ||
+                missing.parts.length ||
+                missing.equipments.length ||
+                !!missing.tech_rate;
+
+            return hasAny ? missing : null;
         }
 
-        missing.services = Array.from(
-            new Map(missing.services.map(x => [String(x.label || "").toLowerCase(), x])).values()
-        );
+        function renderCatalogChecklist(missing) {
+            if (!catalogListEl) return;
 
-        missing.parts = Array.from(
-            new Map(missing.parts.map(x => [`${x.code || ""}|${x.name || ""}`.toLowerCase(), x])).values()
-        );
+            const blocks = [];
 
-        missing.equipments = Array.from(
-            new Map(missing.equipments.map(x => [`${x.name || ""}|${x.serial_number || ""}`.toLowerCase(), x])).values()
-        );
-
-        const hasAny =
-            !!missing.customer ||
-            missing.services.length ||
-            missing.parts.length ||
-            missing.equipments.length ||
-            !!missing.tech_rate;
-
-        return hasAny ? missing : null;
-    }
-
-    function renderCatalogChecklist(missing) {
-        if (!catalogListEl) return;
-
-        const blocks = [];
-
-        const section = (title, itemsHtml) => `
+            const section = (title, itemsHtml) => `
     <div class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
       <div class="text-xs font-semibold text-slate-800 mb-2">${title}</div>
       <div class="space-y-2">${itemsHtml}</div>
     </div>
   `;
 
-        // cliente
-        if (missing.customer) {
-            blocks.push(section("Cliente", `
+            // cliente
+            if (missing.customer) {
+                blocks.push(section("Cliente", `
       <label class="flex items-start gap-3">
         <input type="checkbox" class="mt-1 h-4 w-4" data-kind="customer" checked>
         <div class="text-sm">
@@ -217,11 +216,11 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       </label>
     `));
-        }
+            }
 
-        // equipamentos
-        if (missing.equipments.length) {
-            blocks.push(section("Equipamentos", missing.equipments.map((e, i) => `
+            // equipamentos
+            if (missing.equipments.length) {
+                blocks.push(section("Equipamentos", missing.equipments.map((e, i) => `
       <label class="flex items-start gap-3">
         <input type="checkbox" class="mt-1 h-4 w-4" data-kind="equipment" data-index="${i}" checked>
         <div class="text-sm">
@@ -230,11 +229,11 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       </label>
     `).join("")));
-        }
+            }
 
-        // serviços
-        if (missing.services.length) {
-            blocks.push(section("Serviços", missing.services.map((s, i) => `
+            // serviços
+            if (missing.services.length) {
+                blocks.push(section("Serviços", missing.services.map((s, i) => `
       <label class="flex items-start gap-3">
         <input type="checkbox" class="mt-1 h-4 w-4" data-kind="service" data-index="${i}" checked>
         <div class="text-sm">
@@ -243,11 +242,11 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       </label>
     `).join("")));
-        }
+            }
 
-        // peças
-        if (missing.parts.length) {
-            blocks.push(section("Peças", missing.parts.map((p, i) => `
+            // peças
+            if (missing.parts.length) {
+                blocks.push(section("Peças", missing.parts.map((p, i) => `
       <label class="flex items-start gap-3">
         <input type="checkbox" class="mt-1 h-4 w-4" data-kind="part" data-index="${i}" checked>
         <div class="text-sm">
@@ -258,10 +257,10 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       </label>
     `).join("")));
-        }
+            }
 
-        if (missing.tech_rate) {
-            blocks.push(section("Técnico (valor hora)", `
+            if (missing.tech_rate) {
+                blocks.push(section("Técnico (valor hora)", `
     <label class="flex items-start gap-3">
       <input type="checkbox" class="mt-1 h-4 w-4" data-kind="tech_rate" checked>
       <div class="text-sm">
@@ -272,33 +271,33 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     </label>
   `));
-        }
+            }
 
-        catalogListEl.innerHTML = blocks.join("");
+            catalogListEl.innerHTML = blocks.join("");
 
-        if (!blocks.length) {
-            catalogListEl.innerHTML = `
+            if (!blocks.length) {
+                catalogListEl.innerHTML = `
       <div class="text-sm text-slate-700">Nenhum cadastro pendente.</div>
     `;
+            }
         }
-    }
 
-    async function createSelectedCatalogs(missing) {
-        // lê checkboxes marcados
-        const checked = Array.from(catalogListEl.querySelectorAll("input[type=checkbox]:checked"));
+        async function createSelectedCatalogs(missing) {
+            // lê checkboxes marcados
+            const checked = Array.from(catalogListEl.querySelectorAll("input[type=checkbox]:checked"));
 
-        const want = {
-            customer: checked.some(x => x.dataset.kind === "customer"),
-            equipments: checked.filter(x => x.dataset.kind === "equipment").map(x => Number(x.dataset.index)),
-            services: checked.filter(x => x.dataset.kind === "service").map(x => Number(x.dataset.index)),
-            parts: checked.filter(x => x.dataset.kind === "part").map(x => Number(x.dataset.index)),
-            tech_rate: checked.some(x => x.dataset.kind === "tech_rate"),
-        };
+            const want = {
+                customer: checked.some(x => x.dataset.kind === "customer"),
+                equipments: checked.filter(x => x.dataset.kind === "equipment").map(x => Number(x.dataset.index)),
+                services: checked.filter(x => x.dataset.kind === "service").map(x => Number(x.dataset.index)),
+                parts: checked.filter(x => x.dataset.kind === "part").map(x => Number(x.dataset.index)),
+                tech_rate: checked.some(x => x.dataset.kind === "tech_rate"),
+            };
 
-        // loading
-        const original = catalogConfirmBtn.innerHTML;
-        catalogConfirmBtn.disabled = true;
-        catalogConfirmBtn.innerHTML = `
+            // loading
+            const original = catalogConfirmBtn.innerHTML;
+            catalogConfirmBtn.disabled = true;
+            catalogConfirmBtn.innerHTML = `
             <span class="inline-flex items-center gap-2">
               <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -308,123 +307,151 @@ document.addEventListener("DOMContentLoaded", () => {
             </span>
           `;
 
-        try {
-            // 1) cliente
-            if (want.customer && missing.customer && customerIdInput) {
-                const created = await postJson(ROUTES.customer, missing.customer);
-                const data = created.data || created;
-                if (data?.id) {
-                    customerIdInput.value = data.id;
-                }
-            }
-
-            // 2) equipamentos do catálogo (cria e joga o ID em cada bloco da OS)
-            if (want.equipments.length) {
-                for (const idx of want.equipments) {
-                    const e = missing.equipments[idx];
-                    const created = await postJson(ROUTES.equipment, e);
+            try {
+                // 1) cliente
+                if (want.customer && missing.customer && customerIdInput) {
+                    const created = await postJson(ROUTES.customer, missing.customer);
                     const data = created.data || created;
                     if (data?.id) {
-                        // seta no primeiro bloco da OS que bate (mesmo nome/serie) e ainda tá sem id
-                        const rows = Array.from(document.querySelectorAll('[data-row="equipment"]'));
-                        for (const row of rows) {
-                            const desc = row.querySelector(".js-equipment-desc")?.value?.trim() || "";
-                            const serial = row.querySelector(".js-equipment-serial")?.value?.trim() || "";
-                            const hid = row.querySelector(".js-equipment-id");
-                            if (hid && !hid.value && desc === e.name && (serial || "") === (e.serial_number || "")) {
-                                hid.value = data.id;
-                                break;
+                        customerIdInput.value = data.id;
+                    }
+                }
+
+                // 2) equipamentos do catálogo (cria e joga o ID em cada bloco da OS)
+                if (want.equipments.length) {
+                    for (const idx of want.equipments) {
+                        const e = missing.equipments[idx];
+                        const created = await postJson(ROUTES.equipment, e);
+                        const data = created.data || created;
+                        if (data?.id) {
+                            // seta no primeiro bloco da OS que bate (mesmo nome/serie) e ainda tá sem id
+                            const rows = Array.from(document.querySelectorAll('[data-row="equipment"]'));
+                            for (const row of rows) {
+                                const desc = row.querySelector(".js-equipment-desc")?.value?.trim() || "";
+                                const serial = row.querySelector(".js-equipment-serial")?.value?.trim() || "";
+                                const hid = row.querySelector(".js-equipment-id");
+                                if (hid && !hid.value && desc === e.name && (serial || "") === (e.serial_number || "")) {
+                                    hid.value = data.id;
+                                    break;
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            const norm = (str) =>
-                (str || "")
-                    .toString()
-                    .trim()
-                    .toLowerCase()
-                    .normalize("NFD")
-                    .replace(/[\u0300-\u036f]/g, "");
+                const norm = (str) =>
+                    (str || "")
+                        .toString()
+                        .trim()
+                        .toLowerCase()
+                        .normalize("NFD")
+                        .replace(/[\u0300-\u036f]/g, "");
 
-            if (want.services.length) {
-                for (const idx of want.services) {
-                    const s = missing.services[idx];
-                    const created = await postJson(ROUTES.serviceItem, {
-                        name: s.label,
-                        description: s.label,
-                        unit_price: toNumber(s.unit_price || 0),
-                        service_type_id: null,
-                        is_active: true,
+                if (want.services.length) {
+                    for (const idx of want.services) {
+                        const s = missing.services[idx];
+                        const created = await postJson(ROUTES.serviceItem, {
+                            name: s.label,
+                            description: s.label,
+                            unit_price: toNumber(s.unit_price || 0),
+                            service_type_id: null,
+                            is_active: true,
+                        });
+                        const data = created.data || created;
+                        if (data?.id) {
+                            const target = norm(s.label);
+
+                            const rows = Array.from(document.querySelectorAll('[data-row="service"]'));
+                            for (const row of rows) {
+                                const desc = norm(row.querySelector(".js-service-desc")?.value);
+                                const hid = row.querySelector(".js-service-id");
+
+                                if (hid && !hid.value && desc === target) {
+                                    hid.value = data.id;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 4) peças do catálogo (cria e seta part_id nos rows)
+                if (want.parts.length) {
+                    for (const idx of want.parts) {
+                        const p = missing.parts[idx];
+                        const created = await postJson(ROUTES.part, p);
+                        const data = created.data || created;
+                        if (data?.id) {
+                            const rows = Array.from(document.querySelectorAll('[data-row="part"]'));
+                            for (const row of rows) {
+                                const code = row.querySelector(".js-part-code")?.value?.trim() || "";
+                                const desc = row.querySelector(".js-part-desc")?.value?.trim() || "";
+                                const hid = row.querySelector(".js-part-id");
+                                // bate por code OU descrição
+                                if (hid && !hid.value && ((p.code && code === p.code) || (desc && desc === p.name))) {
+                                    hid.value = data.id;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (want.tech_rate && missing.tech_rate?.technician_id) {
+                    const id = missing.tech_rate.technician_id;
+                    await fetch(`${ROUTES.employee}/${id}`, {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-TOKEN": csrf,
+                            Accept: "application/json",
+                        },
+                        body: JSON.stringify({
+                            full_name: technicianNameInput?.value?.trim() || "", // obrigatório
+                            hourly_rate: toNumber(laborHourValueInput?.value || 0),
+                            is_technician: true,
+                            is_active: true,
+                        }),
                     });
-                    const data = created.data || created;
-                    if (data?.id) {
-                        const target = norm(s.label);
-
-                        const rows = Array.from(document.querySelectorAll('[data-row="service"]'));
-                        for (const row of rows) {
-                            const desc = norm(row.querySelector(".js-service-desc")?.value);
-                            const hid = row.querySelector(".js-service-id");
-
-                            if (hid && !hid.value && desc === target) {
-                                hid.value = data.id;
-                                break;
-                            }
-                        }
-                    }
+                    // atualiza o dataset local também
+                    technicianIdInput.dataset.hourlyRate = String(missing.tech_rate.new_rate);
                 }
-            }
 
-            // 4) peças do catálogo (cria e seta part_id nos rows)
-            if (want.parts.length) {
-                for (const idx of want.parts) {
-                    const p = missing.parts[idx];
-                    const created = await postJson(ROUTES.part, p);
-                    const data = created.data || created;
-                    if (data?.id) {
-                        const rows = Array.from(document.querySelectorAll('[data-row="part"]'));
-                        for (const row of rows) {
-                            const code = row.querySelector(".js-part-code")?.value?.trim() || "";
-                            const desc = row.querySelector(".js-part-desc")?.value?.trim() || "";
-                            const hid = row.querySelector(".js-part-id");
-                            // bate por code OU descrição
-                            if (hid && !hid.value && ((p.code && code === p.code) || (desc && desc === p.name))) {
-                                hid.value = data.id;
-                            }
-                        }
-                    }
-                }
+            } finally {
+                catalogConfirmBtn.disabled = false;
+                catalogConfirmBtn.innerHTML = original;
             }
-
-            if (want.tech_rate && missing.tech_rate?.technician_id) {
-                const id = missing.tech_rate.technician_id;
-                await fetch(`${ROUTES.employee}/${id}`, {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": csrf,
-                        Accept: "application/json",
-                    },
-                    body: JSON.stringify({
-                        full_name: technicianNameInput?.value?.trim() || "", // obrigatório
-                        hourly_rate: toNumber(laborHourValueInput?.value || 0),
-                        is_technician: true,
-                        is_active: true,
-                    }),
-                });
-                // atualiza o dataset local também
-                technicianIdInput.dataset.hourlyRate = String(missing.tech_rate.new_rate);
-            }
-
-        } finally {
-            catalogConfirmBtn.disabled = false;
-            catalogConfirmBtn.innerHTML = original;
         }
-    }
 
+        function normalizeLaborExecutedKeysAfterCatalog() {
+            const serviceMap = new Map(
+                Array.from(document.querySelectorAll('[data-row="service"]'))
+                    .map(r => {
+                        const label = (r.querySelector(".js-service-desc")?.value || "").trim();
+                        const id = (r.querySelector(".js-service-id")?.value || "").trim();
+                        if (!label) return null;
+                        return [label.toLowerCase(), id ? `id:${id}` : `label:${label}`];
+                    })
+                    .filter(Boolean)
+            );
 
-    // ========== CAMPOS PRINCIPAIS ==========
+            document.querySelectorAll('[data-row="labor"]').forEach(row => {
+                const hidden = row.querySelector(".js-labor-services-value");
+                if (!hidden) return;
+
+                const keys = (hidden.value || "").split(",").map(s => s.trim()).filter(Boolean);
+                const newKeys = keys.map(k => {
+                    if (k.startsWith("label:")) {
+                        const lbl = k.slice(6).trim().toLowerCase();
+                        return serviceMap.get(lbl) || k;
+                    }
+                    return k;
+                });
+
+                hidden.value = Array.from(new Set(newKeys)).join(",");
+            });
+        }
+
+        // ========== CAMPOS PRINCIPAIS ==========
         const orderIdInput = q("#service_order_id");
         const orderNumberDisplay = q("#order_number_display");
         const orderDateInput = q("#order_date");
@@ -513,6 +540,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const catalogListEl = q("#os-catalog-list");
         const catalogConfirmBtn = q("#os-catalog-confirm");
         const catalogCancelBtns = document.querySelectorAll("[data-os-catalog-cancel]");
+
+        function notifyLaborServiceOptionsChanged() {
+            document.dispatchEvent(new CustomEvent("os:services-changed"));
+        }
 
         function openCatalogModal() {
             if (!catalogModal) return;
@@ -605,7 +636,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const res = await fetch(url, {
                     signal: abortController.signal,
-                    headers: { Accept: "application/json" },
+                    headers: {Accept: "application/json"},
                 });
 
                 if (!res.ok) return [];
@@ -1077,6 +1108,16 @@ document.addEventListener("DOMContentLoaded", () => {
             const idInput = row.querySelector(".js-service-id");
             const btnRemove = row.querySelector(".btn-remove-service");
 
+            descInput.addEventListener("input", debounce(() => {
+                notifyLaborServiceOptionsChanged();
+            }, 150));
+
+            btnRemove.addEventListener("click", () => {
+                row.remove();
+                recalcTotals();
+                notifyLaborServiceOptionsChanged();
+            });
+
             const recalcRow = () => {
                 const qv = toNumber(qtyInput.value || 0);
                 const p = toNumber(unitInput.value || 0);
@@ -1087,11 +1128,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             qtyInput.addEventListener("input", recalcRow);
             unitInput.addEventListener("input", recalcRow);
-
-            btnRemove.addEventListener("click", () => {
-                row.remove();
-                recalcTotals();
-            });
 
             setupTypeahead({
                 input: descInput,
@@ -1155,8 +1191,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 }, 250)
             );
 
+            btnRemove.addEventListener("click", () => {
+                row.remove();
+                recalcTotals();
+                notifyLaborServiceOptionsChanged();
+            });
+
             // adiciona na lista e calcula
             serviceListEl.appendChild(row);
+            notifyLaborServiceOptionsChanged();
             recalcRow();
         }
 
@@ -1305,44 +1348,179 @@ document.addEventListener("DOMContentLoaded", () => {
             row.dataset.index = String(++laborCounter);
 
             row.innerHTML = `
-          <div class="col-span-2">
-            <input type="time"
-              class="js-labor-start w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm"
-              value="${initial.started_at || ""}">
-          </div>
-          <div class="col-span-2">
-            <input type="time"
-              class="js-labor-end w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm"
-              value="${initial.ended_at || ""}">
-          </div>
-          <div class="col-span-7">
-            <input
-              class="js-labor-desc w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm"
-              placeholder="Atividade realizada"
-              value="${initial.description || ""}">
-          </div>
-          <div class="col-span-1 flex justify-end">
-            <button type="button" class="btn-remove-labor inline-flex h-8 w-8 items-center justify-center rounded-full text-red-500 hover:bg-red-50">🗑</button>
-          </div>
-        `;
+    <div class="col-span-2">
+      <input type="time"
+        class="js-labor-start w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm"
+        value="${initial.started_at || ""}">
+    </div>
+
+    <div class="col-span-2">
+      <input type="time"
+        class="js-labor-end w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm"
+        value="${initial.ended_at || ""}">
+    </div>
+
+    <div class="col-span-7 relative">
+      <button type="button"
+        class="js-labor-services w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-left hover:bg-white">
+        Selecionar serviços executados...
+      </button>
+
+      <div class="js-labor-services-dd absolute z-40 mt-1 w-full rounded-2xl border border-slate-200 bg-white shadow-lg hidden max-h-56 overflow-auto p-2"></div>
+
+      <input type="hidden" class="js-labor-services-value" value="">
+    </div>
+
+    <div class="col-span-1 flex justify-end">
+      <button type="button" class="btn-remove-labor inline-flex h-8 w-8 items-center justify-center rounded-full text-red-500 hover:bg-red-50">🗑</button>
+    </div>
+  `;
 
             const startInput = row.querySelector(".js-labor-start");
             const endInput = row.querySelector(".js-labor-end");
             const btnRemove = row.querySelector(".btn-remove-labor");
 
-            const recomputeHours = () => recalcTotals();
+            const btnServices = row.querySelector(".js-labor-services");
+            const dd = row.querySelector(".js-labor-services-dd");
+            const hidden = row.querySelector(".js-labor-services-value");
 
+            // normaliza initial.executed_service_item_ids para keys
+            if (Array.isArray(initial.executed_service_item_ids) && initial.executed_service_item_ids.length) {
+                hidden.value = initial.executed_service_item_ids.map(String).join(",");
+            } else if (typeof initial.executed_service_item_ids === "string" && initial.executed_service_item_ids.trim()) {
+                hidden.value = initial.executed_service_item_ids.trim();
+            } else {
+                hidden.value = "";
+            }
+
+            const recomputeHours = () => recalcTotals();
             startInput.addEventListener("change", recomputeHours);
             endInput.addEventListener("change", recomputeHours);
 
+            // helpers
+            const getServiceOptions = () => {
+                return Array.from(document.querySelectorAll('[data-row="service"]'))
+                    .map((r) => {
+                        const label = r.querySelector(".js-service-desc")?.value?.trim() || "";
+                        const id = r.querySelector(".js-service-id")?.value?.trim() || "";
+                        if (!label) return null;
+
+                        return {
+                            key: id ? `id:${id}` : `label:${label}`,
+                            label,
+                        };
+                    })
+                    .filter(Boolean);
+            };
+
+            const getSelectedKeys = () =>
+                (hidden.value || "")
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean);
+
+            const getSelectedKeysInOtherRows = (currentRow) => {
+                const rows = Array.from(document.querySelectorAll('[data-row="labor"]'));
+                const used = new Set();
+
+                rows.forEach((r) => {
+                    if (r === currentRow) return;
+                    const v = r.querySelector(".js-labor-services-value")?.value || "";
+                    v.split(",").map(s => s.trim()).filter(Boolean).forEach(k => used.add(k));
+                });
+
+                return used;
+            };
+
+            const updateBtnLabel = () => {
+                const keys = getSelectedKeys();
+                const options = getServiceOptions();
+                const labels = keys
+                    .map(k => options.find(o => o.key === k)?.label || (k.startsWith("label:") ? k.slice(6) : null))
+                    .filter(Boolean);
+
+                btnServices.textContent = labels.length
+                    ? labels.join("; ")
+                    : "Selecionar serviços executados...";
+            };
+
+            const renderDd = () => {
+                const options = getServiceOptions();
+                const selected = new Set(getSelectedKeys());
+                const usedElsewhere = getSelectedKeysInOtherRows(row);
+
+                dd.innerHTML = options.map((opt) => {
+                    const isChecked = selected.has(opt.key);
+                    const isDisabled = !isChecked && usedElsewhere.has(opt.key);
+
+                    return `
+        <label class="flex items-start gap-2 px-2 py-1 rounded-xl hover:bg-slate-50 cursor-pointer ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}">
+          <input type="checkbox"
+            data-key="${opt.key}"
+            class="mt-1"
+            ${isChecked ? "checked" : ""}
+            ${isDisabled ? "disabled" : ""}>
+          <span class="text-sm text-slate-800">${opt.label}</span>
+        </label>
+      `;
+                }).join("");
+
+                dd.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+                    cb.addEventListener("change", () => {
+                        const keys = Array.from(dd.querySelectorAll('input[type="checkbox"]:checked'))
+                            .map(x => x.dataset.key)
+                            .filter(Boolean);
+
+                        hidden.value = keys.join(",");
+                        updateBtnLabel();
+                    });
+                });
+
+                updateBtnLabel();
+            };
+
+            // abre/fecha dropdown
+            btnServices.addEventListener("click", () => {
+                renderDd();
+                dd.classList.toggle("hidden");
+            });
+
+            document.addEventListener("click", (ev) => {
+                if (!row.contains(ev.target)) dd.classList.add("hidden");
+            });
+
+            // realtime refresh quando mexer nos serviços
+            const onServicesChanged = () => {
+                if (!dd.classList.contains("hidden")) renderDd();
+                updateBtnLabel();
+            };
+            document.addEventListener("os:services-changed", onServicesChanged);
+
             btnRemove.addEventListener("click", () => {
+                document.removeEventListener("os:services-changed", onServicesChanged);
                 row.remove();
                 recalcTotals();
             });
 
+            // label inicial (depois das funcs existirem)
+            updateBtnLabel();
+
             laborListEl.appendChild(row);
             recalcTotals();
         }
+
+        const getSelectedServiceKeysInOtherRows = (currentRow) => {
+            const rows = Array.from(document.querySelectorAll('[data-row="labor"]'));
+            const used = new Set();
+
+            rows.forEach((r) => {
+                if (r === currentRow) return;
+                const v = r.querySelector(".js-labor-services-value")?.value || "";
+                v.split(",").map(s => s.trim()).filter(Boolean).forEach(k => used.add(k));
+            });
+
+            return used;
+        };
 
         // ========== COLLECT ==========
         const collectEquipments = () =>
@@ -1437,11 +1615,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const collectLaborEntries = () =>
             Array.from(document.querySelectorAll('[data-row="labor"]'))
                 .map((row) => {
-                    const start =
-                        row.querySelector(".js-labor-start")?.value || "";
+                    const selectedKeys = (row.querySelector(".js-labor-services-value")?.value || "")
+                        .split(",").map(s => s.trim()).filter(Boolean);
+
+                    const start = row.querySelector(".js-labor-start")?.value || "";
                     const end = row.querySelector(".js-labor-end")?.value || "";
-                    const desc =
-                        row.querySelector(".js-labor-desc")?.value?.trim() || "";
 
                     let hours = 0;
                     const rate = toNumber(laborHourValueInput?.value || 0);
@@ -1451,9 +1629,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         const [eh, em] = end.split(":").map(Number);
                         const startMinutes = sh * 60 + sm;
                         const endMinutes = eh * 60 + em;
-                        if (endMinutes > startMinutes) {
-                            hours = (endMinutes - startMinutes) / 60;
-                        }
+                        if (endMinutes > startMinutes) hours = (endMinutes - startMinutes) / 60;
                     }
 
                     return {
@@ -1463,10 +1639,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         hours,
                         rate,
                         total: hours * rate,
-                        description: desc,
+                        executed_service_item_ids: selectedKeys,
                     };
                 })
-                .filter((l) => l.started_at || l.ended_at || l.description);
+                .filter((l) => l.started_at || l.ended_at || (l.executed_service_item_ids && l.executed_service_item_ids.length));
+
 
         // ========== TOTALIZAÇÃO ==========
         function recalcTotals() {
@@ -1731,6 +1908,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // ========== SALVAR CADASTROS AUXILIARES ==========
         let pendingAfterCatalog = null;
+
 // { status: "draft"|"pending", opts: {...}, redirectTo: string|null, openSignature: bool }
 
         async function runCatalogPipelineAndContinue(status, opts, after) {
@@ -1751,7 +1929,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             // tem pendências → abre modal e espera confirmar
-            pendingAfterCatalog = { status, opts, after };
+            pendingAfterCatalog = {status, opts, after};
             renderCatalogChecklist(missing);
             openCatalogModal();
 
@@ -1979,32 +2157,33 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
 
-    if (catalogConfirmBtn) {
-        catalogConfirmBtn.addEventListener("click", async () => {
-            const missing = catalogModal?._missing;
-            if (!missing || !pendingAfterCatalog) {
+        if (catalogConfirmBtn) {
+            catalogConfirmBtn.addEventListener("click", async () => {
+                const missing = catalogModal?._missing;
+                if (!missing || !pendingAfterCatalog) {
+                    closeCatalogModal();
+                    return;
+                }
+
+                // cria antes
+                await createSelectedCatalogs(missing);
+                normalizeLaborExecutedKeysAfterCatalog();
+
                 closeCatalogModal();
-                return;
-            }
 
-            // cria antes
-            await createSelectedCatalogs(missing);
+                // agora salva OS (com IDs preenchidos)
+                const {status, after} = pendingAfterCatalog;
+                pendingAfterCatalog = null;
 
-            closeCatalogModal();
+                const result = await submitServiceOrder(status);
+                if (!result) return;
 
-            // agora salva OS (com IDs preenchidos)
-            const { status, after } = pendingAfterCatalog;
-            pendingAfterCatalog = null;
+                if (after?.openSignature) openSignatureModal();
+                if (after?.redirectTo) window.location.href = after.redirectTo;
+            });
+        }
 
-            const result = await submitServiceOrder(status);
-            if (!result) return;
-
-            if (after?.openSignature) openSignatureModal();
-            if (after?.redirectTo) window.location.href = after.redirectTo;
-        });
-    }
-
-    function initSignaturePad() {
+        function initSignaturePad() {
             if (!signatureCanvas || signatureInitDone) return;
 
             signatureCtx = signatureCanvas.getContext('2d');
@@ -2136,12 +2315,103 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // ========== INIT ==========
+        function dateOnly(v) {
+            if (!v) return "";
+            return String(v).slice(0, 10); // "2026-01-17"
+        }
+
+        function hydrateFromServiceOrder(so) {
+            if (!so || !so.id) return false;
+
+            if (orderDateInput) orderDateInput.value = dateOnly(so.order_date);
+
+            if (requesterNameInput) requesterNameInput.value = so.requester_name || "";
+
+            if (technicianNameInput) technicianNameInput.value = so.technician?.full_name || technicianNameInput.value;
+            if (technicianIdInput) technicianIdInput.value = so.technician_id || "";
+
+            if (laborHourValueInput) laborHourValueInput.value = so.labor_hour_value ?? laborHourValueInput.value;
+            if (paymentConditionSel) paymentConditionSel.value = so.payment_condition || "";
+            if (paymentNotesInput) paymentNotesInput.value = so.notes || "";
+
+            // CUSTOMERS
+            const sc = so.secondary_customer || null;
+            if (customerIdInput) customerIdInput.value = so.secondary_customer_id || "";
+            if (clientNameInput) clientNameInput.value = sc?.name || "";
+            if (clientDocInput) clientDocInput.value = sc?.cpfCnpj || "";
+            if (clientEmailInput) clientEmailInput.value = sc?.email || "";
+            if (clientPhoneInput) clientPhoneInput.value = sc?.mobilePhone || "";
+            if (clientZipInput) clientZipInput.value = sc?.postalCode || so.zip_code || "";
+            if (clientAddressInput) clientAddressInput.value = sc?.address || so.address_line1 || "";
+            if (clientAddressNumberInput) clientAddressNumberInput.value = sc?.addressNumber || "";
+            if (clientComplementInput) clientComplementInput.value = sc?.complement || "";
+
+            // limpa listas
+            equipmentListEl.innerHTML = "";
+            serviceListEl.innerHTML = "";
+            partListEl.innerHTML = "";
+            laborListEl.innerHTML = "";
+
+            // EQUIPMENTS
+            (so.equipments || []).forEach(e => addEquipmentBlock({
+                equipment_id: e.equipment_id,
+                equipment_description: e.equipment_description,
+                serial_number: e.serial_number,
+                location: e.location,
+                notes: e.notes,
+            }));
+
+            // SERVICE ITEMS
+            (so.service_items || so.serviceItems || []).forEach(s => addServiceRow({
+                service_item_id: s.service_item_id,
+                description: s.description,
+                quantity: s.quantity,
+                unit_price: s.unit_price,
+            }));
+
+            // PARTS
+            (so.part_items || so.partItems || []).forEach(p => addPartRow({
+                part_id: p.part_id,
+                code: p.part.code,
+                description: p.description,
+                quantity: p.quantity,
+                unit_price: p.unit_price,
+            }));
+
+            // LABOR
+            (so.labor_entries || so.laborEntries || []).forEach(l => {
+                const keys = Array.isArray(l.executed_service_item_ids)
+                    ? l.executed_service_item_ids
+                    : (typeof l.executed_service_item_ids === "string"
+                        ? l.executed_service_item_ids.split(",").map(s => s.trim()).filter(Boolean)
+                        : []);
+
+                addLaborRow({
+                    started_at: l.started_at ? String(l.started_at).slice(11, 16) : "",
+                    ended_at: l.ended_at ? String(l.ended_at).slice(11, 16) : "",
+                    executed_service_item_ids: keys, // ✅
+                });
+            });
+
+            // DISCOUNT
+            if (discountInput) discountInput.value = so.discount_amount ?? "0.00";
+            if (additionInput) additionInput.value = so.addition_amount ?? "0.00";
+
+            recalcTotals();
+
+            return true;
+        }
+
         setupTechnicianLookup();
 
-        if (equipmentListEl && !equipmentListEl.children.length) addEquipmentBlock();
-        if (serviceListEl && !serviceListEl.children.length) addServiceRow();
-        if (partListEl && !partListEl.children.length) addPartRow();
-        if (laborListEl && !laborListEl.children.length) addLaborRow();
+        const hydrated = hydrateFromServiceOrder(window.__SO__);
+
+        if (!hydrated) {
+            if (equipmentListEl && !equipmentListEl.children.length) addEquipmentBlock();
+            if (serviceListEl && !serviceListEl.children.length) addServiceRow();
+            if (partListEl && !partListEl.children.length) addPartRow();
+            if (laborListEl && !laborListEl.children.length) addLaborRow();
+        }
 
         if (btnAddEquipment)
             btnAddEquipment.addEventListener("click", () => addEquipmentBlock());
