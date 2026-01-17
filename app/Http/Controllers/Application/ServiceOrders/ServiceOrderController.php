@@ -151,6 +151,11 @@ class ServiceOrderController extends Controller
         return $this->saveOrder($request);
     }
 
+    public function edit(string $id)
+    {
+        return $this->create($id);
+    }
+
     public function update(Request $request, string $id)
     {
         return $this->saveOrder($request, $id);
