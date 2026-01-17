@@ -25,6 +25,7 @@ class ServiceOrderLaborEntry extends Model
         'hours'      => 'decimal:2',
         'rate'       => 'decimal:2',
         'total'      => 'decimal:2',
+        'executed_service_item_ids' => 'array',
     ];
 
     public function serviceOrder()
