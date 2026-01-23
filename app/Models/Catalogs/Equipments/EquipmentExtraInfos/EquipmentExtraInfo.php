@@ -18,6 +18,7 @@ class EquipmentExtraInfo extends Model
 
     protected $casts = [
         'image_path' => 'array', // JSON -> array (mime, data, name, size)
+        'catalog_pdf'  => 'array',
     ];
 
     public function equipment()
