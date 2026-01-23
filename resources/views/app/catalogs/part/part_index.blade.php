@@ -23,8 +23,13 @@
                         class="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-800">
                     Adicionar peça
                 </button>
-                <button
-                    class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow hover:bg-slate-50">
+                <button id="btn-import"
+                        class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow hover:bg-slate-50">
+                    Importar
+                </button>
+
+                <button id="btn-export"
+                        class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow hover:bg-slate-50">
                     Exportar
                 </button>
                 <button id="toggle-header"
@@ -60,6 +65,7 @@
     @include('app.catalogs.part.part_modal')
     @include('app.catalogs.part.part_equipments_modal')
     @include('layouts.common.modal.modal_delete')
+    @include('layouts.common.modal.importExport.import_export')
 @endsection
 
 @push('scripts')

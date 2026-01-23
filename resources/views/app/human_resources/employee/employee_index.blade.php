@@ -43,7 +43,7 @@
                 <table class="min-w-full text-sm">
                     <thead class="text-center text-slate-600 bg-blue-50">
                     <tr class="text-center">
-                        <th class="px-6 py-4 first:rounded-tl-2xl">Nome</th>
+                        <th class="px-6 py-4 text-left first:rounded-tl-2xl">Nome</th>
                         <th class="px-3 py-4">E-mail</th>
                         <th class="px-3 py-4">Telefone</th>
                         <th class="px-3 py-4">Cargo</th>

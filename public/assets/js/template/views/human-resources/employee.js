@@ -171,8 +171,115 @@ function initDepartmentAutocomplete() {
     });
 }
 
+// Show/Hide campo de valor hora
+function toggleHourlyRate() {
+    const tech = document.querySelector("#is_technician");
+    const hourly = document.querySelector("#hourly_rate");
+
+    if (!tech || !hourly) return;
+
+    const wrapper = hourly.closest(".col-span-1, .w-full, div") || hourly.parentElement;
+
+    const apply = () => {
+        const on = tech.checked;
+        if (wrapper) wrapper.classList.toggle("hidden", !on);
+        if (!on) hourly.value = "0.00";
+    };
+
+    tech.addEventListener("change", apply);
+    apply();
+}
+
+// Show/Hide campo de senha
+function toggleAccessFields() {
+    const chk = document.querySelector("#has_access");
+    const box = document.querySelector("#access-fields");
+    if (!chk || !box) return;
+
+    const apply = () => {
+        box.classList.toggle("hidden", !chk.checked);
+        if (!chk.checked) {
+            document.querySelector("#password")?.value && (document.querySelector("#password").value = "");
+            document.querySelector("#password_confirmation")?.value && (document.querySelector("#password_confirmation").value = "");
+        }
+    };
+
+    chk.addEventListener("change", apply);
+    apply();
+}
+
+function initToggleUI() {
+    const tech = document.querySelector("#is_technician");
+    const hourlyWrap = document.querySelector("#hourly-wrap");
+    const hourly = document.querySelector("#hourly_rate");
+
+    const access = document.querySelector("#has_access");
+    const accessWrap = document.querySelector("#access-wrap");
+    const pass = document.querySelector("#password");
+    const pass2 = document.querySelector("#password_confirmation");
+
+    const apply = () => {
+        const isTech = !!tech?.checked;
+        if (hourlyWrap) hourlyWrap.classList.toggle("hidden", !isTech);
+        if (!isTech && hourly) hourly.value = "0.00";
+
+        const hasAccess = !!access?.checked;
+        if (accessWrap) accessWrap.classList.toggle("hidden", !hasAccess);
+        if (!hasAccess) {
+            if (pass) pass.value = "";
+            if (pass2) pass2.value = "";
+        }
+    };
+
+    tech?.addEventListener("change", apply);
+    access?.addEventListener("change", apply);
+
+    apply();
+}
+
+function setAccessToggleMode(mode) {
+    const title = document.querySelector("#access-title");
+    const desc  = document.querySelector("#access-desc");
+    const chk   = document.querySelector("#has_access");
+
+    if (!title || !desc || !chk) return;
+
+    if (mode === "edit") {
+        title.textContent = "Atualizar senha de acesso?";
+        desc.textContent  = "Marque para definir uma nova senha para este usuário.";
+    } else {
+        title.textContent = "Definir senha personalizada?";
+        desc.textContent  = "Se desligado, usaremos senha padrão: PrimeiroNome_123@";
+    }
+
+    // no edit sempre começa desligado (pra não sugerir que vai mexer na senha)
+    chk.checked = false;
+    chk.dispatchEvent(new Event("change"));
+}
+
+function bindAccessModeByClicks() {
+    // Novo
+    document.querySelector("#btn-add")?.addEventListener("click", () => {
+        setTimeout(() => setAccessToggleMode("create"), 0);
+    });
+
+    // Editar / Visualizar (delegado, porque vem da tabela dinâmica)
+    document.addEventListener("click", (e) => {
+        const isEdit = e.target.closest("[data-edit]");
+        const isView = e.target.closest("[data-view]");
+        if (!isEdit && !isView) return;
+
+        // após o ModelCrud preencher o form
+        setTimeout(() => setAccessToggleMode("edit"), 0);
+    });
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     initDepartmentAutocomplete();
+    toggleHourlyRate();
+    toggleAccessFields();
+    initToggleUI();
+    bindAccessModeByClicks();
 
     new ModelCrud({
         name: "funcionarios",
@@ -199,9 +306,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         renderRow: (r) => `
 <tr class="hover:bg-slate-50">
     <td class="px-3 py-3 text-left">${r.full_name || "-"}</td>
-    <td class="px-3 py-3 text-left">${r.email || "-"}</td>
-    <td class="px-3 py-3 text-left">${r.phone || "-"}</td>
-    <td class="px-3 py-3 text-left">${r.position || "-"}</td>
+    <td class="px-3 py-3 text-center">${r.email || "-"}</td>
+    <td class="px-3 py-3 text-center">${r.phone || "-"}</td>
+    <td class="px-3 py-3 text-center">${r.position || "-"}</td>
     <td class="px-3 py-3 text-center">
         <span class="inline-flex items-center rounded-md bg-${
             r.is_technician ? "emerald" : "slate"
@@ -213,7 +320,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             ${r.is_technician ? "Sim" : "Não"}
         </span>
     </td>
-    <td class="px-3 py-3 text-right">
+    <td class="px-3 py-3 text-center">
         <span class="inline-flex items-center rounded-md bg-${
             r.is_active ? "blue" : "rose"
         }-400/10 px-2 py-1 text-xs font-medium text-${
@@ -277,35 +384,47 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.querySelector("#mobilePhone").value = e.phone || "";
             document.querySelector("#cpfCnpj").value = e.document_number || "";
             document.querySelector("#position").value = e.position || "";
-            document.querySelector("#hourly_rate").value = e.hourly_rate ?? "";
 
             // departamento
             const depHidden = document.querySelector("#department_id");
             const depSearch = document.querySelector("#department_search");
             if (depHidden) depHidden.value = e.department_id || "";
-            if (depSearch) {
-                depSearch.value =
-                    (e.department && e.department.name) ||
-                    e.department_name ||
-                    "";
-            }
+            if (depSearch) depSearch.value = (e.department && e.department.name) || e.department_name || "";
 
             document.querySelector("#is_active").checked = !!e.is_active;
-            document.querySelector("#is_technician").checked = !!e.is_technician;
+
+            const tech = document.querySelector("#is_technician");
+            if (tech) tech.checked = !!e.is_technician;
+
+            // no EDIT: senha nunca começa aberta
+            const access = document.querySelector("#has_access");
+            if (access) access.checked = false;
+
+            // aplica visibilidade
+            tech?.dispatchEvent(new Event("change"));
+            access?.dispatchEvent(new Event("change"));
         },
 
-        getPayload: () => ({
-            user_id: document.querySelector("#user_id").value || null,
-            department_id: document.querySelector("#department_id").value || null,
-            full_name: document.querySelector("#full_name").value,
-            email: document.querySelector("#email").value,
-            phone: document.querySelector("#mobilePhone").value,
-            document_number: document.querySelector("#cpfCnpj").value,
-            position: document.querySelector("#position").value,
-            hourly_rate: document.querySelector("#hourly_rate").value || 0,
-            is_active: document.querySelector("#is_active").checked,
-            is_technician: document.querySelector("#is_technician").checked,
-        }),
+        getPayload: () => {
+            const hasAccess = document.querySelector("#has_access")?.checked || false;
+
+            return {
+                user_id: document.querySelector("#user_id").value || null,
+                department_id: document.querySelector("#department_id").value || null,
+                full_name: document.querySelector("#full_name").value,
+                email: document.querySelector("#email").value,
+                phone: document.querySelector("#mobilePhone").value,
+                document_number: document.querySelector("#cpfCnpj").value,
+                position: document.querySelector("#position").value,
+                hourly_rate: document.querySelector("#hourly_rate")?.value || 0,
+                is_active: document.querySelector("#is_active").checked,
+                is_technician: document.querySelector("#is_technician").checked,
+
+                has_access: hasAccess,
+                password: hasAccess ? (document.querySelector("#password")?.value || null) : null,
+                password_confirmation: hasAccess ? (document.querySelector("#password_confirmation")?.value || null) : null,
+            };
+        },
 
         getId: () => document.querySelector("#employee_id").value,
     });

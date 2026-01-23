@@ -33,6 +33,7 @@ use App\Http\Controllers\Application\ServiceOrders\ServiceOrderPartItemControlle
 use App\Http\Controllers\Application\ServiceOrders\ServiceOrderServiceItemController;
 use App\Http\Controllers\Application\Services\ServiceItemController;
 use App\Http\Controllers\Application\Services\ServiceTypeController;
+use App\Http\Controllers\General\ImportExport\ImportExportController;
 use App\Http\Controllers\General\Notifications\NotificationController;
 use App\Http\Middleware\CheckSubscription;
 use Illuminate\Support\Facades\Route;
@@ -327,6 +328,10 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
 Route::get('/run/{tenantId}', [DashboardController::class, 'run']);
 
+Route::get('/io/options', [ImportExportController::class, 'options'])->name('io.options');
+Route::post('/io/export', [ImportExportController::class, 'export'])->name('io.export');
+Route::post('/io/import', [ImportExportController::class, 'import'])->name('io.import');
+Route::get('/io/template', [ImportExportController::class, 'template'])->name('io.template');
 
 /*
 
