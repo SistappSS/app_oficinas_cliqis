@@ -40,11 +40,6 @@ class EmployeeController extends Controller
             ->with('department')
             ->orderBy('full_name');
 
-        // 1) só ativos (opcional mas recomendado)
-        if ($request->boolean('only_active', true)) {
-            $q->where('is_active', true);
-        }
-
         // 2) filtro técnico (usado no typeahead)
         if ($request->boolean('is_technician')) {
             $q->where('is_technician', true);
@@ -78,12 +73,7 @@ class EmployeeController extends Controller
         $validated = $request->validate([
             'department_id'   => ['nullable', 'uuid'],
             'full_name'       => ['required', 'string', 'max:255'],
-            'email'           => [
-                'nullable',
-                'email',
-                'max:255',
-                Rule::unique('users', 'email'),
-            ],
+            'email'           => ['nullable','email','max:255', Rule::unique('users', 'email')],
             'phone'           => ['nullable', 'string', 'max:30'],
             'document_number' => ['nullable', 'string', 'max:20'],
             'position'        => ['nullable', 'string', 'max:255'],
@@ -91,56 +81,68 @@ class EmployeeController extends Controller
             'is_technician'   => ['sometimes', 'boolean'],
             'is_active'       => ['sometimes', 'boolean'],
             'user_id'         => ['nullable', 'uuid'],
+
+            // campo de UI (não salva em employees)
+            'has_access'      => ['sometimes', 'boolean'],
+
+            // senha só faz sentido quando has_access = true
+            'password'        => ['nullable', 'string', 'min:6', 'confirmed'],
         ], [
-            'full_name.required' => 'Insira um nome para esse funcionário.',
+            'full_name.required'   => 'Insira um nome para esse funcionário.',
+            'password.confirmed'   => 'As senhas não conferem.',
         ]);
 
         $validated['is_technician'] = (bool)($validated['is_technician'] ?? false);
         $validated['is_active']     = (bool)($validated['is_active'] ?? true);
 
-        return DB::transaction(function () use ($validated, $ownerUserId) {
-            $firstName = explode(' ', $validated['full_name'])[0];
-            $randomPassword = ucfirst($firstName) . '@123';
+        // pega o toggle ANTES da transaction
+        $hasAccess = (bool)($validated['has_access'] ?? false);
+
+        return DB::transaction(function () use ($validated, $ownerUserId, $hasAccess) {
+
+            $firstNameRaw = explode(' ', trim($validated['full_name']))[0] ?? 'User';
+            $firstName = Str::ucfirst(Str::lower(Str::ascii($firstNameRaw)));
+
             $randomEmail = "{$firstName}@cliqis.com.br";
+            $finalEmail = strtolower($validated['email'] ?? $randomEmail);
+
+            $defaultPassword = "{$firstName}_123@";
+
+            $passwordToUse = ($hasAccess && !empty($validated['password']))
+                ? $validated['password']
+                : $defaultPassword;
 
             $employeeUser = User::create([
                 'name'     => $validated['full_name'],
-                'email'    => $validated['email']  ?? $randomEmail,
-                'password' => Hash::make($randomPassword),
+                'email'    => strtolower($validated['email'] ?? $randomEmail),
+                'password' => Hash::make($passwordToUse),
             ]);
 
-            $tenantId = CustomerContext::get();
+            $validated['email'] = $finalEmail;
 
+            $tenantId = CustomerContext::get();
             if (!$tenantId) {
                 throw new \RuntimeException('CustomerContext não definido ao criar funcionário.');
             }
 
             $employeeRoleName = "{$tenantId}_employee_customer_cliqis";
-
-            $employeeCustomerRole = Role::firstOrCreate([
-                'name'       => $employeeRoleName,
-                'guard_name' => 'web',
-            ]);
-
+            Role::firstOrCreate(['name' => $employeeRoleName, 'guard_name' => 'web']);
             $employeeUser->assignRole($employeeRoleName);
 
             if (!empty($validated['department_id'])) {
                 $department = Department::find($validated['department_id']);
-
                 if ($department) {
-                    $slug               = Str::slug($department->name, '_');
+                    $slug = Str::slug($department->name, '_');
                     $departmentRoleName = "{$tenantId}_{$slug}";
-
-                    Role::firstOrCreate([
-                        'name'       => $departmentRoleName,
-                        'guard_name' => 'web',
-                    ]);
-
+                    Role::firstOrCreate(['name' => $departmentRoleName, 'guard_name' => 'web']);
                     $employeeUser->assignRole($departmentRoleName);
                 }
             }
 
-            $employeeData            = $validated;
+            // 🔥 LIMPA CAMPOS QUE NÃO EXISTEM EM employees
+            unset($validated['password'], $validated['password_confirmation'], $validated['has_access']);
+
+            $employeeData = $validated;
             $employeeData['user_id'] = $ownerUserId;
 
             $employee = $this->employee->create($employeeData);
@@ -164,7 +166,7 @@ class EmployeeController extends Controller
     {
         $validated = $request->validate([
             'department_id'   => ['nullable', 'uuid'],
-            'full_name' => ['sometimes', 'string', 'max:255'],
+            'full_name'       => ['sometimes', 'string', 'max:255'],
             'email'           => ['nullable', 'email', 'max:255'],
             'phone'           => ['nullable', 'string', 'max:30'],
             'document_number' => ['nullable', 'string', 'max:20'],
@@ -172,7 +174,11 @@ class EmployeeController extends Controller
             'hourly_rate'     => ['nullable', 'numeric'],
             'is_technician'   => ['sometimes', 'boolean'],
             'is_active'       => ['sometimes', 'boolean'],
-            'user_id'         => ['nullable', 'uuid'],
+
+            // só se quiser permitir troca de senha no edit
+            'password'        => ['nullable', 'string', 'min:6', 'confirmed'],
+        ], [
+            'password.confirmed' => 'As senhas não conferem.',
         ]);
 
         if (!array_key_exists('full_name', $validated)) {
@@ -182,7 +188,47 @@ class EmployeeController extends Controller
         $validated['is_technician'] = (bool)($validated['is_technician'] ?? false);
         $validated['is_active']     = (bool)($validated['is_active'] ?? true);
 
-        return $this->updateMethod($this->employee->find($id), $validated);
+        return DB::transaction(function () use ($validated, $id) {
+
+            $employee = $this->employee->with('department')->findOrFail($id);
+
+            // 1) Atualiza employees (sem campos que não existem)
+            $employeeUpdate = $validated;
+            unset($employeeUpdate['password'], $employeeUpdate['password_confirmation']);
+            $employee->update($employeeUpdate);
+
+            // 2) Acha o user do funcionário via pivot customer_employee_users
+            $employeeUserId = CustomerEmployeeUser::where('employee_id', $employee->id)->value('user_id');
+
+            if ($employeeUserId) {
+                $user = User::find($employeeUserId);
+
+                if ($user) {
+                    $userUpdate = [];
+
+                    // email
+                    if (array_key_exists('email', $validated) && !empty($validated['email'])) {
+                        $userUpdate['email'] = strtolower($validated['email']);
+                    }
+
+                    // nome do user acompanha full_name (opcional mas faz sentido)
+                    if (array_key_exists('full_name', $validated) && !empty($validated['full_name'])) {
+                        $userUpdate['name'] = $validated['full_name'];
+                    }
+
+                    if (!empty($userUpdate)) {
+                        $user->update($userUpdate);
+                    }
+
+                    // senha
+                    if (!empty($validated['password'])) {
+                        $user->update(['password' => Hash::make($validated['password'])]);
+                    }
+                }
+            }
+
+            return response()->json($employee->fresh()->load('department'));
+        });
     }
 
     public function destroy(string $id)

@@ -103,12 +103,15 @@ export class ModelCrud {
             this.setFormDisabled(false);
             this.btnDelete.classList.add("hidden");
             this.form.reset();
+
+            this.form.querySelectorAll('input[type="hidden"]').forEach(i => i.value = "");
         }
     }
 
     closeModal() {
         this.modal.classList.add("hidden");
         this.showErrors();
+        this.form?.querySelectorAll('input[type="hidden"]').forEach(i => i.value = "");
     }
 
     async saveItem(payload, id = null) {

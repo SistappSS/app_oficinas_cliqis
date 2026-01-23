@@ -1,4 +1,6 @@
 import { ModelCrud } from "../../partials/modelCrud.js";
+import { initImportExportModal } from "../../../common/import_export.js";
+
 
 async function loadSuppliers() {
     const sel = document.querySelector("#supplier_id");
@@ -23,6 +25,16 @@ async function loadSuppliers() {
 
 document.addEventListener("DOMContentLoaded", async () => {
     await loadSuppliers();
+
+    initImportExportModal();
+
+    document.querySelector("#btn-export")?.addEventListener("click", () => {
+        window.IO_MODAL?.openExport();
+    });
+
+    document.querySelector("#btn-import")?.addEventListener("click", () => {
+        window.IO_MODAL?.openImport();
+    });
 
     new ModelCrud({
         name: "pecas",
