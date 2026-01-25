@@ -20,10 +20,12 @@
                         id="search"
                         type="text"
                         placeholder="Buscar equipamentos (ex.: balança, impressora, CLP)…"
-                        class="w-full rounded-2xl border border-slate-300 bg-white pl-11 pr-4 py-3 outline-none placeholder:text-slate-400 hover:border-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-200" />
+                        class="w-full rounded-2xl border border-slate-300 bg-white pl-11 pr-4 py-3 outline-none placeholder:text-slate-400 hover:border-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-200"/>
                     <svg class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"
-                         xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
+                         xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.8">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path d="M21 21l-4.3-4.3"/>
                     </svg>
                 </div>
 
@@ -63,8 +65,10 @@
 
     <!-- Modal (criar/editar) -->
     <div id="edit-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm">
-        <div class="w-full max-w-lg rounded-2xl bg-white shadow-xl">
-            <div class="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
+        <div
+            class="w-[calc(100vw-16px)] sm:w-full sm:max-w-lg h-[calc(100dvh-16px)] sm:h-auto sm:max-h-[90vh] flex flex-col rounded-2xl bg-white shadow-xl">
+            <div
+                class="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-5 py-3.5">
                 <h2 id="edit-modal-title" class="text-sm font-semibold text-slate-900">Editar equipamento</h2>
                 <button type="button" id="close-modal"
                         class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
@@ -75,7 +79,7 @@
                 </button>
             </div>
 
-            <form id="edit-form" class="px-5 py-4 space-y-4">
+            <form id="edit-form" class="flex-1 overflow-y-auto px-5 pt-4 space-y-4">
                 {{-- Preview imagem (apenas visual por enquanto) --}}
                 <div class="grid grid-cols-[80px,1fr] gap-3 items-start">
                     <div class="relative h-16 w-16 overflow-hidden rounded-xl bg-slate-100">
@@ -92,7 +96,7 @@
                             id="edit-photo"
                             type="file"
                             accept="image/*"
-                            class="mt-1 block w-full text-xs text-slate-600 file:mr-3 file:rounded-lg file:border file:border-slate-200 file:bg-slate-50 file:px-3 file:py-1.5 file:text-xs file:font-medium hover:file:bg-slate-100" />
+                            class="mt-1 block w-full text-xs text-slate-600 file:mr-3 file:rounded-lg file:border file:border-slate-200 file:bg-slate-50 file:px-3 file:py-1.5 file:text-xs file:font-medium hover:file:bg-slate-100"/>
                         <p class="mt-1 text-[11px] text-slate-500">
                             Apenas visual. Upload real será implementado depois.
                         </p>
@@ -108,7 +112,7 @@
                         <input
                             id="edit-name"
                             type="text"
-                            class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-xs outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100" />
+                            class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-xs outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"/>
                     </div>
 
                     <div>
@@ -118,7 +122,7 @@
                         <input
                             id="edit-code"
                             type="text"
-                            class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-xs outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100" />
+                            class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-xs outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"/>
                     </div>
                 </div>
 
@@ -129,7 +133,7 @@
                     <input
                         id="edit-model"
                         type="text"
-                        class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-xs outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100" />
+                        class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-xs outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"/>
                 </div>
 
                 <div>
@@ -139,7 +143,7 @@
                     <input
                         id="edit-serial"
                         type="text"
-                        class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-xs outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100" />
+                        class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-xs outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"/>
                 </div>
 
                 <div>
@@ -159,7 +163,7 @@
                         id="edit-pdf"
                         type="file"
                         accept="application/pdf"
-                        class="mt-1 block w-full text-xs text-slate-600 file:mr-3 file:rounded-lg file:border file:border-slate-200 file:bg-slate-50 file:px-3 file:py-1.5 file:text-xs file:font-medium hover:file:bg-slate-100" />
+                        class="mt-1 block w-full text-xs text-slate-600 file:mr-3 file:rounded-lg file:border file:border-slate-200 file:bg-slate-50 file:px-3 file:py-1.5 file:text-xs file:font-medium hover:file:bg-slate-100"/>
                     <p class="mt-1 text-[11px] text-slate-500">
                         Apenas visual. Salvar arquivo via API depois (equipment_extra_infos).
                     </p>
@@ -170,9 +174,10 @@
                         <label class="block text-xs font-medium text-slate-700">
                             Peças que compõem este equipamento
                         </label>
-                        <a href="{{route('part.view')}}" class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-700 hover:bg-slate-50">
-                        Gerenciar peças
-                        </a>
+                        <button type="button" id="btn-manage-parts"
+                                class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-700 hover:bg-slate-50">
+                            Gerenciar peças
+                        </button>
                     </div>
 
                     <div id="edit-parts-list" class="mt-2 flex flex-wrap gap-2"></div>
@@ -182,33 +187,38 @@
                     </p>
                 </div>
 
-                <div class="flex justify-end gap-2 pt-2">
-                    <button
-                        type="button"
-                        id="cancel-modal"
-                        class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
-                        Cancelar
-                    </button>
-                    <button
-                        type="submit"
-                        class="inline-flex items-center rounded-xl bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">
-                        Salvar
-                    </button>
+                <div class="sticky bottom-0 bg-white pt-2 pb-3">
+                    <div class="flex justify-end gap-2">
+                        <button
+                            type="button"
+                            id="cancel-modal"
+                            class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            class="inline-flex items-center rounded-xl bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">
+                            Salvar
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Modal: Peças do equipamento -->
-    <div id="parts-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm">
-        <div class="w-full max-w-lg max-h-[80vh] flex flex-col rounded-2xl bg-white shadow-xl">
-            <div class="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
+    <div id="parts-modal"
+         class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+        <div class="w-[calc(100vw-16px)] sm:w-full sm:max-w-lg h-[calc(100dvh-16px)] sm:h-auto sm:max-h-[80vh] flex flex-col rounded-2xl bg-white shadow-xl">
+            <div class="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-5 py-3.5">
                 <div>
                     <p class="text-[11px] font-medium text-slate-500">Peças que compõem o equipamento</p>
                     <h2 id="parts-modal-title" class="text-sm font-semibold text-slate-900"></h2>
                 </div>
-                <button type="button" id="parts-modal-x" class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
-                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <button type="button" id="parts-modal-x"
+                        class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2">
                         <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </button>
@@ -231,39 +241,200 @@
     </div>
 
     <!-- Modal: Catálogo (iframe) -->
-    <div id="catalog-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm">
-        <div class="w-full max-w-5xl max-h-[90vh] flex flex-col rounded-2xl bg-white shadow-xl">
-            <div class="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
+    <div id="catalog-modal"
+         class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4">
+        <div class="w-[calc(100vw-16px)] sm:w-full sm:max-w-6xl h-[calc(100dvh-16px)] sm:h-[90vh] flex flex-col rounded-2xl bg-white shadow-xl">
+            <div class="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-5 py-3.5">
                 <div>
                     <p class="text-[11px] font-medium text-slate-500">Catálogo técnico</p>
                     <h2 id="catalog-modal-title" class="text-sm font-semibold text-slate-900"></h2>
                 </div>
-                <button type="button" id="catalog-modal-x" class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
-                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <button type="button" id="catalog-modal-x"
+                        class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </button>
             </div>
 
-            <div class="flex-1">
-                <iframe id="catalog-iframe"
-                        class="block h-[70vh] w-full rounded-b-2xl"
-                        src=""
-                        loading="lazy"
-                        referrerpolicy="no-referrer"
-                        frameborder="0"></iframe>
+            <div class="flex-1 min-h-0 flex flex-col">
+                <!-- dentro do modal #catalog-modal, acima do iframe -->
+                <div id="catalog-details" class="px-5 py-4 border-b border-slate-100">
+                    <div class="grid grid-cols-1 lg:grid-cols-[1fr,360px] gap-4">
+                        <!-- ESQUERDA: infos -->
+                        <div class="flex items-start gap-3">
+                            <div class="h-14 w-14 overflow-hidden rounded-xl bg-slate-100 flex items-center justify-center">
+                                <img id="catalog-eq-image" class="h-full w-full object-cover hidden" alt="Foto do equipamento">
+                                <div id="catalog-eq-image-empty" class="text-[11px] text-slate-400">Sem<br>imagem</div>
+                            </div>
 
-                <div id="catalog-empty"
-                     class="hidden h-[70vh] w-full items-center justify-center p-6 text-sm text-slate-500">
-                    Nenhum catálogo (iframe) cadastrado para este equipamento.
+                            <div class="min-w-0">
+                                <p class="text-[11px] font-medium text-slate-500">Equipamento</p>
+                                <p id="catalog-eq-name" class="text-sm font-semibold text-slate-900"></p>
+                                <p id="catalog-eq-desc" class="mt-0.5 text-[12px] text-slate-600"></p>
+
+                                <div class="mt-2 flex flex-wrap gap-2">
+                <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] text-slate-700">
+                  Código: <strong class="ml-1" id="catalog-eq-code"></strong>
+                </span>
+                                    <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] text-slate-700">
+                  Serial: <strong class="ml-1" id="catalog-eq-serial"></strong>
+                </span>
+                                </div>
+
+                                <div class="mt-3">
+                                    <button id="catalog-open-edit" type="button"
+                                            class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                                        Editar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- DIREITA: peças vinculadas -->
+                        <aside class="rounded-2xl border border-slate-200 bg-slate-50 p-3 max-h-[170px] overflow-y-auto">
+                            <p class="text-xs font-semibold text-slate-800">Peças vinculadas</p>
+                            <p id="catalog-eq-parts-empty" class="mt-1 text-[11px] text-slate-500 hidden">
+                                Nenhuma peça vinculada.
+                            </p>
+                            <div id="catalog-eq-parts" class="mt-2 flex flex-wrap gap-2"></div>
+                        </aside>
+                    </div>
+                </div>
+
+                <!-- viewer -->
+                <div class="flex-1 min-h-0 flex flex-col">
+                    <iframe id="catalog-iframe"
+                            class="block w-full flex-1 min-h-0 rounded-b-2xl"
+                            src=""
+                            loading="lazy"
+                            referrerpolicy="no-referrer"
+                            frameborder="0"></iframe>
+
+                    <!-- ✅ ESTE BLOCO É O QUE ESTAVA FALTANDO (JS USA #catalog-empty) -->
+                    <div id="catalog-empty"
+                         class="hidden h-full w-full flex-col items-center justify-center gap-2 p-6 text-sm text-slate-500">
+                        <p class="text-sm font-medium text-slate-700">Nenhum catálogo (PDF) cadastrado.</p>
+                        <p class="text-[11px] text-slate-500">Use “Adicionar PDF” abaixo.</p>
+                    </div>
                 </div>
             </div>
 
-            <div class="flex justify-end border-t border-slate-100 px-5 py-3">
+            <div class="flex items-center justify-between border-t border-slate-100 px-5 py-3">
+                <div class="flex items-center gap-2">
+                    <!-- ✅ TROQUEI hidden -> sr-only (melhor pra click programático) -->
+                    <input id="catalog-upload" type="file" accept="application/pdf" class="sr-only">
+
+                    <button id="catalog-upload-btn" type="button"
+                            class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                        Adicionar PDF
+                    </button>
+
+                    <button id="catalog-save-btn" type="button" disabled
+                            class="inline-flex items-center rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Salvar
+                    </button>
+
+                    <p id="catalog-file-name" class="text-[11px] text-slate-500"></p>
+                </div>
+
                 <button type="button" id="catalog-modal-close"
                         class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
                     Fechar
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Gerenciar Peças (seleção) -->
+    <div id="parts-picker-modal"
+         class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+        <div
+            class="w-[calc(100vw-16px)] sm:w-full sm:max-w-3xl h-[calc(100dvh-16px)] sm:h-auto sm:max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-xl">
+            <div
+                class="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-5 py-3.5">
+                <div>
+                    <p class="text-[11px] font-medium text-slate-500">Selecionar peças do equipamento</p>
+                    <h2 id="parts-picker-title" class="text-sm font-semibold text-slate-900"></h2>
+                </div>
+                <button type="button" id="parts-picker-x"
+                        class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2">
+                        <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="sticky top-[56px] z-10 px-5 py-4 border-b border-slate-100 bg-white">
+                <div class="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                    <div class="relative w-full sm:max-w-md">
+                        <input id="parts-picker-search" type="text" placeholder="Buscar peça (nome, código, NCM)…"
+                               class="w-full rounded-xl border border-slate-300 bg-white pl-10 pr-3 py-2 text-xs outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"/>
+                        <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
+                             xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2">
+                            <circle cx="11" cy="11" r="7"/>
+                            <path d="M21 21l-4.3-4.3"/>
+                        </svg>
+                    </div>
+
+                    <label class="inline-flex items-center gap-2 text-xs text-slate-700 select-none">
+                        <input id="parts-picker-only-selected" type="checkbox" class="rounded border-slate-300">
+                        Mostrar só selecionadas
+                    </label>
+                </div>
+
+                <div class="mt-3 flex justify-between flex-wrap gap-2 text-xs">
+                   <div>
+                        <span id="parts-picker-count"
+                              class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1.5 font-medium text-slate-700"></span>
+                       <span id="parts-picker-selected"
+                             class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1.5 font-medium text-blue-700"></span>
+                   </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <button id="parts-picker-select-page"
+                                    type="button"
+                                    class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-700 hover:bg-slate-50">
+                                Selecionar esta página
+                            </button>
+
+                            <button id="parts-picker-unselect-batch"
+                                    type="button"
+                                    class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-700 hover:bg-slate-50">
+                                Desmarcar último lote
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="parts-picker-list" class="flex-1 overflow-y-auto px-5 py-4">
+                <div id="parts-picker-selected-wrap" class="space-y-2"></div>
+
+                <div id="parts-picker-selected-sep" class="my-3 hidden border-t border-slate-100"></div>
+
+                <div id="parts-picker-results-wrap" class="space-y-2"></div>
+
+                <p id="parts-picker-only-empty" class="mt-2 hidden text-sm text-slate-500">
+                    Nenhuma peça selecionada.
+                </p>
+            </div>
+
+            <div class="sticky bottom-0 flex items-center justify-between border-t border-slate-100 bg-white px-5 py-3">
+                <p id="parts-picker-loading" class="text-xs text-slate-500 invisible">Carregando…</p>
+                <div class="flex gap-2">
+                    <button type="button" id="parts-picker-close"
+                            class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                        Fechar
+                    </button>
+                    <button type="button" id="parts-picker-save"
+                            class="inline-flex items-center rounded-xl bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">
+                        Salvar peças
+                    </button>
+                </div>
             </div>
         </div>
     </div>

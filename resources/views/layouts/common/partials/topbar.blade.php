@@ -122,31 +122,6 @@
                        class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
                         Peças x Equipamentos
                     </a>
-
-                    {{-- Fluxo da OS --}}
-                    <div class="px-3 pt-3 pb-0">
-                        <p class="text-[11px] font-semibold tracking-wide uppercase text-slate-400">Fluxo da OS</p>
-                    </div>
-                    <a href="{{ route('service-order-equipment.view') }}"
-                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
-                        Equipamentos da OS
-                    </a>
-                    <a href="{{ route('service-order-service-item.view') }}"
-                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
-                        Serviços da OS
-                    </a>
-                    <a href="{{ route('service-order-part-item.view') }}"
-                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
-                        Peças da OS
-                    </a>
-                    <a href="{{ route('service-order-labor-entry.view') }}"
-                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
-                        Horas de mão de obra
-                    </a>
-                    <a href="{{ route('completed-service-order.view') }}"
-                       class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
-                        OS concluídas
-                    </a>
                 </div>
             </div>
         </nav>
