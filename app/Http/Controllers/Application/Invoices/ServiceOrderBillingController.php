@@ -187,14 +187,14 @@ class ServiceOrderBillingController extends Controller
     public function generate(Request $request, ServiceOrder $serviceOrder)
     {
         $data = $request->validate([
-            'first_due_date' => ['required', 'date'],
+            'first_due_date' => ['required'],
             'payment_method' => ['required', 'string', 'max:50'],
 
             'use_down_payment' => ['nullable'],
-            'down_payment_percent' => ['required_if:use_down_payment,1','integer','min:1','max:99'],
-            'remaining_installments' => ['required_if:use_down_payment,1','integer','min:1'],
+            'down_payment_percent' => ['nullable'],
+            'remaining_installments' => ['nullable'],
 
-            'installments' => ['required_unless:use_down_payment,1','integer','min:1'],
+            'installments' => ['nullable'],
         ]);
 
         return DB::transaction(function () use ($serviceOrder, $data) {
