@@ -495,16 +495,18 @@ class ServiceOrderController extends Controller
 
     public function generateNextNumber(): string
     {
-        $last = ServiceOrder::orderByDesc('created_at')->value('order_number');
+        return DB::transaction(function () {
+            $last = ServiceOrder::query()
+                ->select('order_number')
+                ->orderByDesc('order_number') // como é 000001..000010, ordena certo
+                ->lockForUpdate()
+                ->value('order_number');
 
-        if (!$last) {
-            return '000001';
-        }
+            if (!$last) return '000001';
 
-        $int = (int) preg_replace('/\D/', '', $last);
-        $next = $int + 1;
-
-        return str_pad((string) $next, 6, '0', STR_PAD_LEFT);
+            $next = ((int) $last) + 1;
+            return str_pad((string) $next, 6, '0', STR_PAD_LEFT);
+        });
     }
 
     public function pdf(ServiceOrder $serviceOrder)
@@ -605,7 +607,9 @@ class ServiceOrderController extends Controller
 
             $copy->id = (string) Str::uuid();
 
-            $copy->order_number = $this->generateNextNumber($original->customer_sistapp_id);
+            $copy->order_number = CustomerContext::for($original->customer_sistapp_id, function () {
+                return $this->generateNextNumber();
+            });
 
             $copy->status = 'draft';
             $copy->order_date = now()->toDateString();

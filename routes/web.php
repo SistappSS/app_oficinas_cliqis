@@ -25,6 +25,7 @@ use App\Http\Controllers\Application\HumanResources\DepartmentController;
 use App\Http\Controllers\Application\HumanResources\EmployeeBenefitController;
 use App\Http\Controllers\Application\HumanResources\EmployeeController;
 use App\Http\Controllers\Application\Invoices\ServiceOrderBillingController;
+use App\Http\Controllers\Application\PartOrderController;
 use App\Http\Controllers\Application\ServiceOrders\CompletedServiceOrderController;
 use App\Http\Controllers\Application\ServiceOrders\ServiceOrderController;
 use App\Http\Controllers\Application\ServiceOrders\ServiceOrderEquipmentController;
@@ -236,6 +237,31 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::get('/billing', [ServiceOrderBillingController::class, 'index'])->name('service-order-invoice.view');
         Route::get('/billing-api', [ServiceOrderBillingController::class, 'list'])->name('service-orders.billing.api');
         Route::post('/billing', [ServiceOrderBillingController::class, 'store'])->name('service-orders.billing.store');
+    });
+
+    Route::group(['prefix' => 'part-orders'], function () {
+
+        // Part Orders (Pedidos de Peças)
+        Route::get('/part-order', [PartOrderController::class, 'view'])->name('part-order.view');
+        Route::get('/part-order/create/{id?}', [PartOrderController::class, 'create'])->name('part-order.create');
+        Route::get('/part-order/{partOrder}/edit', [PartOrderController::class, 'edit'])->name('part-order.edit');
+        Route::resource('/part-order-api', PartOrderController::class);
+
+        // Ações (botões)
+        Route::get('/{partOrder}/pdf', [PartOrderController::class, 'pdf'])->name('part-order.pdf');
+        Route::get('/{partOrder}/pdf/download', [PartOrderController::class, 'pdfDownload'])->name('part-order.pdf.download');
+        Route::post('/{partOrder}/email', [PartOrderController::class, 'sendPdfEmail'])->name('part-orders.email');
+        Route::post('/{partOrder}/duplicate', [PartOrderController::class, 'duplicate'])->name('part-orders.duplicate');
+
+        /*
+        // Itens do pedido (se existir módulo separado)
+        Route::get('/part-order-item', [PartOrderItemController::class, 'view'])->name('part-order-item.view');
+        Route::resource('/part-order-item-api', PartOrderItemController::class);
+
+        // Catálogo de peças (se existir módulo separado)
+        Route::get('/parts-catalog', [PartsCatalogController::class, 'view'])->name('parts-catalog.view');
+        Route::resource('/parts-catalog-api', PartsCatalogController::class);
+        */
     });
 
     /* --->| Finances |<--- */

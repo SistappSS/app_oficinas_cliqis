@@ -178,7 +178,7 @@ function renderRow(os) {
                       <button type="button" class="block w-full px-3 py-2 text-left bg-transparent rounded-none hover:bg-slate-50 focus:outline-none" data-download data-id="${os.id}">Baixar PDF</button>
                     </li>
                     <li>
-                      <button type="button" class="block w-full px-3 py-2 text-left bg-transparent rounded-none hover:bg-slate-50 focus:outline-none" data-email data-to="${os.secondary_customer.email}" data-number="${os.order_number}" data-id="${os.id}">Enviar por e-mail</button>
+                      <button type="button" class="block w-full px-3 py-2 text-left bg-transparent rounded-none hover:bg-slate-50 focus:outline-none" data-email data-to="${os.secondary_customer?.email || ""}" data-number="${os.order_number}" data-id="${os.id}">Enviar por e-mail</button>
                     </li>
                     <li>
                       <button type="button" class="block w-full px-3 py-2 text-left bg-transparent rounded-none hover:bg-slate-50 focus:outline-none" data-dup data-id="${os.id}">Duplicar OS</button>

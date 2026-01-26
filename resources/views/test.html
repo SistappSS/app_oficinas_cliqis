@@ -1,15 +1,13 @@
-<!--valvula gaveta-->
-
+<!--atuadores eletricos-->
 <!DOCTYPE html>
 <html lang="pt-BR" class="scroll-smooth">
+
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
-    <!-- Mantido (mesmo tema e intenção da campanha) -->
-    <title>Automação de Válvulas Gaveta e Comporta | BONGAS</title>
+    <title>Atuadores ¼ de Volta e Multivoltas | BONGAS</title>
     <meta name="description"
-          content="Suporte técnico para especificação de atuadores em válvulas gaveta e comporta. Grey-MZ e Grey-L. Orçamento rápido.">
+          content="Seleção técnica de atuadores Grey-Q, White-E, Grey-MZ e Grey-L. Soluções para automação de válvulas industriais."/>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -17,16 +15,16 @@
             theme: {
                 extend: {
                     colors: {
-                        'bg-900': '#232530',
-                        'bg-850': '#2d3041',
-                        'bg-800': '#3c3f54',
-                        'bg-700': '#474b61',
-                        'accent': '#ECBA46',
-                        'white': '#fefefe',
-                    }
-                }
-            }
-        }
+                        "bg-900": "#232530",
+                        "bg-850": "#2d3041",
+                        "bg-800": "#3c3f54",
+                        "bg-700": "#474b61",
+                        accent: "#ECBA46",
+                        white: "#fefefe",
+                    },
+                },
+            },
+        };
     </script>
 
     <style>
@@ -40,6 +38,12 @@
             background: linear-gradient(135deg, #232530 0%, #2d3041 100%);
         }
 
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
         .grid-dots {
             background-image: radial-gradient(rgba(236, 186, 70, 0.18) 1px, transparent 1px);
             background-size: 18px 18px;
@@ -49,516 +53,520 @@
 
 <body class="antialiased">
 
-<!-- HEADER (mantido / enriquecido visualmente + espaço logo) -->
+<!-- HEADER -->
 <header class="fixed top-0 w-full z-50 bg-900/95 border-b border-bg-800 backdrop-blur-md h-16 lg:h-20">
-    <nav class="container mx-auto px-4 h-full flex items-center justify-between gap-3">
-        <!-- LOGO (melhor no mobile/tablet) -->
-        <a href="https://bongas.com.br" class="flex items-center shrink-0" aria-label="Bongas">
+    <nav class="container mx-auto px-4 h-full flex items-center justify-between">
+        <a href="https://bongas.com.br" class="flex items-center gap-3">
             <img
                 src="https://bongas.com.br/wp-content/uploads/2025/06/Logo_Bongas_branco_e_amarelo-1-e1744564774874.png"
-                alt="Bongas"
-                class="h-7 sm:h-8 md:h-9 lg:h-12 w-auto object-contain"
-                loading="eager"
+                alt="BONGAS"
+                class="h-10 w-auto"
+                loading="lazy"
             />
+            <span class="sr-only">BONGAS</span>
         </a>
 
-        <!-- MENU: só no desktop (evita apertar no tablet) -->
-        <ul class="hidden lg:flex space-x-6 text-xs font-bold uppercase tracking-widest text-gray-300">
-            <li><a href="https://bongas.com.br" class="hover:text-accent transition">Home</a></li>
-            <li><a href="#produtos" class="hover:text-accent transition">Produtos</a></li>
-            <li><a href="#diferenciais" class="hover:text-accent transition">Diferenciais</a></li>
-            <li><a href="#orcamento" class="hover:text-accent transition">Contato</a></li>
+        <ul class="hidden lg:flex flex-1 justify-center space-x-6 text-xs font-bold uppercase tracking-widest text-gray-300">
+            <li><a href="#modelos" class="hover:text-accent transition">Modelos</a></li>
+            <li><a href="#como-escolher" class="hover:text-accent transition">Como Escolher</a></li>
+            <li><a href="#especificacao" class="hover:text-accent transition">Checklist</a></li>
+            <li><a href="#contato" class="hover:text-accent transition">Contato</a></li>
         </ul>
 
-        <div class="flex items-center gap-2">
-            <!-- BOTÃO VERMELHO: só no desktop (lg+) -->
+        <div class="ml-auto flex items-center gap-2">
+            <!-- Site principal: hidden no mobile + tablet -->
             <a
                 href="https://bongas.com.br"
                 class="hidden lg:inline-flex items-center bg-[#CA1118] px-5 py-2 rounded font-black text-xs uppercase hover:scale-105 transition"
             >
                 Site principal
             </a>
-            <a
-                href="https://api.whatsapp.com/send/?phone=551130933967&text=Olá! Gostaria de automatizar válvula gaveta/comporta. Pode me ajudar com a especificação?"
-                class="bg-accent text-bg-900 px-5 py-2 rounded font-black text-xs uppercase hover:scale-105 transition">
-                Fale no WhatsApp
+            <!-- CTA com UTM via script -->
+            <a href="#" data-wa data-cta="header_orcamento" data-template="specialist"
+               class="bg-accent text-bg-900 px-5 py-2 rounded font-black text-xs uppercase hover:scale-105 transition italic">
+                Orçamento WhatsApp
             </a>
         </div>
-
     </nav>
 </header>
 
-<!-- HERO (mantido e enriquecido com badges + placeholders) -->
-<section class="pt-32 pb-16 px-4 bg-gradient-industrial border-b border-bg-800 relative overflow-hidden">
-    <div class="absolute inset-0 opacity-40 grid-dots pointer-events-none"></div>
+<main>
 
-    <div class="container mx-auto grid lg:grid-cols-12 gap-12 items-center relative">
-        <div class="lg:col-span-7">
-        <span class="text-accent font-bold tracking-widest uppercase text-sm">
-          Gaveta + Comporta (Aplicação Industrial)
-        </span>
+    <!-- HERO -->
+    <section class="pt-32 pb-16 px-4 bg-gradient-industrial border-b border-bg-800 relative overflow-hidden">
+        <div class="absolute inset-0 opacity-35 grid-dots pointer-events-none"></div>
+        <div
+            class="absolute top-0 right-0 w-1/2 h-full bg-accent/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2"></div>
 
-            <h1 class="text-3xl lg:text-5xl font-black mt-4 mb-6 leading-tight uppercase italic">
-                Automação de Válvula Gaveta e Comporta com
-                <span class="text-accent">Especificação Técnica</span>
-            </h1>
+        <div class="container mx-auto grid lg:grid-cols-12 gap-12 items-center relative z-10">
+            <div class="lg:col-span-7">
+                <span
+                    class="text-accent font-bold tracking-widest uppercase text-sm">Automação de Alta Performance</span>
 
-            <p class="text-lg text-gray-300 mb-8 max-w-2xl">
-                Indicamos o atuador ideal para sua aplicação e enviamos cotação com base nos dados do processo.
-                Compatibilidade recomendada:
-                <span class="text-white font-bold italic">Grey-MZ e Grey-L (multivoltas).</span>
-            </p>
+                <h1 class="text-3xl lg:text-5xl font-black mt-4 mb-6 leading-tight uppercase italic text-white">
+                    Seleção de Atuadores para <span class="text-accent">Válvulas Industriais</span>
+                </h1>
 
-            <!-- CTAs (mantidos) -->
-            <div class="flex flex-col sm:flex-row gap-4 mb-10">
-                <a
-                    href="https://api.whatsapp.com/send/?phone=551130933967&text=Olá! Gostaria de falar com um especialista sobre automação de válvulas Gaveta/Comporta."
-                    class="bg-accent text-bg-900 px-8 py-4 rounded font-black text-center text-lg uppercase shadow-lg">
-                    Falar com especialista
-                </a>
-                <a
-                    href="#checklist"
-                    class="border border-accent text-accent px-8 py-4 rounded font-black text-center text-lg uppercase hover:bg-accent hover:text-bg-900 transition">
-                    Enviar dados da aplicação
-                </a>
-            </div>
+                <p class="text-lg text-gray-300 mb-8 max-w-2xl italic leading-relaxed">
+                    Indicamos o atuador ideal conforme o tipo de movimento:
+                    <span
+                        class="text-white font-bold tracking-tight underline decoration-accent italic">¼ DE VOLTA:</span>
+                    Grey-Q / White-E •
+                    <span
+                        class="text-white font-bold tracking-tight underline decoration-accent italic">MULTIVOLTAS:</span>
+                    Grey-MZ / Grey-L
+                    <br/>
+                    <span class="text-gray-400 text-sm italic">
+              Envie DN, pressão e fluido — a engenharia orienta o conjunto (atuador + acessórios quando necessário).
+            </span>
+                </p>
 
-            <!-- NOVO: “Badges” de foco técnico (não altera info, só reforça) -->
-            <div class="grid sm:grid-cols-3 gap-4 max-w-2xl">
-                <div class="bg-bg-850/60 border border-bg-800 rounded p-4">
-                    <p class="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">Foco</p>
-                    <p class="text-sm font-bold">Multivoltas</p>
-                    <p class="text-xs text-gray-400 mt-1">Gaveta / Comporta</p>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a href="#" data-wa data-cta="hero_especialista" data-template="specialist"
+                       class="bg-accent text-bg-900 px-8 py-4 rounded font-black text-center text-lg uppercase shadow-lg italic hover:scale-[1.02] transition">
+                        Falar com especialista
+                    </a>
+                    <a href="#modelos"
+                       class="border border-gray-500 text-gray-300 px-8 py-4 rounded font-black text-center text-lg uppercase hover:border-accent hover:text-accent transition italic">
+                        Ver modelos
+                    </a>
                 </div>
-                <div class="bg-bg-850/60 border border-bg-800 rounded p-4">
-                    <p class="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">Saída</p>
-                    <p class="text-sm font-bold">Cotação rápida</p>
-                    <p class="text-xs text-gray-400 mt-1">Com dados do processo</p>
+
+                <!-- Cards rápidos (melhora conversão e entendimento) -->
+                <div class="mt-10 grid sm:grid-cols-3 gap-4 max-w-2xl">
+                    <div class="bg-bg-850/60 border border-bg-800 rounded p-4">
+                        <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black mb-1 italic">
+                            Movimento</p>
+                        <p class="text-sm font-black italic text-white">¼ de volta (90°)</p>
+                        <p class="text-xs text-gray-400 mt-1 italic">Esfera / Borboleta / Macho</p>
+                    </div>
+                    <div class="bg-bg-850/60 border border-bg-800 rounded p-4">
+                        <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black mb-1 italic">
+                            Movimento</p>
+                        <p class="text-sm font-black italic text-white">Multivoltas</p>
+                        <p class="text-xs text-gray-400 mt-1 italic">Gaveta / Comporta / Globo</p>
+                    </div>
+                    <div class="bg-bg-850/60 border border-bg-800 rounded p-4">
+                        <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black mb-1 italic">
+                            Objetivo</p>
+                        <p class="text-sm font-black italic text-white">Achar o torque certo</p>
+                        <p class="text-xs text-gray-400 mt-1 italic">Evita falhas e retrabalho</p>
+                    </div>
                 </div>
-                <div class="bg-bg-850/60 border border-bg-800 rounded p-4">
-                    <p class="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">Apoio</p>
-                    <p class="text-sm font-bold">Suporte técnico</p>
-                    <p class="text-xs text-gray-400 mt-1">Especificação orientada</p>
+            </div>
+
+            <!-- Card lateral (enriquecido + imagem placeholder) -->
+            <div class="lg:col-span-5 bg-bg-850 p-6 border border-bg-700 rounded shadow-2xl relative overflow-hidden">
+                <div
+                    class="absolute top-0 right-0 bg-accent text-bg-900 px-3 py-1 font-bold text-[10px] uppercase italic">
+                    Engenharia de Aplicação
                 </div>
-            </div>
-        </div>
 
-        <!-- Card lateral (mantido / enriquecido + espaço para imagem) -->
-        <div class="lg:col-span-5 bg-bg-850 p-6 border border-bg-700 rounded shadow-2xl relative overflow-hidden">
-            <div class="absolute top-0 right-0 bg-accent text-bg-900 px-3 py-1 font-bold text-[10px] uppercase italic">
-                Foco: Multivoltas
-            </div>
+                <h3 class="text-xl font-black mb-4 uppercase italic">Critérios de Seleção</h3>
+                <ul class="space-y-3 text-sm mb-6 italic">
+                    <li class="flex items-start gap-2">
+                        ✔ <span><span class="font-bold uppercase italic text-accent">Torque:</span> dimensionamento para segurança (abertura/fechamento sem esforço excessivo)</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        ✔ <span><span class="font-bold uppercase italic text-accent">Controle:</span> On/Off ou Modulante (4–20 mA quando aplicável)</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        ✔ <span><span class="font-bold uppercase italic text-accent">Energia:</span> 220V, 380V, 440V ou Pneumático (conforme infraestrutura)</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        ✔ <span><span class="font-bold uppercase italic text-accent">Ambiente:</span> interno/externo, grau de proteção e condições do local</span>
+                    </li>
+                </ul>
 
-            <h3 class="text-xl font-black mb-4 uppercase italic">Checklist de Engenharia</h3>
+                <div
+                    class="p-4 bg-bg-900/50 border border-dashed border-accent/30 rounded text-xs text-gray-400 italic text-center">
+                    "A especificação correta do atuador evita falhas no acionamento e quebra de hastes."
+                </div>
 
-            <ul class="space-y-3 text-sm mb-6">
-                <li class="flex items-center gap-2">✔ <span class="font-bold uppercase">Atuadores:</span> Grey-MZ ou
-                    Grey-L
-                </li>
-                <li class="flex items-center gap-2">✔ <span class="font-bold uppercase">Dados:</span> Diâmetro, Pressão
-                    e Fluido
-                </li>
-                <li class="flex items-center gap-2">✔ <span class="font-bold uppercase">Cotação:</span> Resposta técnica
-                    rápida
-                </li>
-            </ul>
-
-            <div
-                class="p-4 bg-bg-900/50 border border-dashed border-accent/30 rounded text-xs text-gray-400 mb-5 italic text-center">
-                "A seleção correta evita paradas na linha e garante a vedação total."
-            </div>
-
-            <!-- NOVO: placeholder de imagem “conjunto montado” -->
-            <div class="bg-bg-900/40 border border-bg-800 rounded p-4">
-                <p class="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">ATUADOR ELÉTRICO GREY-MZ</p>
+                <!-- Placeholder foto aplicação (trocar depois) -->
                 <img
                     src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-eletrico-grey-mz-scaled.png"
-                    alt="Placeholder - conjunto válvula + atuador"
-                    class="w-full h-44 object-contain rounded bg-bg-900/40 border border-bg-800"
+                    alt="Placeholder aplicação industrial"
+                    class="w-full py-3 object-contain rounded bg-bg-900/40 border border-bg-800 mt-5"
+                    style="height: 225px;"
                     loading="lazy"
                 />
-                <p class="text-[10px] text-gray-500 mt-2">
-                    O melhor para automatização de válvulas gaveta.
+                <p class="mt-3 text-[10px] text-gray-500 uppercase italic text-center">
+                    Imagem ilustrativa • troque por foto real do conjunto em campo
                 </p>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- NOVO: visão técnica (enriquece sem mudar info) -->
-<section class="py-20 px-4 bg-bg-900 border-b border-bg-800">
-    <div class="container mx-auto grid lg:grid-cols-12 gap-10 items-start">
-        <div class="lg:col-span-7">
-            <h2 class="text-3xl font-black mb-4 uppercase italic">
-                Como aceleramos sua especificação
+    <!-- COMO ESCOLHER (novo bloco: aumenta conversão e reduz dúvida) -->
+    <section id="como-escolher" class="py-20 px-4 bg-bg-900 border-b border-bg-800">
+        <div class="container mx-auto grid lg:grid-cols-12 gap-10 items-start">
+            <div class="lg:col-span-7">
+                <h2 class="text-3xl font-black mb-4 uppercase italic">Como escolher o atuador certo</h2>
+                <p class="text-gray-300 italic leading-relaxed mb-8">
+                    Nesta campanha, a pessoa está buscando <span
+                    class="text-white font-black">“atuador para válvula”</span>.
+                    O segredo para gerar lead qualificado é guiar o usuário no caminho certo:
+                    <span class="text-white font-black">movimento → torque → controle → ambiente</span>.
+                </p>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="glass-card rounded-2xl p-6">
+                        <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black mb-1 italic">Passo
+                            1</p>
+                        <h3 class="text-lg font-black uppercase italic text-accent mb-2">Identificar o movimento</h3>
+                        <p class="text-sm text-gray-300 italic leading-relaxed">
+                            Se é <span class="text-white font-black">¼ de volta</span> (90°), normalmente entra Grey-Q /
+                            White-E.
+                            Se é <span class="text-white font-black">multivoltas</span> (curso por várias voltas), entra
+                            Grey-MZ / Grey-L.
+                        </p>
+                    </div>
+
+                    <div class="glass-card rounded-2xl p-6">
+                        <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black mb-1 italic">Passo
+                            2</p>
+                        <h3 class="text-lg font-black uppercase italic text-accent mb-2">Definir o torque</h3>
+                        <p class="text-sm text-gray-300 italic leading-relaxed">
+                            Torque depende de diâmetro, pressão, vedação e atrito do conjunto.
+                            O dimensionamento correto aumenta a vida útil e reduz falhas.
+                        </p>
+                    </div>
+
+                    <div class="glass-card rounded-2xl p-6">
+                        <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black mb-1 italic">Passo
+                            3</p>
+                        <h3 class="text-lg font-black uppercase italic text-accent mb-2">Escolher o controle</h3>
+                        <p class="text-sm text-gray-300 italic leading-relaxed">
+                            <span class="text-white font-black">On/Off</span> (abre/fecha) ou <span
+                            class="text-white font-black">modulante</span>.
+                            Se precisar, avaliamos integração e acessórios (quando aplicável).
+                        </p>
+                    </div>
+
+                    <div class="glass-card rounded-2xl p-6">
+                        <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black mb-1 italic">Passo
+                            4</p>
+                        <h3 class="text-lg font-black uppercase italic text-accent mb-2">Ambiente e instalação</h3>
+                        <p class="text-sm text-gray-300 italic leading-relaxed">
+                            Interno/externo, umidade, poeira e condições do local.
+                            Com isso, orientamos configuração e instalação mais segura.
+                        </p>
+                    </div>
+                </div>
+
+                <div
+                    class="mt-10 bg-bg-850 border border-bg-800 rounded-lg p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black mb-1 italic">Atalho</p>
+                        <p class="text-lg font-black italic">Enviar checklist e receber indicação</p>
+                        <p class="text-sm text-gray-400 italic">Clique e mande seus dados no WhatsApp em 30
+                            segundos.</p>
+                    </div>
+                    <a href="#" data-wa data-cta="atalho_checklist" data-template="checklist"
+                       class="bg-accent text-bg-900 px-6 py-3 rounded font-black text-sm uppercase hover:bg-white transition italic text-center">
+                        Enviar no WhatsApp
+                    </a>
+                </div>
+            </div>
+
+            <!-- Comparativo rápido + placeholders de imagens -->
+            <aside class="lg:col-span-5">
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-xl font-black uppercase italic mb-4">Comparativo rápido</h3>
+
+                    <div class="overflow-hidden rounded-lg border border-bg-800">
+                        <div
+                            class="grid grid-cols-3 bg-bg-850 text-[11px] font-black uppercase tracking-widest text-gray-200 italic">
+                            <div class="p-3 border-r border-bg-800">Item</div>
+                            <div class="p-3 border-r border-bg-800">¼ de volta</div>
+                            <div class="p-3">Multivoltas</div>
+                        </div>
+
+                        <div class="grid grid-cols-3 text-sm text-gray-300 italic">
+                            <div class="p-3 border-t border-r border-bg-800 bg-bg-900/20 font-black">Movimento</div>
+                            <div class="p-3 border-t border-r border-bg-800">90°</div>
+                            <div class="p-3 border-t border-bg-800">Várias voltas</div>
+
+                            <div class="p-3 border-t border-r border-bg-800 bg-bg-900/20 font-black">Aplicação</div>
+                            <div class="p-3 border-t border-r border-bg-800">Esfera / Borboleta</div>
+                            <div class="p-3 border-t border-bg-800">Gaveta / Comporta</div>
+
+                            <div class="p-3 border-t border-r border-bg-800 bg-bg-900/20 font-black">Modelos</div>
+                            <div class="p-3 border-t border-r border-bg-800">Grey-Q / White-E</div>
+                            <div class="p-3 border-t border-bg-800">Grey-MZ / Grey-L</div>
+                        </div>
+                    </div>
+
+                    <!--                    <div class="mt-6">-->
+                    <!--                        <h4 class="font-black uppercase italic text-accent mb-3">Espaços para imagens</h4>-->
+                    <!--                        <div class="grid grid-cols-2 gap-4">-->
+                    <!--                            <img-->
+                    <!--                                src="https://bongas.com.br/wp-content/uploads/2025/09/atuador-eletrico-white_e-evolution.png"-->
+                    <!--                                alt="Placeholder 1"-->
+                    <!--                                class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800"-->
+                    <!--                                loading="lazy"-->
+                    <!--                            />-->
+                    <!--                            <img-->
+                    <!--                                src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-eletrico-grey_mz-scaled.png"-->
+                    <!--                                alt="Placeholder 2"-->
+                    <!--                                class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800"-->
+                    <!--                                loading="lazy"-->
+                    <!--                                onerror="this.src='https://bongas.com.br/wp-content/uploads/2025/10/atuador-eletrico-grey-mz-scaled.png'"-->
+                    <!--                            />-->
+                    <!--                        </div>-->
+                    <!--                        <p class="mt-3 text-[10px] text-gray-500 uppercase italic">-->
+                    <!--                            Sugestão: 1) conjunto em bancada • 2) instalação em campo-->
+                    <!--                        </p>-->
+                    <!--                    </div>-->
+                </div>
+            </aside>
+        </div>
+    </section>
+
+    <!-- MODELOS -->
+    <section id="modelos" class="py-20 px-4 bg-bg-900">
+        <div class="container mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-black mb-4 uppercase italic">Modelos por Tipo de Movimento</h2>
+                <div class="h-1 w-24 bg-accent mx-auto"></div>
+                <p class="mt-4 text-gray-400 italic">
+                    Selecione o tipo e fale com a engenharia para validar torque, controle e ambiente.
+                </p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-10">
+
+                <!-- 1/4 DE VOLTA -->
+                <div class="bg-bg-850 border border-bg-800 p-8 rounded-lg relative">
+            <span class="absolute -top-3 left-8 bg-accent text-bg-900 px-4 py-1 font-black text-xs uppercase italic">
+              Movimento 90°
+            </span>
+                    <h3 class="text-2xl font-black mb-2 uppercase italic text-white tracking-tight">
+                        Atuadores ¼ de Volta
+                    </h3>
+                    <p class="text-sm text-gray-400 italic mb-6">
+                        Para válvulas rotativas (ex.: esfera/borboleta). Decisão por torque e modo de controle.
+                    </p>
+
+                    <div class="grid sm:grid-cols-2 gap-6">
+                        <!-- Grey-Q -->
+                        <div
+                            class="bg-bg-900 p-5 border border-bg-700 rounded hover:border-accent transition flex flex-col">
+                            <img
+                                src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-eletrico-grey_q_compact.png"
+                                alt="Atuador Grey-Q"
+                                class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800 mb-4"
+                                loading="lazy"
+                            />
+                            <h4 class="font-black text-accent uppercase mb-1 italic">Grey-Q</h4>
+                            <p class="text-[10px] text-gray-500 font-bold uppercase mb-3 italic underline decoration-bg-700">
+                                Elétrico • ¼ de volta
+                            </p>
+
+                            <div class="text-xs text-gray-300 italic leading-relaxed space-y-2 mb-4 flex-1">
+                                <p><span class="text-white font-semibold">Serve para:</span> aplicações ¼ de volta em
+                                    válvulas rotativas.</p>
+                                <p><span class="text-white font-semibold">Onde usar:</span> processos industriais e
+                                    utilidades (conforme torque).</p>
+                                <p><span class="text-white font-semibold">Perfil:</span> opção compacta para seleção
+                                    técnica por tamanho/torque.</p>
+                            </div>
+
+                            <a href="#" data-wa data-cta="card_greyq" data-template="specialist"
+                               class="mt-2 block text-center border border-accent/30 text-accent py-2 font-black text-[10px] uppercase hover:bg-accent hover:text-bg-900 transition italic">
+                                Me indique o ideal
+                            </a>
+                        </div>
+
+                        <!-- White-E -->
+                        <div
+                            class="bg-bg-900 p-5 border border-bg-700 rounded hover:border-accent transition flex flex-col">
+                            <img
+                                src="https://bongas.com.br/wp-content/uploads/2025/09/atuador-eletrico-white_e-evolution.png"
+                                alt="Atuador White-E"
+                                class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800 mb-4"
+                                loading="lazy"
+                            />
+                            <h4 class="font-black text-accent uppercase mb-1 italic">White-E</h4>
+                            <p class="text-[10px] text-gray-500 font-bold uppercase mb-3 italic underline decoration-bg-700">
+                                Elétrico Heavy-Duty
+                            </p>
+
+                            <div class="text-xs text-gray-300 italic leading-relaxed space-y-2 mb-4 flex-1">
+                                <p><span class="text-white font-semibold">Serve para:</span> automação ¼ de volta com
+                                    robustez e estabilidade.</p>
+                                <p><span class="text-white font-semibold">Onde usar:</span> aplicações industriais
+                                    comuns (conforme torque e ambiente).</p>
+                                <p><span class="text-white font-semibold">Perfil:</span> linha versátil para quem
+                                    precisa de padrão confiável.</p>
+                            </div>
+
+                            <a href="#" data-wa data-cta="card_whitee" data-template="specialist"
+                               class="mt-2 block text-center border border-accent/30 text-accent py-2 font-black text-[10px] uppercase hover:bg-accent hover:text-bg-900 transition italic">
+                                Me indique o ideal
+                            </a>
+                        </div>
+                    </div>
+
+                    <p class="mt-6 text-xs text-gray-500 italic uppercase font-bold">
+                        • Aplicação: Esfera, Borboleta e Macho.
+                    </p>
+                </div>
+
+                <!-- MULTIVOLTAS -->
+                <div class="bg-bg-850 border border-bg-800 p-8 rounded-lg relative">
+            <span class="absolute -top-3 left-8 bg-white text-bg-900 px-4 py-1 font-black text-xs uppercase italic">
+              Movimento Linear
+            </span>
+                    <h3 class="text-2xl font-black mb-2 uppercase italic text-white tracking-tight">
+                        Atuadores Multivoltas
+                    </h3>
+                    <p class="text-sm text-gray-400 italic mb-6">
+                        Para válvulas lineares (ex.: gaveta/comporta/globo). Seleção por curso, torque e processo.
+                    </p>
+
+                    <div class="grid sm:grid-cols-2 gap-6">
+                        <!-- Grey-MZ -->
+                        <div
+                            class="bg-bg-900 p-5 border border-bg-700 rounded hover:border-accent transition flex flex-col">
+                            <img
+                                src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-eletrico-grey-mz-scaled.png"
+                                alt="Atuador Grey-MZ"
+                                class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800 mb-4"
+                                loading="lazy"
+                            />
+                            <h4 class="font-black text-accent uppercase mb-1 italic">Grey-MZ</h4>
+                            <p class="text-[10px] text-gray-500 font-bold uppercase mb-3 italic underline decoration-bg-700">
+                                Elétrico Multivoltas
+                            </p>
+
+                            <div class="text-xs text-gray-300 italic leading-relaxed space-y-2 mb-4 flex-1">
+                                <p><span class="text-white font-semibold">Serve para:</span> válvulas lineares com
+                                    operação multivoltas.</p>
+                                <p><span class="text-white font-semibold">Onde usar:</span> redes de água, energia,
+                                    mineração e grandes plantas.</p>
+                                <p><span class="text-white font-semibold">Perfil:</span> quando a válvula não é ¼ de
+                                    volta — é abre/fecha por várias voltas.</p>
+                            </div>
+
+                            <a href="#" data-wa data-cta="card_greymz" data-template="specialist"
+                               class="mt-2 block text-center border border-accent/30 text-accent py-2 font-black text-[10px] uppercase hover:bg-accent hover:text-bg-900 transition italic">
+                                Me indique o ideal
+                            </a>
+                        </div>
+
+                        <!-- Grey-L -->
+                        <div
+                            class="bg-bg-900 p-5 border border-bg-700 rounded hover:border-accent transition flex flex-col">
+                            <img
+                                src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-multivoltas-grey-l-smart-integral.png"
+                                alt="Atuador Grey-L"
+                                class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800 mb-4"
+                                loading="lazy"
+                            />
+                            <h4 class="font-black text-accent uppercase mb-1 italic">Grey-L</h4>
+                            <p class="text-[10px] text-gray-500 font-bold uppercase mb-3 italic underline decoration-bg-700">
+                                Multivoltas • Sob seleção
+                            </p>
+
+                            <div class="text-xs text-gray-300 italic leading-relaxed space-y-2 mb-4 flex-1">
+                                <p><span class="text-white font-semibold">Serve para:</span> multivoltas em
+                                    gaveta/comporta conforme dimensionamento.</p>
+                                <p><span class="text-white font-semibold">Onde usar:</span> aplicações industriais com
+                                    requisitos específicos.</p>
+                                <p><span class="text-white font-semibold">Perfil:</span> opção otimizada para cenários e
+                                    torques específicos.</p>
+                            </div>
+
+                            <a href="#" data-wa data-cta="card_greyl" data-template="specialist"
+                               class="mt-2 block text-center border border-accent/30 text-accent py-2 font-black text-[10px] uppercase hover:bg-accent hover:text-bg-900 transition italic">
+                                Me indique o ideal
+                            </a>
+                        </div>
+                    </div>
+
+                    <p class="mt-6 text-xs text-gray-500 italic uppercase font-bold">
+                        • Aplicação: Gaveta, Comporta e Globo.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- CHECKLIST (mantido, com CTA via data-wa) -->
+    <section id="especificacao" class="py-20 px-4 bg-bg-850 border-y border-bg-800">
+        <div class="container mx-auto max-w-4xl">
+            <h2 class="text-3xl font-black mb-8 text-center uppercase italic text-accent">
+                Checklist para Especificação
             </h2>
-            <p class="text-gray-300 mb-6">
-                Nesta página, o foco é <span class="font-bold">automação de válvulas gaveta e comporta</span> com
-                <span class="font-bold">atuadores multivoltas</span> (Grey-MZ / Grey-L). Quanto mais completo o
-                checklist,
-                mais rápido conseguimos orientar e preparar a cotação.
-            </p>
 
-            <div class="grid md:grid-cols-2 gap-6">
-                <div class="bg-bg-850 border border-bg-800 rounded p-6">
-                    <h3 class="font-black uppercase text-accent mb-2">Dados que mais ajudam</h3>
-                    <ul class="text-sm text-gray-400 space-y-2">
-                        <li>• Tipo: Gaveta ou Comporta</li>
-                        <li>• Diâmetro (DN/pol)</li>
-                        <li>• Pressão e temperatura</li>
-                        <li>• Fluido (água, gás, vapor etc.)</li>
-                        <li>• Ambiente (interno/externo)</li>
-                    </ul>
-                </div>
+            <div class="grid md:grid-cols-2 gap-8 bg-bg-900 p-8 rounded-lg shadow-xl border border-bg-800 relative">
+                <div class="absolute top-4 right-4 text-bg-800 font-black text-6xl opacity-20">DATA</div>
 
-                <div class="bg-bg-850 border border-bg-800 rounded p-6">
-                    <h3 class="font-black uppercase text-accent mb-2">Detalhes que refinam</h3>
-                    <ul class="text-sm text-gray-400 space-y-2">
-                        <li>• Controle: On/Off ou modulante</li>
-                        <li>• Frequência (ciclos/dia), se souber</li>
-                        <li>• Condição do processo (informações gerais)</li>
-                        <li>• Preferência elétrica ou pneumática (se houver)</li>
-                        <li>• Foto/placa da válvula (quando possível)</li>
-                    </ul>
-                </div>
-            </div>
-
-            <div
-                class="mt-8 bg-bg-850 border border-bg-800 rounded p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <p class="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">Atalho</p>
-                    <p class="text-lg font-black">Enviar checklist completo no WhatsApp</p>
-                </div>
-                <a
-                    href="https://api.whatsapp.com/send/?phone=551130933967&text=Olá! Quero automatizar válvula gaveta/comporta. Seguem os dados:%0A• Tipo: %0A• Diâmetro: %0A• Pressão: %0A• Temperatura: %0A• Fluido: %0A• Controle: On/Off ou Modulante %0A• Ambiente: Interno/Externo"
-                    class="bg-accent text-bg-900 px-6 py-3 rounded font-black text-sm uppercase hover:scale-105 transition text-center">
-                    Enviar no WhatsApp
-                </a>
-            </div>
-        </div>
-
-        <!-- NOVO: galeria técnica (placeholders) -->
-<!--        <aside class="lg:col-span-5">-->
-<!--            <div class="bg-bg-850 border border-bg-800 rounded p-6">-->
-<!--                <h3 class="text-xl font-black uppercase mb-4">Galeria (placeholder)</h3>-->
-<!--                <p class="text-sm text-gray-400 mb-6">-->
-<!--                    Reserve estes espaços para imagens que “vendem”: conjunto montado, instalação, detalhes e aplicação.-->
-<!--                </p>-->
-
-<!--                <div class="grid grid-cols-2 gap-4">-->
-<!--                    <img src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-eletrico-grey-mz-scaled.png"-->
-<!--                         alt="Placeholder 1"-->
-<!--                         class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800" loading="lazy"/>-->
-<!--                    <img-->
-<!--                        src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-pneumatico-grey-p-aluminium-bongas.png"-->
-<!--                        alt="Placeholder 2" class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800"-->
-<!--                        loading="lazy"/>-->
-<!--                    <img src="https://bongas.com.br/wp-content/uploads/2025/09/atuador-eletrico-white_e-evolution.png"-->
-<!--                         alt="Placeholder 3"-->
-<!--                         class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800" loading="lazy"/>-->
-<!--                    <img src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-eletrico-grey_q_compact.png"-->
-<!--                         alt="Placeholder 4"-->
-<!--                         class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800" loading="lazy"/>-->
-<!--                </div>-->
-
-<!--                <div class="mt-6 border-t border-bg-800 pt-6">-->
-<!--                    <h4 class="font-black uppercase text-accent mb-2">Sugestões de imagens</h4>-->
-<!--                    <ul class="text-sm text-gray-400 space-y-2">-->
-<!--                        <li>• Conjunto válvula + atuador (montado)</li>-->
-<!--                        <li>• Aplicação instalada em campo</li>-->
-<!--                        <li>• Vista lateral / dimensões</li>-->
-<!--                        <li>• Detalhe do atuador em operação</li>-->
-<!--                    </ul>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--        </aside>-->
-    </div>
-</section>
-
-<!-- ATUADORES (Grey-MZ / Grey-L) - MANTIDO, com placeholders corrigidos -->
-<section id="produtos" class="py-20 px-4 bg-bg-900">
-    <div class="container mx-auto text-center">
-        <h2 class="text-3xl font-black mb-4 uppercase italic">Atuadores Recomendados</h2>
-        <p class="text-gray-400 mb-12 max-w-xl mx-auto">
-            A seleção depende de torque, diâmetro, pressão e condições do processo.
-        </p>
-
-        <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-
-            <!-- Grey-MZ -->
-            <div class="bg-bg-850 p-8 border border-bg-800 rounded text-left h-full flex flex-col">
-                <img
-                    src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-eletrico-grey-mz-scaled.png"
-                    alt="Atuador Grey-MZ"
-                    class="w-full h-44 object-contain rounded bg-bg-900/40 border border-bg-800 mb-5"
-                    loading="lazy"
-                />
-
-                <h4 class="text-accent font-black text-2xl mb-1 uppercase italic">Grey-MZ</h4>
-
-                <p class="text-xs font-bold text-gray-400 mb-5 uppercase tracking-widest italic">
-                    Multivoltas • Aplicações Industriais
-                </p>
-
-                <!-- Conteúdo com 3 blocos (igual ao Grey-L) -->
-                <div class="text-sm text-gray-200 space-y-4 leading-relaxed flex-1">
-                    <p>
-                        <span class="font-semibold">Serve para:</span>
-                        automação multivoltas em válvulas lineares (gaveta e comporta; também globo quando aplicável),
-                        quando a operação exige abertura/fechamento por várias voltas no eixo/haste.
-                    </p>
-
-                    <p>
-                        <span class="font-semibold">Onde usar:</span>
-                        infraestrutura e processos contínuos: água/saneamento, utilidades, energia, mineração,
-                        petroquímica e plantas com operação frequente e necessidade de padronização.
-                    </p>
-
-                    <p>
-                        <span class="font-semibold">Perfil:</span>
-                        a “escolha robusta” para multivoltas: foco em confiabilidade e repetibilidade.
-                        Ideal quando você quer uma solução estável para operação industrial (sem ficar “no limite”).
-                    </p>
+                    <h4 class="font-black text-lg mb-4 text-white uppercase italic underline decoration-accent">
+                        Dados da Válvula
+                    </h4>
+                    <ul class="space-y-3 text-sm text-gray-300 font-medium italic">
+                        <li>• Tipo de Válvula (Gaveta, Esfera, Borboleta...)</li>
+                        <li>• Diâmetro (DN/pol) e Classe/Pressão</li>
+                        <li>• Movimento (¼ de volta ou Multivoltas)</li>
+                        <li>• Fluido e Temperatura (quando tiver)</li>
+                    </ul>
                 </div>
 
-                <a
-                    href="https://api.whatsapp.com/send/?phone=551130933967&text=Tenho%20interesse%20no%20Grey-MZ%20para%20automacao%20de%20valvula%20gaveta%2Fcomporta.%20Pode%20me%20ajudar%20na%20especificacao%3F"
-                    class="mt-6 block text-center border border-accent/30 text-accent py-3 font-black text-sm uppercase hover:bg-accent hover:text-bg-900 transition italic"
-                >
-                    Me indique o ideal
-                </a>
-            </div>
-
-
-            <!-- Grey-L -->
-            <div class="bg-bg-850 p-8 border border-bg-800 rounded text-left h-full flex flex-col">
-                <img
-                    src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-multivoltas-grey-l-smart-integral.png"
-                    alt="Atuador Grey-L"
-                    class="w-full h-44 object-contain rounded bg-bg-900/40 border border-bg-800 mb-5"
-                    loading="lazy"
-                />
-
-                <h4 class="text-accent font-black text-2xl mb-1 uppercase italic">Grey-L</h4>
-
-                <p class="text-xs font-bold text-gray-400 mb-5 uppercase tracking-widest italic">
-                    Multivoltas • Torques Específicos
-                </p>
-
-                <!-- Conteúdo com 3 blocos (igual ao Grey-MZ) -->
-                <div class="text-sm text-gray-200 space-y-4 leading-relaxed flex-1">
-                    <p>
-                        <span class="font-semibold">Serve para:</span>
-                        válvulas lineares com exigência de torque/robustez mais “direcionada” (gaveta e comporta e variações),
-                        quando o dimensionamento pede uma solução dedicada para o esforço do conjunto.
-                    </p>
-
-                    <p>
-                        <span class="font-semibold">Onde usar:</span>
-                        aplicações industriais mais pesadas ou críticas: ciclos exigentes, ambientes severos
-                        e necessidade de alta confiabilidade operacional (utilidades, infraestrutura e plantas industriais).
-                    </p>
-
-                    <p>
-                        <span class="font-semibold">Perfil:</span>
-                        multivoltas “sob medida”: para quando o processo pede ajuste fino de seleção
-                        (torque, esforço e condições) e não basta escolher apenas o padrão.
-                    </p>
-                </div>
-
-                <a
-                    href="https://api.whatsapp.com/send/?phone=551130933967&text=Quero%20saber%20mais%20sobre%20o%20Grey-L%20para%20automacao%20de%20valvula%20comporta.%20Pode%20me%20ajudar%20na%20especificacao%3F"
-                    class="mt-6 block text-center border border-accent/30 text-accent py-3 font-black text-sm uppercase hover:bg-accent hover:text-bg-900 transition italic"
-                >
-                    Me indique o ideal
-                </a>
-            </div>
-
-        </div>
-
-        <!-- compatibilidade -->
-        <div class="mt-12 bg-bg-850 border border-bg-800 rounded p-8 max-w-4xl mx-auto text-left">
-            <h3 class="text-2xl font-black uppercase mb-3 text-accent">Compatibilidade</h3>
-            <p class="text-gray-400 text-sm mb-6">
-                Para gaveta/comporta, a automação costuma ser multivoltas. A seleção final depende dos dados do
-                processo.
-            </p>
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-sm">
-                    <thead>
-                    <tr class="text-left text-gray-300 uppercase tracking-widest text-[11px]">
-                        <th class="py-3 px-3 border-b border-bg-800">Tipo</th>
-                        <th class="py-3 px-3 border-b border-bg-800">Família</th>
-                        <th class="py-3 px-3 border-b border-bg-800">Controle</th>
-                        <th class="py-3 px-3 border-b border-bg-800">O que enviar</th>
-                    </tr>
-                    </thead>
-                    <tbody class="text-gray-400">
-                    <tr>
-                        <td class="py-3 px-3 border-b border-bg-800 font-bold text-white">Gaveta/Comporta</td>
-                        <td class="py-3 px-3 border-b border-bg-800">Grey-MZ / Grey-L (multivoltas)</td>
-                        <td class="py-3 px-3 border-b border-bg-800">On/Off ou modulante*</td>
-                        <td class="py-3 px-3 border-b border-bg-800">DN, pressão, fluido, ambiente</td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-            <p class="text-[11px] text-gray-500 mt-3 italic">
-                *Informe no checklist se é On/Off ou modulante para orientar a especificação.
-            </p>
-        </div>
-    </div>
-</section>
-
-<!-- CHECKLIST (mantido e enriquecido com “extras”) -->
-<section id="checklist" class="py-20 px-4 bg-bg-850 border-y border-bg-800">
-    <div class="container mx-auto max-w-4xl">
-        <h2 class="text-3xl font-black mb-8 text-center uppercase italic text-accent">
-            Dados para Orçamento Gaveta/Comporta:
-        </h2>
-
-        <div class="grid md:grid-cols-2 gap-8 bg-bg-900 p-8 rounded-lg shadow-xl border border-bg-800">
-            <div>
-                <h4 class="font-black text-lg mb-4 text-white uppercase italic underline decoration-accent">A
-                    Válvula</h4>
-                <ul class="space-y-3 text-sm text-gray-300 font-medium">
-                    <li>• Tipo: Gaveta ( ) Comporta ( )</li>
-                    <li>• Diâmetro (DN/pol)</li>
-                    <li>• Pressão (bar/psi) e Temperatura</li>
-                </ul>
-
-                <!-- NOVO -->
-                <div class="mt-6 bg-bg-850 border border-bg-800 rounded p-4">
-                    <p class="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Complemento (se
-                        souber)</p>
-                    <ul class="space-y-2 text-sm text-gray-400">
-                        <li>• Classe/linha da válvula (se houver)</li>
-                        <li>• Tempo desejado de abertura</li>
-                        <li>• Foto/placa de identificação</li>
+                <div>
+                    <h4 class="font-black text-lg mb-4 text-white uppercase italic underline decoration-accent">
+                        Dados de Automação
+                    </h4>
+                    <ul class="space-y-3 text-sm text-gray-300 font-medium italic">
+                        <li>• Tensão de Alimentação (V) ou Pneumático</li>
+                        <li>• Modo: On/Off ou Modulante</li>
+                        <li>• Frequência de acionamento (Ciclos)</li>
+                        <li>• Ambiente (interno/externo) e condição local</li>
                     </ul>
                 </div>
             </div>
 
-            <div>
-                <h4 class="font-black text-lg mb-4 text-white uppercase italic underline decoration-accent">O
-                    Processo</h4>
-                <ul class="space-y-3 text-sm text-gray-300 font-medium">
-                    <li>• Fluido (Água, Gás, Vapor, etc)</li>
-                    <li>• Controle: On/Off ou Modulante</li>
-                    <li>• Ambiente: Interno ou Externo</li>
-                </ul>
-
-                <!-- NOVO -->
-                <div class="mt-6 bg-bg-850 border border-bg-800 rounded p-4">
-                    <p class="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Complemento (se
-                        souber)</p>
-                    <ul class="space-y-2 text-sm text-gray-400">
-                        <li>• Ciclos/dia (frequência)</li>
-                        <li>• Se há ar comprimido disponível</li>
-                        <li>• Preferência de alimentação (se houver)</li>
-                    </ul>
-                </div>
+            <div class="mt-12 text-center">
+                <a href="#" data-wa data-cta="checklist_engenharia" data-template="checklist"
+                   class="bg-accent text-bg-900 px-10 py-5 rounded font-black text-xl uppercase shadow-2xl hover:scale-105 transition inline-block italic">
+                    Enviar dados para Engenharia
+                </a>
+                <p class="mt-4 text-gray-500 text-sm italic">
+                    Se não souber algum item, mande o que tiver (foto, plaqueta, descrição do processo). A engenharia
+                    orienta.
+                </p>
             </div>
         </div>
+    </section>
 
-        <div class="mt-12 text-center">
-            <a
-                href="https://api.whatsapp.com/send/?phone=551130933967&text=Olá! Quero automatizar válvula gaveta/comporta. Seguem os dados:%0A• Tipo: Gaveta ( ) Comporta ( )%0A• Diâmetro: %0A• Pressão: %0A• Fluido: %0A• Controle: On/Off ( ) Modulante ( )"
-                class="bg-accent text-bg-900 px-10 py-5 rounded font-black text-xl uppercase shadow-2xl hover:scale-105 transition inline-block italic">
-                Enviar checklist pronto
-            </a>
-            <p class="mt-4 text-gray-500 text-sm font-bold uppercase italic">
-                Você pode escrever “não sei” em algum campo e nossa engenharia orienta.
+    <!-- CTA FINAL -->
+    <section id="contato" class="py-24 px-4 bg-bg-900 text-center">
+        <div class="container mx-auto max-w-5xl">
+            <h2 class="text-4xl font-black mb-6 uppercase italic leading-none">
+                Precisa de ajuda com o dimensionamento?
+            </h2>
+
+            <p class="text-xl text-gray-300 font-bold mb-10 uppercase tracking-tight italic">
+                Nossa equipe técnica analisa sua aplicação para indicar o modelo exato.
             </p>
-        </div>
-    </div>
-</section>
 
-<!-- OUTRAS APLICAÇÕES (mantido + placeholders) -->
-<section id="paginas" class="py-20 px-4">
-    <div class="container mx-auto">
-        <h2 class="text-3xl font-black mb-4 text-center uppercase italic">Outras Aplicações Industriais</h2>
-        <p class="text-center text-gray-400 mb-12">
-            Se preferir, escolha um tipo diferente para acelerar a cotação.
-        </p>
-
-        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <a href="/automacao-e-aplicacao-de-valvula-industrial/"
-               class="bg-bg-850 p-6 rounded border-b-2 border-accent hover:bg-bg-800 transition">
-                <img
-                    src="https://bongas.com.br/wp-content/uploads/2025/09/atuador-eletrico-white_e-evolution.png"
-                    alt="Industrial Geral"
-                    class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800 mb-4"
-                    loading="lazy"
-                />
-                <h4 class="font-black mb-2 uppercase text-white italic">Industrial Geral</h4>
-                <p class="text-[10px] text-gray-400 uppercase font-bold">White-E • Grey-MZ • Grey-Q</p>
-            </a>
-
-            <a href="/automacao-e-aplicacao-de-valvula-esfera/"
-               class="bg-bg-850 p-6 rounded border-b-2 border-accent hover:bg-bg-800 transition">
-                <img
-                    src="https://bongas.com.br/wp-content/uploads/2025/09/atuador-eletrico-white_e-evolution.png"
-                    alt="Esfera e Globo"
-                    class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800 mb-4"
-                    loading="lazy"
-                />
-                <h4 class="font-black mb-2 uppercase text-white italic">Esfera + Globo</h4>
-                <p class="text-[10px] text-gray-400 uppercase font-bold">White-E • Pneumático</p>
-            </a>
-
-            <a href="/automacao-e-aplicacao-de-valvula-borboleta/"
-               class="bg-bg-850 p-6 rounded border-b-2 border-accent hover:bg-bg-800 transition">
-                <img
-                    src="https://bongas.com.br/wp-content/uploads/2025/09/atuador-eletrico-white_e-evolution.png"
-                    alt="Borboleta"
-                    class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800 mb-4"
-                    loading="lazy"
-                />
-                <h4 class="font-black mb-2 uppercase text-white italic">Borboleta</h4>
-                <p class="text-[10px] text-gray-400 uppercase font-bold">White-E • Pneumático • Grey-Q</p>
-            </a>
-
-            <a href="/automacao-e-aplicacao-com-atuador-multivolta-1-4-volta/"
-               class="bg-bg-850 p-6 rounded border-b-2 border-accent hover:bg-bg-800 transition">
-                <img
-                    src="https://bongas.com.br/wp-content/uploads/2025/09/atuador-eletrico-white_e-evolution.png"
-                    alt="Atuadores"
-                    class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800 mb-4"
-                    loading="lazy"
-                />
-                <h4 class="font-black mb-2 uppercase text-white italic">Atuadores</h4>
-                <p class="text-[10px] text-gray-400 uppercase font-bold">¼ Volta • Multivoltas</p>
+            <a href="#" data-wa data-cta="cta_final_contato" data-template="specialist"
+               class="bg-accent text-bg-900 px-12 py-6 rounded font-black text-2xl uppercase shadow-2xl hover:bg-white hover:scale-105 transition inline-block italic">
+                Consultar especialista agora
             </a>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- CTA FINAL (mantido e reforçado visualmente) -->
-<section id="orcamento" class="py-24 px-4 bg-bg-850 text-center border-t border-bg-800">
-    <div class="container mx-auto max-w-5xl">
-        <h2 class="text-4xl font-black mb-6 uppercase italic leading-none">Pronto para automatizar?</h2>
-        <p class="text-xl text-accent font-bold mb-10 italic uppercase">
-            Clique no WhatsApp e envie seus dados para orientação técnica.
-        </p>
+</main>
 
-        <a
-            href="https://api.whatsapp.com/send/?phone=551130933967&text=Olá! Quero cotar a automação de minhas válvulas."
-            class="bg-accent text-bg-900 px-12 py-6 rounded-full font-black text-2xl uppercase shadow-2xl hover:scale-110 transition inline-block">
-            Falar no WhatsApp
-        </a>
-
-        <!-- NOVO: nota de “o que enviar” (sem mudar a promessa) -->
-        <p class="mt-6 text-sm text-gray-400 max-w-2xl mx-auto">
-            Dica: se puder, envie também foto da válvula (placa/etiqueta) e o tipo de controle (On/Off ou modulante).
-        </p>
-    </div>
-</section>
-
-<!-- FOOTER (mantido) -->
+<!-- FOOTER -->
 <footer class="py-12 border-t border-bg-800 text-center text-gray-500 text-[10px] uppercase tracking-widest font-bold">
     <p class="text-sm text-slate-400">
-        © 2026 BONGAS. Todos os direitos reservados. |
+        © <span id="year">2026</span> BONGAS. Todos os direitos reservados. |
         Desenvolvido por
         <a href="https://cliqis.com.br" target="_blank" rel="noopener noreferrer"
            class="text-slate-200 hover:text-accent underline underline-offset-4">
@@ -567,20 +575,1938 @@
     </p>
 </footer>
 
-<!-- MOBILE BAR (mantido) -->
+<!-- MOBILE BAR -->
 <div class="fixed bottom-0 left-0 w-full h-16 bg-bg-850 grid grid-cols-2 border-t border-bg-700 md:hidden z-50">
-    <a href="https://api.whatsapp.com/send/?phone=551130933967"
+    <a href="#" data-wa data-cta="mobile_whatsapp" data-template="specialist"
        class="bg-accent text-bg-900 flex items-center justify-center font-black text-xs uppercase italic">
         WhatsApp
     </a>
-    <a href="#checklist"
+    <a href="#especificacao"
        class="bg-bg-800 text-white flex items-center justify-center font-black text-xs uppercase italic">
-        Checklist
+        Especificar
     </a>
 </div>
 
+<!-- WhatsApp flutuante (mantido, agora com UTM) -->
+<a href="#" data-wa data-cta="floating_whatsapp" data-template="specialist"
+   class="fixed bottom-24 right-6 md:bottom-10 md:right-10 w-16 h-16 bg-[#25D366] rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition z-50 ring-2 ring-white/10 focus:outline-none focus:ring-4 focus:ring-[#25D366]/40">
+    <span class="sr-only">WhatsApp</span>
+    <svg class="w-9 h-9 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path
+            d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.472-.149-.67.149-.198.297-.768.967-.94 1.165-.173.198-.347.223-.644.075-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.149-.173.198-.298.298-.497.099-.198.05-.372-.025-.521-.075-.149-.67-1.612-.916-2.207-.242-.579-.487-.5-.67-.51l-.573-.01c-.198 0-.521.075-.793.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.876 1.214 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347M12.05 21.785h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884a9.825 9.825 0 0 1 6.99 2.899 9.825 9.825 0 0 1 2.898 6.988c-.002 5.45-4.437 9.884-9.892 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c-.001 2.096.547 4.142 1.588 5.946L0 24l6.306-1.654a11.85 11.85 0 0 0 5.74 1.47h.005c6.557 0 11.892-5.335 11.894-11.893a11.82 11.82 0 0 0-3.481-8.413"/>
+    </svg>
+</a>
+
+<!-- Script UTM + WA.ME (igual ao padrão do grupo 3/4) -->
+<script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    const WA_PHONE = "551130933967";
+    const PAGE_URL = window.location.href;
+
+    // UTM desta LP (grupo 5)
+    const UTM_BASE = "utm_source=website&utm_medium=whatsapp&utm_campaign=lp_atuadores_1_4_multivoltas";
+
+    const templates = {
+        specialist: ({utm}) =>
+            `Olá! Preciso de ajuda para especificar um atuador (¼ de volta ou multivoltas).\n\n` +
+            `Tipo de válvula (ex.: esfera/borboleta/gaveta): ___\n` +
+            `Movimento (¼ de volta ou multivoltas): ___\n` +
+            `Diâmetro (DN/pol): ___\n` +
+            `Pressão: ___\n` +
+            `Fluido: ___\n` +
+            `Temperatura: ___\n` +
+            `Controle (On/Off ou modulante): ___\n` +
+            `Alimentação (220/380/440/pneumático): ___\n` +
+            `Ciclos/dia: ___\n` +
+            `Ambiente (interno/externo): ___\n\n` +
+            `Página: ${PAGE_URL}\n` +
+            `UTM: ${utm}\n\n` +
+            `Obrigado!`,
+        checklist: ({utm}) =>
+            `Olá! Quero especificar um atuador. Seguem os dados:\n\n` +
+            `• Tipo de válvula: ___\n` +
+            `• Movimento: ¼ de volta ( )  Multivoltas ( )\n` +
+            `• Diâmetro (DN/pol): ___\n` +
+            `• Pressão: ___\n` +
+            `• Fluido: ___\n` +
+            `• Temperatura: ___\n` +
+            `• Controle: On/Off ( )  Modulante ( )\n` +
+            `• Alimentação: ___\n` +
+            `• Ciclos/dia: ___\n` +
+            `• Ambiente: Interno ( )  Externo ( )\n\n` +
+            `Página: ${PAGE_URL}\n` +
+            `UTM: ${utm}`
+    };
+
+    function buildWaLink(message) {
+        return `https://wa.me/${WA_PHONE}?text=${encodeURIComponent(message)}`;
+    }
+
+    document.querySelectorAll("[data-wa]").forEach((el) => {
+        const cta = el.getAttribute("data-cta") || "cta";
+        const tpl = el.getAttribute("data-template") || "specialist";
+        const utm = `${UTM_BASE}&utm_content=${cta}`;
+        const msg = (templates[tpl] || templates.specialist)({utm});
+        el.href = buildWaLink(msg);
+    });
+</script>
+
+<!-- JSON-LD (leve e seguro) -->
+<script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": "Seleção de Atuadores para Automação de Válvulas",
+        "provider": {
+            "@type": "Organization",
+            "name": "BONGAS",
+            "url": "https://bongas.com.br"
+        },
+        "areaServed": "BR",
+        "serviceType": "Especificação técnica de atuadores (¼ de volta e multivoltas)"
+    }
+</script>
+
 </body>
+
 </html>
+
+
+<!--valvula borboleta-->
+
+<!--<!DOCTYPE html>-->
+<!--<html lang="pt-BR" class="scroll-smooth">-->
+
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+<!--    <title>Automação de Válvula Borboleta | BONGAS</title>-->
+<!--    <meta name="description"-->
+<!--          content="Automação de válvula borboleta com especificação técnica. Atuadores compatíveis White-E, Pneumáticos e Grey-Q. Orçamento rápido.">-->
+
+<!--    <script src="https://cdn.tailwindcss.com"></script>-->
+<!--    <script>-->
+<!--        tailwind.config = {-->
+<!--            theme: {-->
+<!--                extend: {-->
+<!--                    colors: {-->
+<!--                        'bg-900': '#232530',-->
+<!--                        'bg-850': '#2d3041',-->
+<!--                        'bg-800': '#3c3f54',-->
+<!--                        'bg-700': '#474b61',-->
+<!--                        'accent': '#ECBA46',-->
+<!--                        'white': '#fefefe',-->
+<!--                    }-->
+<!--                }-->
+<!--            }-->
+<!--        }-->
+<!--    </script>-->
+
+<!--    <style>-->
+<!--        body {-->
+<!--            font-family: system-ui, sans-serif;-->
+<!--            background-color: #232530;-->
+<!--            color: #fefefe;-->
+<!--        }-->
+
+<!--        .bg-gradient-industrial {-->
+<!--            background: linear-gradient(135deg, #232530 0%, #2d3041 100%);-->
+<!--        }-->
+
+<!--        .glass-card {-->
+<!--            background: rgba(255, 255, 255, 0.03);-->
+<!--            backdrop-filter: blur(10px);-->
+<!--            border: 1px solid rgba(255, 255, 255, 0.06);-->
+<!--        }-->
+
+<!--        .grid-dots {-->
+<!--            background-image: radial-gradient(rgba(236, 186, 70, 0.18) 1px, transparent 1px);-->
+<!--            background-size: 18px 18px;-->
+<!--        }-->
+<!--    </style>-->
+<!--</head>-->
+
+<!--<body class="antialiased">-->
+
+<!--&lt;!&ndash; HEADER &ndash;&gt;-->
+<!--<header class="fixed top-0 w-full z-50 bg-900/95 border-b border-bg-800 backdrop-blur-md h-16 lg:h-20">-->
+<!-- <nav class="container mx-auto px-4 h-full flex items-center gap-3">-->
+<!--        <a href="https://bongas.com.br" class="flex items-center gap-3">-->
+<!--            <img-->
+<!--                src="https://bongas.com.br/wp-content/uploads/2025/06/Logo_Bongas_branco_e_amarelo-1-e1744564774874.png"-->
+<!--                alt="BONGAS"-->
+<!--                class="h-10 w-auto"-->
+<!--                loading="lazy"-->
+<!--            />-->
+<!--            <span class="sr-only">BONGAS</span>-->
+<!--        </a>-->
+
+<!--        <ul class="hidden lg:flex flex-1 justify-center space-x-6 text-xs font-bold uppercase tracking-widest text-gray-300">-->
+<!--            <li><a href="#produtos" class="hover:text-accent transition">Atuadores</a></li>-->
+<!--            <li><a href="#visao-tecnica" class="hover:text-accent transition">Visão Técnica</a></li>-->
+<!--            <li><a href="#checklist" class="hover:text-accent transition">Checklist</a></li>-->
+<!--            <li><a href="#paginas" class="hover:text-accent transition">Outros Tipos</a></li>-->
+<!--        </ul>-->
+
+<!--        <div class="ml-auto flex items-center gap-2">-->
+<!--            <a-->
+<!--                href="https://bongas.com.br"-->
+<!--                class="hidden lg:inline-flex items-center bg-[#CA1118] px-5 py-2 rounded font-black text-xs uppercase hover:scale-105 transition"-->
+<!--            >-->
+<!--                Site principal-->
+<!--            </a> <a href="#" data-wa data-cta="header_whatsapp" data-template="specialist"-->
+<!--                    class="bg-accent text-bg-900 px-5 py-2 rounded font-black text-xs uppercase hover:scale-105 transition italic">-->
+<!--            Fale no WhatsApp-->
+<!--        </a>-->
+<!--        </div>-->
+<!--    </nav>-->
+<!--</header>-->
+
+<!--<main>-->
+
+<!--    &lt;!&ndash; HERO &ndash;&gt;-->
+<!--    <section class="pt-32 pb-16 px-4 bg-gradient-industrial border-b border-bg-800 relative overflow-hidden">-->
+<!--        <div class="absolute inset-0 opacity-40 grid-dots pointer-events-none"></div>-->
+<!--        <div-->
+<!--            class="absolute top-0 right-0 w-1/2 h-full bg-accent/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2"></div>-->
+
+<!--        <div class="container mx-auto grid lg:grid-cols-12 gap-12 items-center relative z-10">-->
+<!--            <div class="lg:col-span-7">-->
+<!--          <span class="text-accent font-bold tracking-widest uppercase text-sm">-->
+<!--            Borboleta (Automação por tamanho/torque)-->
+<!--          </span>-->
+
+<!--                <h1 class="text-3xl lg:text-5xl font-black mt-4 mb-6 leading-tight uppercase italic">-->
+<!--                    Automação de Válvula Borboleta com <span class="text-accent">Especificação Técnica</span>-->
+<!--                </h1>-->
+
+<!--                <p class="text-lg text-gray-300 mb-8 max-w-2xl italic leading-relaxed">-->
+<!--                    Indicamos o atuador ideal de acordo com tamanho, torque e condições do processo.-->
+<!--                    Compatibilidade recomendada:-->
+<!--                    <span class="text-white font-bold italic">White-E, Pneumáticos e Grey-Q*.</span>-->
+<!--                </p>-->
+
+<!--                <div class="flex flex-col sm:flex-row gap-4 mb-8">-->
+<!--                    <a href="#" data-wa data-cta="hero_especialista" data-template="specialist"-->
+<!--                       class="bg-accent text-bg-900 px-8 py-4 rounded font-black text-center text-lg uppercase shadow-lg hover:scale-[1.02] transition italic">-->
+<!--                        Falar com especialista-->
+<!--                    </a>-->
+<!--                    <a href="#checklist"-->
+<!--                       class="border border-accent text-accent px-8 py-4 rounded font-black text-center text-lg uppercase hover:bg-accent hover:text-bg-900 transition italic">-->
+<!--                        Enviar dados da aplicação-->
+<!--                    </a>-->
+<!--                </div>-->
+
+<!--                &lt;!&ndash; NOVO: 3 “cartões” de confiança focados em lead &ndash;&gt;-->
+<!--                <div class="grid sm:grid-cols-3 gap-4 max-w-2xl">-->
+<!--                    <div class="bg-bg-850/60 border border-bg-800 rounded p-4">-->
+<!--                        <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black mb-1 italic">Foco</p>-->
+<!--                        <p class="text-sm font-black">¼ de volta</p>-->
+<!--                        <p class="text-xs text-gray-400 mt-1 italic">Borboleta com atuador</p>-->
+<!--                    </div>-->
+<!--                    <div class="bg-bg-850/60 border border-bg-800 rounded p-4">-->
+<!--                        <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black mb-1 italic">-->
+<!--                            Seleção</p>-->
+<!--                        <p class="text-sm font-black">Torque e ciclo</p>-->
+<!--                        <p class="text-xs text-gray-400 mt-1 italic">evita erro de compra</p>-->
+<!--                    </div>-->
+<!--                    <div class="bg-bg-850/60 border border-bg-800 rounded p-4">-->
+<!--                        <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black mb-1 italic">Saída</p>-->
+<!--                        <p class="text-sm font-black">Cotação rápida</p>-->
+<!--                        <p class="text-xs text-gray-400 mt-1 italic">via WhatsApp</p>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+
+<!--            &lt;!&ndash; Box lateral (mantido e enriquecido com mini imagem placeholder) &ndash;&gt;-->
+<!--            <div class="lg:col-span-5 bg-bg-850 p-6 border border-bg-700 rounded shadow-2xl relative overflow-hidden">-->
+<!--                <div-->
+<!--                    class="absolute top-0 right-0 bg-accent text-bg-900 px-3 py-1 font-bold text-[10px] uppercase italic">-->
+<!--                    Foco: Torque e Ciclo-->
+<!--                </div>-->
+
+<!--                <h3 class="text-xl font-black mb-4 uppercase italic">Checklist Rápido</h3>-->
+<!--                <ul class="space-y-3 text-sm mb-6">-->
+<!--                    <li class="flex items-center gap-2">✔ <span class="font-bold uppercase">Atuadores:</span> White-E /-->
+<!--                        Pneumático-->
+<!--                    </li>-->
+<!--                    <li class="flex items-center gap-2">✔ <span class="font-bold uppercase">Decisão:</span> Baseada em-->
+<!--                        torque e pressão-->
+<!--                    </li>-->
+<!--                    <li class="flex items-center gap-2">✔ <span class="font-bold uppercase">Suporte:</span> Orientação-->
+<!--                        técnica de engenharia-->
+<!--                    </li>-->
+<!--                </ul>-->
+
+<!--                <div-->
+<!--                    class="p-4 bg-bg-900/50 border border-dashed border-accent/30 rounded text-xs text-gray-400 mb-4 italic text-center">-->
+<!--                    "O dimensionamento correto do torque garante a vida útil da vedação."-->
+<!--                </div>-->
+
+<!--                &lt;!&ndash; Placeholder imagem (troque por foto de conjunto borboleta+atuador depois) &ndash;&gt;-->
+<!--                <img-->
+<!--                    src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-eletrico-grey_q_compact.png"-->
+<!--                    alt="Placeholder conjunto borboleta + atuador"-->
+<!--                    class="w-full object-contain rounded bg-bg-900/40 border border-bg-800 py-3"-->
+<!--                    loading="lazy"-->
+<!--                    style="height: 225px;"-->
+<!--                />-->
+<!--                <p class="mt-3 text-[10px] text-gray-500 uppercase italic text-center">-->
+<!--                    Imagem ilustrativa • troque por aplicação real-->
+<!--                </p>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </section>-->
+
+<!--    &lt;!&ndash; VISÃO TÉCNICA + GALERIA (igual ao grupo 3: mais detalhe e espaços de imagens) &ndash;&gt;-->
+<!--    <section id="visao-tecnica" class="py-20 px-4 bg-bg-900 border-b border-bg-800">-->
+<!--        <div class="container mx-auto grid lg:grid-cols-12 gap-10 items-start">-->
+<!--            <div class="lg:col-span-7">-->
+<!--                <h2 class="text-3xl font-black mb-4 uppercase italic">Visão técnica da automação</h2>-->
+
+<!--                <p class="text-gray-300 mb-6 italic leading-relaxed">-->
+<!--                    Nesta campanha o objetivo é atrair quem busca <span class="text-white font-black">automação de válvula borboleta</span>.-->
+<!--                    Para acertar rápido, precisamos do mínimo técnico: <span class="text-white font-black">DN, pressão, fluido, temperatura e modo de controle</span>.-->
+<!--                    Com isso, indicamos o conjunto correto (válvula + atuador + acessórios quando necessário) e evitamos-->
+<!--                    retrabalho.-->
+<!--                </p>-->
+
+<!--                <div class="grid md:grid-cols-2 gap-6">-->
+<!--                    <div class="bg-bg-850 border border-bg-800 rounded p-6">-->
+<!--                        <h3 class="font-black uppercase text-accent mb-2 italic">Quando faz mais sentido</h3>-->
+<!--                        <ul class="text-sm text-gray-400 space-y-2 italic">-->
+<!--                            <li>• Operação remota e padronizada (reduz ação manual)</li>-->
+<!--                            <li>• Ciclos frequentes de abre/fecha</li>-->
+<!--                            <li>• Segurança operacional e consistência no processo</li>-->
+<!--                            <li>• Integração com controle e monitoramento</li>-->
+<!--                        </ul>-->
+<!--                    </div>-->
+
+<!--                    <div class="bg-bg-850 border border-bg-800 rounded p-6">-->
+<!--                        <h3 class="font-black uppercase text-accent mb-2 italic">O que define o atuador</h3>-->
+<!--                        <ul class="text-sm text-gray-400 space-y-2 italic">-->
+<!--                            <li>• Torque necessário e tipo de válvula</li>-->
+<!--                            <li>• Pressão de rede e condições do processo</li>-->
+<!--                            <li>• On/Off ou modulante (quando aplicável)</li>-->
+<!--                            <li>• Ambiente de instalação e grau de proteção</li>-->
+<!--                        </ul>-->
+<!--                    </div>-->
+<!--                </div>-->
+
+<!--                <div-->
+<!--                    class="mt-8 bg-bg-850 border border-bg-800 rounded p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">-->
+<!--                    <div>-->
+<!--                        <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black mb-1 italic">Atalho</p>-->
+<!--                        <p class="text-lg font-black italic">Enviar checklist e receber indicação</p>-->
+<!--                        <p class="text-sm text-gray-400 italic">Clique no WhatsApp e cole seus dados em 30 segundos.</p>-->
+<!--                    </div>-->
+<!--                    <a href="#" data-wa data-cta="visao_tecnica_checklist" data-template="checklist"-->
+<!--                       class="bg-accent text-bg-900 px-6 py-3 rounded font-black text-sm uppercase hover:bg-white transition italic text-center">-->
+<!--                        Enviar no WhatsApp-->
+<!--                    </a>-->
+<!--                </div>-->
+
+<!--                &lt;!&ndash; NOVO: Aplicações comuns (mais contexto para conversão) &ndash;&gt;-->
+<!--                <div class="mt-10 glass-card rounded-2xl p-6">-->
+<!--                    <h3 class="text-xl font-black uppercase italic mb-3">Aplicações comuns</h3>-->
+<!--                    <div class="flex flex-wrap gap-2">-->
+<!--              <span-->
+<!--                  class="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest bg-bg-850 border border-bg-800 text-gray-200 italic">-->
+<!--                Saneamento-->
+<!--              </span>-->
+<!--                        <span-->
+<!--                            class="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest bg-bg-850 border border-bg-800 text-gray-200 italic">-->
+<!--                Indústria-->
+<!--              </span>-->
+<!--                        <span-->
+<!--                            class="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest bg-bg-850 border border-bg-800 text-gray-200 italic">-->
+<!--                Utilidades-->
+<!--              </span>-->
+<!--                        <span-->
+<!--                            class="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest bg-bg-850 border border-bg-800 text-gray-200 italic">-->
+<!--                HVAC / Processos-->
+<!--              </span>-->
+<!--                        <span-->
+<!--                            class="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest bg-bg-850 border border-bg-800 text-gray-200 italic">-->
+<!--                Água e Efluentes-->
+<!--              </span>-->
+<!--                        <span-->
+<!--                            class="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest bg-bg-850 border border-bg-800 text-gray-200 italic">-->
+<!--                Mineração (quando aplicável)-->
+<!--              </span>-->
+<!--                    </div>-->
+<!--                    <p class="mt-4 text-sm text-gray-400 italic">-->
+<!--                        Se você não souber algum dado, envie o que tiver (ex.: foto da plaqueta, DN aproximado, ou-->
+<!--                        descrição do processo).-->
+<!--                        A engenharia te orienta.-->
+<!--                    </p>-->
+<!--                </div>-->
+<!--            </div>-->
+
+<!--            &lt;!&ndash;            <aside class="lg:col-span-5">&ndash;&gt;-->
+<!--            &lt;!&ndash;                <div class="glass-card rounded-2xl p-6 border-bg-800">&ndash;&gt;-->
+<!--            &lt;!&ndash;                    <h3 class="text-xl font-black uppercase italic mb-3">Galeria (placeholder)</h3>&ndash;&gt;-->
+<!--            &lt;!&ndash;                    <p class="text-sm text-gray-400 italic mb-6">&ndash;&gt;-->
+<!--            &lt;!&ndash;                        Reserve estes espaços para imagens que aumentam conversão: conjunto montado, instalação e aplicação real.&ndash;&gt;-->
+<!--            &lt;!&ndash;                    </p>&ndash;&gt;-->
+
+<!--            &lt;!&ndash;                    <div class="grid grid-cols-2 gap-4">&ndash;&gt;-->
+<!--            &lt;!&ndash;                        <img src="https://bongas.com.br/wp-content/uploads/2025/09/atuador-eletrico-white_e-evolution.png"&ndash;&gt;-->
+<!--            &lt;!&ndash;                             alt="Placeholder 1"&ndash;&gt;-->
+<!--            &lt;!&ndash;                             class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800"&ndash;&gt;-->
+<!--            &lt;!&ndash;                             loading="lazy" />&ndash;&gt;-->
+<!--            &lt;!&ndash;                        <img src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-pneumatico-grey-p-aluminium-bongas.png"&ndash;&gt;-->
+<!--            &lt;!&ndash;                             alt="Placeholder 2"&ndash;&gt;-->
+<!--            &lt;!&ndash;                             class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800"&ndash;&gt;-->
+<!--            &lt;!&ndash;                             loading="lazy" />&ndash;&gt;-->
+<!--            &lt;!&ndash;                        <img src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-eletrico-grey_q_compact.png"&ndash;&gt;-->
+<!--            &lt;!&ndash;                             alt="Placeholder 3"&ndash;&gt;-->
+<!--            &lt;!&ndash;                             class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800"&ndash;&gt;-->
+<!--            &lt;!&ndash;                             loading="lazy" />&ndash;&gt;-->
+<!--            &lt;!&ndash;                        <img src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-pneumatico-grey-p-aluminium-bongas.png"&ndash;&gt;-->
+<!--            &lt;!&ndash;                             alt="Placeholder 4"&ndash;&gt;-->
+<!--            &lt;!&ndash;                             class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800"&ndash;&gt;-->
+<!--            &lt;!&ndash;                             loading="lazy" />&ndash;&gt;-->
+<!--            &lt;!&ndash;                    </div>&ndash;&gt;-->
+
+<!--            &lt;!&ndash;                    <div class="mt-6 border-t border-bg-800 pt-6">&ndash;&gt;-->
+<!--            &lt;!&ndash;                        <h4 class="font-black uppercase italic text-accent mb-2">Sugestões de imagens</h4>&ndash;&gt;-->
+<!--            &lt;!&ndash;                        <ul class="text-sm text-gray-400 italic space-y-2">&ndash;&gt;-->
+<!--            &lt;!&ndash;                            <li>• Conjunto válvula borboleta + atuador (montado)</li>&ndash;&gt;-->
+<!--            &lt;!&ndash;                            <li>• Instalação no campo (aplicação real)</li>&ndash;&gt;-->
+<!--            &lt;!&ndash;                            <li>• Vista do acoplamento e fixação</li>&ndash;&gt;-->
+<!--            &lt;!&ndash;                            <li>• Detalhe de vedação/linha (quando possível)</li>&ndash;&gt;-->
+<!--            &lt;!&ndash;                        </ul>&ndash;&gt;-->
+<!--            &lt;!&ndash;                    </div>&ndash;&gt;-->
+<!--            &lt;!&ndash;                </div>&ndash;&gt;-->
+<!--            &lt;!&ndash;            </aside>&ndash;&gt;-->
+<!--        </div>-->
+<!--    </section>-->
+
+<!--    &lt;!&ndash; PRODUTOS (ATUADORES) &ndash;&gt;-->
+<!--    <section id="produtos" class="py-20 px-4 bg-bg-900">-->
+<!--        <div class="container mx-auto text-center">-->
+<!--            <h2 class="text-3xl font-black mb-4 uppercase italic">Atuadores Compatíveis</h2>-->
+<!--            <p class="text-gray-400 mb-12 max-w-xl mx-auto italic">-->
+<!--                A seleção depende diretamente do diâmetro, pressão e do perfil de operação (ciclo/ambiente).-->
+<!--            </p>-->
+
+<!--            <div class="grid md:grid-cols-3 gap-6 text-left">-->
+<!--                &lt;!&ndash; White-E &ndash;&gt;-->
+<!--                <div class="bg-bg-850 p-6 border border-bg-800 rounded flex flex-col">-->
+<!--                    <img-->
+<!--                        src="https://bongas.com.br/wp-content/uploads/2025/09/atuador-eletrico-white_e-evolution.png"-->
+<!--                        alt="Atuador White-E"-->
+<!--                        class="w-full h-40 object-contain rounded bg-bg-900/40 border border-bg-800 mb-4"-->
+<!--                        loading="lazy"-->
+<!--                    />-->
+<!--                    <h4 class="text-accent font-black text-xl mb-1 uppercase italic">White-E</h4>-->
+<!--                    <p class="text-[10px] font-bold text-gray-400 mb-4 uppercase tracking-widest italic">-->
+<!--                        Elétrico • ¼ de Volta-->
+<!--                    </p>-->
+
+<!--                    <div class="text-sm text-gray-300 italic space-y-3 mb-6 flex-1">-->
+<!--                        <p><span class="font-semibold text-white">Serve para:</span> automação de borboletas em ¼ de-->
+<!--                            volta, com controle estável.</p>-->
+<!--                        <p><span class="font-semibold text-white">Onde usar:</span> processos gerais, saneamento e-->
+<!--                            aplicações industriais.</p>-->
+<!--                        <p><span class="font-semibold text-white">Perfil:</span> opção versátil quando a escolha-->
+<!--                            elétrica é preferida.</p>-->
+<!--                    </div>-->
+
+<!--                    <a href="#" data-wa data-cta="card_whitee" data-template="specialist"-->
+<!--                       class="block text-center border border-accent/30 text-accent py-2 font-black text-xs uppercase hover:bg-accent hover:text-bg-900 transition italic">-->
+<!--                        Me indique o ideal-->
+<!--                    </a>-->
+<!--                </div>-->
+
+<!--                &lt;!&ndash; Pneumáticos &ndash;&gt;-->
+<!--                <div class="bg-bg-850 p-6 border border-bg-800 rounded flex flex-col">-->
+<!--                    <img-->
+<!--                        src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-pneumatico-grey-p-aluminium-bongas.png"-->
+<!--                        alt="Atuador Pneumático"-->
+<!--                        class="w-full h-40 object-contain rounded bg-bg-900/40 border border-bg-800 mb-4"-->
+<!--                        loading="lazy"-->
+<!--                    />-->
+<!--                    <h4 class="text-accent font-black text-xl mb-1 uppercase italic">Pneumáticos</h4>-->
+<!--                    <p class="text-[10px] font-bold text-gray-400 mb-4 uppercase tracking-widest italic">-->
+<!--                        Ar Comprimido • On/Off-->
+<!--                    </p>-->
+
+<!--                    <div class="text-sm text-gray-300 italic space-y-3 mb-6 flex-1">-->
+<!--                        <p><span class="font-semibold text-white">Serve para:</span> abre/fecha rápido (On/Off) em-->
+<!--                            borboletas.</p>-->
+<!--                        <p><span class="font-semibold text-white">Onde usar:</span> onde há ar comprimido disponível e-->
+<!--                            necessidade de manobra ágil.</p>-->
+<!--                        <p><span class="font-semibold text-white">Perfil:</span> solução robusta e prática para operação-->
+<!--                            repetitiva.</p>-->
+<!--                    </div>-->
+
+<!--                    <a href="#" data-wa data-cta="card_pneumatico" data-template="specialist"-->
+<!--                       class="block text-center border border-accent/30 text-accent py-2 font-black text-xs uppercase hover:bg-accent hover:text-bg-900 transition italic">-->
+<!--                        Me indique o ideal-->
+<!--                    </a>-->
+<!--                </div>-->
+
+<!--                &lt;!&ndash; Grey-Q &ndash;&gt;-->
+<!--                <div class="bg-bg-850 p-6 border border-bg-800 rounded flex flex-col">-->
+<!--                    <img-->
+<!--                        src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-eletrico-grey_q_compact.png"-->
+<!--                        alt="Atuador Grey-Q"-->
+<!--                        class="w-full h-40 object-contain rounded bg-bg-900/40 border border-bg-800 mb-4"-->
+<!--                        loading="lazy"-->
+<!--                    />-->
+<!--                    <h4 class="text-accent font-black text-xl mb-1 uppercase italic">Grey-Q*</h4>-->
+<!--                    <p class="text-[10px] font-bold text-gray-400 mb-4 uppercase tracking-widest italic">-->
+<!--                        ¼ Volta • Sob Consulta-->
+<!--                    </p>-->
+
+<!--                    <div class="text-sm text-gray-300 italic space-y-3 mb-6 flex-1">-->
+<!--                        <p><span class="font-semibold text-white">Serve para:</span> borboletas conforme exigência de-->
+<!--                            torque e conjunto.</p>-->
+<!--                        <p><span class="font-semibold text-white">Onde usar:</span> aplicações com necessidade de-->
+<!--                            robustez extra (conforme seleção).</p>-->
+<!--                        <p><span class="font-semibold text-white">Perfil:</span> opção direcionada para cenários-->
+<!--                            específicos.</p>-->
+<!--                    </div>-->
+
+<!--                    <a href="#" data-wa data-cta="card_greyq" data-template="specialist"-->
+<!--                       class="block text-center border border-accent/30 text-accent py-2 font-black text-xs uppercase hover:bg-accent hover:text-bg-900 transition italic">-->
+<!--                        Me indique o ideal-->
+<!--                    </a>-->
+<!--                </div>-->
+<!--            </div>-->
+
+<!--            <p class="mt-8 text-[10px] text-gray-500 uppercase italic">-->
+<!--                *Grey-Q pode variar conforme tamanho/torque necessário.-->
+<!--            </p>-->
+<!--        </div>-->
+<!--    </section>-->
+
+<!--    &lt;!&ndash; CHECKLIST &ndash;&gt;-->
+<!--    <section id="checklist" class="py-20 px-4 bg-bg-850 border-y border-bg-800">-->
+<!--        <div class="container mx-auto max-w-4xl">-->
+<!--            <h2 class="text-3xl font-black mb-8 text-center uppercase italic text-accent">-->
+<!--                Dados para Orçamento Borboleta:-->
+<!--            </h2>-->
+
+<!--            <div class="grid md:grid-cols-2 gap-8 bg-bg-900 p-8 rounded-lg shadow-xl border border-bg-800">-->
+<!--                <div>-->
+<!--                    <h4 class="font-black text-lg mb-4 text-white uppercase italic underline decoration-accent">-->
+<!--                        Dados da Válvula-->
+<!--                    </h4>-->
+<!--                    <ul class="space-y-3 text-sm text-gray-300 font-medium italic">-->
+<!--                        <li>• Tipo: Borboleta</li>-->
+<!--                        <li>• Diâmetro (DN/pol)</li>-->
+<!--                        <li>• Pressão (bar/psi) e Classe</li>-->
+<!--                    </ul>-->
+<!--                </div>-->
+
+<!--                <div>-->
+<!--                    <h4 class="font-black text-lg mb-4 text-white uppercase italic underline decoration-accent">-->
+<!--                        Dados do Processo-->
+<!--                    </h4>-->
+<!--                    <ul class="space-y-3 text-sm text-gray-300 font-medium italic">-->
+<!--                        <li>• Fluido e Temperatura</li>-->
+<!--                        <li>• Controle: On/Off ou Modulante</li>-->
+<!--                        <li>• Ciclo de operação e Ambiente</li>-->
+<!--                    </ul>-->
+<!--                </div>-->
+<!--            </div>-->
+
+<!--            <div class="mt-12 text-center">-->
+<!--                &lt;!&ndash; Igual ao grupo 3: template de checklist com UTM + página &ndash;&gt;-->
+<!--                <a href="#" data-wa data-cta="checklist_pronto" data-template="checklist"-->
+<!--                   class="bg-accent text-bg-900 px-10 py-5 rounded font-black text-xl uppercase shadow-2xl hover:scale-105 transition inline-block italic">-->
+<!--                    Enviar checklist pronto-->
+<!--                </a>-->
+
+<!--                <p class="mt-4 text-gray-500 text-sm italic">-->
+<!--                    Pode preencher com “não sei” em algum campo — a engenharia orienta.-->
+<!--                </p>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </section>-->
+
+<!--    &lt;!&ndash; FAQ (enriquecimento leve, focado em conversão) &ndash;&gt;-->
+<!--    <section class="py-20 px-4 bg-bg-900 border-b border-bg-800">-->
+<!--        <div class="container mx-auto max-w-4xl">-->
+<!--            <h2 class="text-3xl font-black mb-8 text-center uppercase italic">Dúvidas comuns</h2>-->
+
+<!--            <div class="space-y-4">-->
+<!--                <details class="bg-bg-850 border border-bg-800 rounded p-5">-->
+<!--                    <summary class="cursor-pointer font-black uppercase italic text-accent">-->
+<!--                        Preciso saber o torque exato?-->
+<!--                    </summary>-->
+<!--                    <p class="mt-3 text-sm text-gray-300 italic leading-relaxed">-->
+<!--                        Se você tiver, ótimo. Se não tiver, envie DN, pressão, fluido, temperatura e como a válvula-->
+<!--                        opera hoje.-->
+<!--                        Com essas informações, conseguimos orientar a seleção e fechar o conjunto correto.-->
+<!--                    </p>-->
+<!--                </details>-->
+
+<!--                <details class="bg-bg-850 border border-bg-800 rounded p-5">-->
+<!--                    <summary class="cursor-pointer font-black uppercase italic text-accent">-->
+<!--                        Elétrico ou pneumático: qual escolher?-->
+<!--                    </summary>-->
+<!--                    <p class="mt-3 text-sm text-gray-300 italic leading-relaxed">-->
+<!--                        Depende principalmente da infraestrutura disponível (ar comprimido), do modo de controle (On/Off-->
+<!--                        ou modulante)-->
+<!--                        e das condições do processo. A gente te recomenda a opção mais segura para sua aplicação.-->
+<!--                    </p>-->
+<!--                </details>-->
+
+<!--                <details class="bg-bg-850 border border-bg-800 rounded p-5">-->
+<!--                    <summary class="cursor-pointer font-black uppercase italic text-accent">-->
+<!--                        A borboleta pode ser modulante?-->
+<!--                    </summary>-->
+<!--                    <p class="mt-3 text-sm text-gray-300 italic leading-relaxed">-->
+<!--                        Em aplicações que exigem controle e posicionamento, avaliamos o cenário e a necessidade do-->
+<!--                        processo para definir-->
+<!--                        o conjunto (atuador + acessórios quando aplicável).-->
+<!--                    </p>-->
+<!--                </details>-->
+<!--            </div>-->
+
+<!--            <div class="mt-10 text-center">-->
+<!--                <a href="#" data-wa data-cta="faq_especialista" data-template="specialist"-->
+<!--                   class="border border-accent/40 text-white px-10 py-4 rounded font-black text-sm uppercase hover:bg-bg-850 transition italic inline-block">-->
+<!--                    Tirar dúvida no WhatsApp-->
+<!--                </a>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </section>-->
+
+<!--    &lt;!&ndash; OUTRAS PÁGINAS &ndash;&gt;-->
+<!--    <section id="paginas" class="py-20 px-4">-->
+<!--        <div class="container mx-auto">-->
+<!--            <h2 class="text-3xl font-black mb-4 text-center uppercase italic">Veja também outras linhas</h2>-->
+
+<!--            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">-->
+<!--                <a href="/automacao-e-aplicacao-de-valvula-industrial/"-->
+<!--                   class="bg-bg-850 p-6 rounded border-b-2 border-accent hover:bg-bg-800 transition">-->
+<!--                    <img-->
+<!--                        src="https://bongas.com.br/wp-content/uploads/2025/09/atuador-eletrico-white_e-evolution.png"-->
+<!--                        alt="Industrial Geral"-->
+<!--                        class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800 mb-4"-->
+<!--                        loading="lazy"-->
+<!--                    />-->
+<!--                    <h4 class="font-black mb-2 uppercase text-white italic text-sm">Industrial Geral</h4>-->
+<!--                    <p class="text-[9px] text-gray-400 uppercase font-bold italic">White-E • Grey-MZ • Pneumáticos</p>-->
+<!--                </a>-->
+
+<!--                <a href="/automacao-e-aplicacao-de-valvula-gaveta/"-->
+<!--                   class="bg-bg-850 p-6 rounded border-b-2 border-accent hover:bg-bg-800 transition">-->
+<!--                    <img-->
+<!--                        src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-eletrico-grey-mz-scaled.png"-->
+<!--                        alt="Gaveta e Comporta"-->
+<!--                        class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800 mb-4"-->
+<!--                        loading="lazy"-->
+<!--                    />-->
+<!--                    <h4 class="font-black mb-2 uppercase text-white italic text-sm">Gaveta + Comporta</h4>-->
+<!--                    <p class="text-[9px] text-gray-400 uppercase font-bold italic">Grey-MZ • Grey-L</p>-->
+<!--                </a>-->
+
+<!--                <a href="/automacao-e-aplicacao-de-valvula-esfera/"-->
+<!--                   class="bg-bg-850 p-6 rounded border-b-2 border-accent hover:bg-bg-800 transition">-->
+<!--                    <img-->
+<!--                        src="https://bongas.com.br/wp-content/uploads/2025/09/valvula-esfera-inox-tri-bongas-1.png"-->
+<!--                        alt="Esfera e Globo"-->
+<!--                        class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800 mb-4"-->
+<!--                        loading="lazy"-->
+<!--                    />-->
+<!--                    <h4 class="font-black mb-2 uppercase text-white italic text-sm">Esfera + Globo</h4>-->
+<!--                    <p class="text-[9px] text-gray-400 uppercase font-bold italic">White-E • Pneumático</p>-->
+<!--                </a>-->
+
+<!--                <a href="/automacao-e-aplicacao-com-atuador-multivolta-1-4-volta/"-->
+<!--                   class="bg-bg-850 p-6 rounded border-b-2 border-accent hover:bg-bg-800 transition">-->
+<!--                    <img-->
+<!--                        src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-eletrico-grey_q_compact.png"-->
+<!--                        alt="Atuadores"-->
+<!--                        class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800 mb-4"-->
+<!--                        loading="lazy"-->
+<!--                    />-->
+<!--                    <h4 class="font-black mb-2 uppercase text-white italic text-sm">Atuadores</h4>-->
+<!--                    <p class="text-[9px] text-gray-400 uppercase font-bold italic">¼ Volta • Multivoltas</p>-->
+<!--                </a>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </section>-->
+
+<!--    &lt;!&ndash; CTA FINAL &ndash;&gt;-->
+<!--    <section id="orcamento" class="py-24 px-4 bg-bg-850 text-center border-t border-bg-800">-->
+<!--        <div class="container mx-auto max-w-5xl">-->
+<!--            <h2 class="text-4xl font-black mb-6 uppercase italic leading-none">-->
+<!--                Pronto para automatizar sua borboleta?-->
+<!--            </h2>-->
+
+<!--            <p class="text-xl text-accent font-bold mb-10 italic uppercase">-->
+<!--                Envie seus dados técnicos e receba orientação de nossa engenharia.-->
+<!--            </p>-->
+
+<!--            <a href="#" data-wa data-cta="cta_final" data-template="specialist"-->
+<!--               class="bg-accent text-bg-900 px-12 py-6 rounded-full font-black text-2xl uppercase shadow-2xl hover:scale-110 transition inline-block italic">-->
+<!--                Cotar agora no WhatsApp-->
+<!--            </a>-->
+<!--        </div>-->
+<!--    </section>-->
+
+<!--</main>-->
+
+<!--&lt;!&ndash; FOOTER &ndash;&gt;-->
+<!--<footer class="py-12 border-t border-bg-800 text-center text-gray-500 text-[10px] uppercase tracking-widest font-bold">-->
+<!--    <p class="text-sm text-slate-400">-->
+<!--        © <span id="year">2026</span> BONGAS. Todos os direitos reservados. |-->
+<!--        Desenvolvido por-->
+<!--        <a href="https://cliqis.com.br" target="_blank" rel="noopener noreferrer"-->
+<!--           class="text-slate-200 hover:text-accent underline underline-offset-4">-->
+<!--            Cliqis Lab-->
+<!--        </a>-->
+<!--    </p>-->
+<!--</footer>-->
+
+<!--&lt;!&ndash; MOBILE BAR &ndash;&gt;-->
+<!--<div class="fixed bottom-0 left-0 w-full h-16 bg-bg-850 grid grid-cols-2 border-t border-bg-700 md:hidden z-50">-->
+<!--    <a href="#" data-wa data-cta="mobile_whatsapp" data-template="specialist"-->
+<!--       class="bg-accent text-bg-900 flex items-center justify-center font-black text-xs uppercase italic">-->
+<!--        WhatsApp-->
+<!--    </a>-->
+<!--    <a href="#checklist"-->
+<!--       class="bg-bg-800 text-white flex items-center justify-center font-black text-xs uppercase italic">-->
+<!--        Checklist-->
+<!--    </a>-->
+<!--</div>-->
+
+<!--&lt;!&ndash; WhatsApp flutuante (mantido) &ndash;&gt;-->
+<!--<a href="#" data-wa data-cta="floating_whatsapp" data-template="specialist"-->
+<!--   class="fixed bottom-24 right-6 md:bottom-10 md:right-10 w-16 h-16 bg-[#25D366] rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition z-50 ring-2 ring-white/10 focus:outline-none focus:ring-4 focus:ring-[#25D366]/40">-->
+<!--    <span class="sr-only">WhatsApp</span>-->
+<!--    <svg class="w-9 h-9 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">-->
+<!--        <path-->
+<!--            d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.472-.149-.67.149-.198.297-.768.967-.94 1.165-.173.198-.347.223-.644.075-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.149-.173.198-.298.298-.497.099-.198.05-.372-.025-.521-.075-.149-.67-1.612-.916-2.207-.242-.579-.487-.5-.67-.51l-.573-.01c-.198 0-.521.075-.793.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.876 1.214 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347M12.05 21.785h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884a9.825 9.825 0 0 1 6.99 2.899 9.825 9.825 0 0 1 2.898 6.988c-.002 5.45-4.437 9.884-9.892 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c-.001 2.096.547 4.142 1.588 5.946L0 24l6.306-1.654a11.85 11.85 0 0 0 5.74 1.47h.005c6.557 0 11.892-5.335 11.894-11.893a11.82 11.82 0 0 0-3.481-8.413"/>-->
+<!--    </svg>-->
+<!--</a>-->
+
+<!--&lt;!&ndash; SCRIPT (igual ao grupo 3: UTM + templates) &ndash;&gt;-->
+<!--<script>-->
+<!--    document.getElementById("year").textContent = new Date().getFullYear();-->
+
+<!--    const WA_PHONE = "551130933967";-->
+<!--    const PAGE_URL = window.location.href;-->
+
+<!--    // UTM desta LP-->
+<!--    const UTM_BASE = "utm_source=website&utm_medium=whatsapp&utm_campaign=lp_borboleta";-->
+
+<!--    const templates = {-->
+<!--        specialist: ({utm}) =>-->
+<!--            `Olá! Gostaria de automatizar válvula borboleta.\n\n` +-->
+<!--            `Diâmetro (DN/pol): ___\n` +-->
+<!--            `Pressão (bar/psi): ___\n` +-->
+<!--            `Fluido: ___\n` +-->
+<!--            `Temperatura: ___\n` +-->
+<!--            `Controle (On/Off ou modulante): ___\n` +-->
+<!--            `Ciclo (quantas manobras/dia): ___\n` +-->
+<!--            `Ambiente (interno/externo): ___\n\n` +-->
+<!--            `Página: ${PAGE_URL}\n` +-->
+<!--            `UTM: ${utm}\n\n` +-->
+<!--            `Obrigado!`,-->
+<!--        checklist: ({utm}) =>-->
+<!--            `Olá! Quero automatizar válvula borboleta. Seguem os dados:\n\n` +-->
+<!--            `• Diâmetro (DN/pol): ___\n` +-->
+<!--            `• Pressão (bar/psi): ___\n` +-->
+<!--            `• Fluido: ___\n` +-->
+<!--            `• Temperatura: ___\n` +-->
+<!--            `• Controle: On/Off ( )  Modulante ( )\n` +-->
+<!--            `• Ciclo (manobras/dia): ___\n` +-->
+<!--            `• Ambiente: Interno ( )  Externo ( )\n\n` +-->
+<!--            `Página: ${PAGE_URL}\n` +-->
+<!--            `UTM: ${utm}`-->
+<!--    };-->
+
+<!--    function buildWaLink(message) {-->
+<!--        return `https://wa.me/${WA_PHONE}?text=${encodeURIComponent(message)}`;-->
+<!--    }-->
+
+<!--    document.querySelectorAll("[data-wa]").forEach((el) => {-->
+<!--        const cta = el.getAttribute("data-cta") || "cta";-->
+<!--        const tpl = el.getAttribute("data-template") || "specialist";-->
+<!--        const utm = `${UTM_BASE}&utm_content=${cta}`;-->
+<!--        const msg = (templates[tpl] || templates.specialist)({utm});-->
+<!--        el.href = buildWaLink(msg);-->
+<!--    });-->
+<!--</script>-->
+
+<!--</body>-->
+<!--</html>-->
+
+
+<!--valvula esfera-->
+
+<!--<!DOCTYPE html>-->
+<!--<html lang="pt-BR" class="scroll-smooth">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+
+<!--    &lt;!&ndash; Mantido &ndash;&gt;-->
+<!--    <title>Automação de Válvula Esfera, Globo e Macho | BONGAS</title>-->
+<!--    <meta name="description"-->
+<!--          content="Soluções em automação para válvulas esfera, globo e macho. Especificação técnica com atuadores White-E e Pneumáticos.">-->
+
+<!--    <script src="https://cdn.tailwindcss.com"></script>-->
+<!--    <script>-->
+<!--        tailwind.config = {-->
+<!--            theme: {-->
+<!--                extend: {-->
+<!--                    colors: {-->
+<!--                        'bg-900': '#232530',-->
+<!--                        'bg-850': '#2d3041',-->
+<!--                        'bg-800': '#3c3f54',-->
+<!--                        'bg-700': '#474b61',-->
+<!--                        'accent': '#ECBA46',-->
+<!--                        'white': '#fefefe',-->
+<!--                    }-->
+<!--                }-->
+<!--            }-->
+<!--        }-->
+<!--    </script>-->
+
+<!--    <style>-->
+<!--        body { font-family: system-ui, sans-serif; background-color: #232530; color: #fefefe; }-->
+<!--        .bg-gradient-industrial { background: linear-gradient(135deg, #232530 0%, #2d3041 100%); }-->
+<!--        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }-->
+
+<!--        /* Visual leve (igual ao padrão das outras LPs) */-->
+<!--        .grid-dots {-->
+<!--            background-image: radial-gradient(rgba(236, 186, 70, 0.18) 1px, transparent 1px);-->
+<!--            background-size: 18px 18px;-->
+<!--        }-->
+<!--    </style>-->
+<!--</head>-->
+
+<!--<body class="antialiased font-medium">-->
+
+<!--<header class="fixed top-0 w-full z-50 bg-900/95 border-b border-bg-800 backdrop-blur-md h-16 lg:h-20">-->
+<!--    <nav class="container mx-auto px-4 h-full flex items-center gap-3">-->
+<!--        &lt;!&ndash; LOGO (controlado) &ndash;&gt;-->
+<!--        <a href="https://bongas.com.br" class="flex items-center shrink-0" aria-label="Bongas">-->
+<!--            <img-->
+<!--                src="https://bongas.com.br/wp-content/uploads/2025/06/Logo_Bongas_branco_e_amarelo-1-e1744564774874.png"-->
+<!--                alt="Bongas"-->
+<!--                class="block object-contain"-->
+<!--                loading="eager"-->
+<!--                style="height: 40px !important;"-->
+<!--            />-->
+<!--        </a>-->
+
+<!--        &lt;!&ndash; MENU (centralizado de verdade) &ndash;&gt;-->
+<!--        <ul class="hidden lg:flex flex-1 justify-center space-x-6 text-xs font-bold uppercase tracking-widest text-gray-300">-->
+<!--            <li><a href="#solucoes" class="hover:text-accent transition">Soluções</a></li>-->
+<!--            <li><a href="#especificacao" class="hover:text-accent transition">Especificação</a></li>-->
+<!--            <li><a href="#modelos" class="hover:text-accent transition">Atuadores</a></li>-->
+<!--        </ul>-->
+
+<!--        &lt;!&ndash; AÇÕES &ndash;&gt;-->
+<!--        <div class="ml-auto flex items-center gap-2">-->
+<!--            &lt;!&ndash; Site principal: hidden no mobile + tablet &ndash;&gt;-->
+<!--            <a-->
+<!--                href="https://bongas.com.br"-->
+<!--                class="hidden lg:inline-flex items-center bg-[#CA1118] px-5 py-2 rounded font-black text-xs uppercase hover:scale-105 transition"-->
+<!--            >-->
+<!--                Site principal-->
+<!--            </a>-->
+
+<!--            <a-->
+<!--                href="https://api.whatsapp.com/send/?phone=551130933967&text=Ol%C3%A1%2C+tudo+bem%3F%0A%0AVisitei+o+website+e+gostaria+de+mais+informa%C3%A7%C3%B5es+sobre+v%C3%A1lvulas+ESFERA-GLOBO-MACHO%2C+pode+me+ajudar%3F"-->
+<!--                class="inline-flex items-center bg-accent text-bg-900 px-3 sm:px-4 lg:px-5 py-2 rounded font-black text-xs uppercase hover:scale-105 transition whitespace-nowrap"-->
+<!--            >-->
+<!--                <span class="sm:hidden">WhatsApp</span>-->
+<!--                <span class="hidden sm:inline">Fale no WhatsApp</span>-->
+<!--            </a>-->
+<!--        </div>-->
+<!--    </nav>-->
+<!--</header>-->
+
+<!--<main>-->
+<!--    &lt;!&ndash; HERO / SOLUÇÕES &ndash;&gt;-->
+<!--    <section id="solucoes" class="pt-32 pb-20 px-4 bg-gradient-industrial relative overflow-hidden">-->
+<!--        <div class="absolute inset-0 opacity-40 grid-dots pointer-events-none"></div>-->
+<!--        <div class="absolute top-0 right-0 w-1/2 h-full bg-accent/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2"></div>-->
+
+<!--        <div class="container mx-auto grid lg:grid-cols-2 gap-12 items-center relative z-10">-->
+<!--            <div>-->
+<!--                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-[10px] font-black uppercase tracking-widest mb-6">-->
+<!--                    <span class="w-2 h-2 rounded-full bg-accent animate-pulse"></span>-->
+<!--                    Engenharia de Automação-->
+<!--                </div>-->
+
+<!--                <h1 class="text-4xl lg:text-6xl font-black mb-6 leading-[0.95] uppercase italic text-white">-->
+<!--                    Automação de Válvulas <span class="text-accent underline decoration-bg-700">Esfera, Globo e Macho</span>-->
+<!--                </h1>-->
+
+<!--                &lt;!&ndash; Mantido &ndash;&gt;-->
+<!--                <p class="text-lg text-gray-400 mb-10 max-w-xl italic leading-relaxed">-->
+<!--                    Dimensionamento técnico para processos industriais críticos. Seleção baseada em torque, fluido e ciclo de operação.-->
+<!--                    Recomendados: <span class="text-white font-bold italic">White-E e Sistemas Pneumáticos.</span>-->
+<!--                </p>-->
+
+<!--                <div class="flex flex-col sm:flex-row gap-4">-->
+<!--                    <a href="#" data-wa data-cta="hero_especialista" data-template="specialist"-->
+<!--                       class="bg-accent text-bg-900 px-8 py-4 rounded-sm font-black text-center text-lg uppercase shadow-xl hover:scale-[1.02] transition italic">-->
+<!--                        Falar com Especialista-->
+<!--                    </a>-->
+<!--                    <a href="#especificacao"-->
+<!--                       class="border border-bg-700 text-white px-8 py-4 rounded-sm font-black text-center text-lg uppercase hover:bg-bg-800 transition italic">-->
+<!--                        Dados Técnicos-->
+<!--                    </a>-->
+<!--                </div>-->
+
+<!--                &lt;!&ndash; NOVO: mini-blocos de confiança (sem alterar sua promessa) &ndash;&gt;-->
+<!--                <div class="grid sm:grid-cols-3 gap-4 mt-10 max-w-xl">-->
+<!--                    <div class="bg-bg-850/60 border border-bg-800 rounded p-4">-->
+<!--                        <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black mb-1">Foco</p>-->
+<!--                        <p class="text-sm font-black">¼ de volta e aplicações</p>-->
+<!--                        <p class="text-xs text-gray-400 mt-1 italic">Esfera / Macho</p>-->
+<!--                    </div>-->
+<!--                    <div class="bg-bg-850/60 border border-bg-800 rounded p-4">-->
+<!--                        <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black mb-1">Controle</p>-->
+<!--                        <p class="text-sm font-black">On/Off ou modulante</p>-->
+<!--                        <p class="text-xs text-gray-400 mt-1 italic">4–20mA quando aplicável</p>-->
+<!--                    </div>-->
+<!--                    <div class="bg-bg-850/60 border border-bg-800 rounded p-4">-->
+<!--                        <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black mb-1">Saída</p>-->
+<!--                        <p class="text-sm font-black">Cotação rápida</p>-->
+<!--                        <p class="text-xs text-gray-400 mt-1 italic">Via WhatsApp</p>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+
+<!--            &lt;!&ndash; Cards dos tipos (mantidos) + placeholders visuais &ndash;&gt;-->
+<!--            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">-->
+<!--                <div class="bg-bg-850/50 p-6 border border-bg-800 rounded-lg relative overflow-hidden">-->
+<!--                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-accent/10 blur-[40px] rounded-full"></div>-->
+<!--                    <h3 class="text-accent font-black uppercase italic mb-2 text-sm">Válvula Esfera</h3>-->
+<!--                    <p class="text-xs text-gray-400 leading-relaxed italic">Automação de alta vedação para bloqueio e controle de fluxo.</p>-->
+<!--                    &lt;!&ndash; placeholder imagem &ndash;&gt;-->
+<!--                    <img-->
+<!--                        src="https://bongas.com.br/wp-content/uploads/2025/09/valvula-esfera-inox-tri-bongas-1.png"-->
+<!--                        alt="Placeholder Esfera"-->
+<!--                        class="mt-4 w-full h-24 object-contain rounded bg-bg-900/40 border border-bg-800"-->
+<!--                        loading="lazy"-->
+<!--                    />-->
+<!--                </div>-->
+
+<!--                <div class="bg-bg-850/50 p-6 border border-bg-800 rounded-lg relative overflow-hidden">-->
+<!--                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-accent/10 blur-[40px] rounded-full"></div>-->
+<!--                    <h3 class="text-accent font-black uppercase italic mb-2 text-sm">Válvula Macho</h3>-->
+<!--                    <p class="text-xs text-gray-400 leading-relaxed italic">Solidez para fluidos com sólidos ou alta viscosidade.</p>-->
+<!--                    &lt;!&ndash; placeholder imagem &ndash;&gt;-->
+<!--                    <img-->
+<!--                        src="https://bongas.com.br/wp-content/uploads/2025/10/valvulas-fluidos-basic-s0213.png"-->
+<!--                        alt="Placeholder Macho"-->
+<!--                        class="mt-4 w-full h-24 object-contain rounded bg-bg-900/40 border border-bg-800"-->
+<!--                        loading="lazy"-->
+<!--                    />-->
+<!--                </div>-->
+
+<!--                <div class="bg-bg-850/50 p-6 border border-bg-800 rounded-lg border-dashed flex flex-col justify-between">-->
+<!--                    <div>-->
+<!--                        <h3 class="text-white font-black uppercase italic mb-2 text-sm">Pronto p/ Orçar</h3>-->
+<!--                        <p class="text-xs text-gray-500 leading-relaxed italic">Clique e envie os dados da aplicação via WhatsApp.</p>-->
+<!--                    </div>-->
+<!--                    <a href="#" data-wa data-cta="hero_card_orcar" data-template="checklist"-->
+<!--                       class="mt-4 bg-accent text-bg-900 px-5 py-2 rounded-sm font-black text-xs uppercase hover:bg-white transition italic text-center">-->
+<!--                        Enviar checklist-->
+<!--                    </a>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </section>-->
+
+<!--    &lt;!&ndash; NOVO: Visão técnica + galeria (enriquecimento com espaços de imagem) &ndash;&gt;-->
+<!--    <section class="py-20 px-4 bg-bg-900 border-t border-bg-800">-->
+<!--        <div class="container mx-auto grid lg:grid-cols-12 gap-10 items-start">-->
+<!--            <div class="lg:col-span-7">-->
+<!--                <h2 class="text-3xl font-black mb-4 uppercase italic">Visão técnica da automação</h2>-->
+
+<!--                <p class="text-gray-300 mb-6 italic leading-relaxed">-->
+<!--                    Nesta campanha, o objetivo é direcionar leads que já buscam <span class="text-white font-black">automação</span> (não apenas “válvula”).-->
+<!--                    Por isso, a especificação é orientada por dados do processo: <span class="text-white font-black">DN, pressão, fluido, temperatura e modo de controle</span>.-->
+<!--                </p>-->
+
+<!--                <div class="grid md:grid-cols-2 gap-6">-->
+<!--                    <div class="bg-bg-850 border border-bg-800 rounded p-6">-->
+<!--                        <h3 class="font-black uppercase text-accent mb-2 italic">Quando faz mais sentido</h3>-->
+<!--                        <ul class="text-sm text-gray-400 space-y-2 italic">-->
+<!--                            <li>• Operação remota e padronizada (evita ação manual)</li>-->
+<!--                            <li>• Segurança e repetibilidade no processo</li>-->
+<!--                            <li>• Ciclos frequentes e necessidade de agilidade</li>-->
+<!--                            <li>• Integração com automação/controle</li>-->
+<!--                        </ul>-->
+<!--                    </div>-->
+
+<!--                    <div class="bg-bg-850 border border-bg-800 rounded p-6">-->
+<!--                        <h3 class="font-black uppercase text-accent mb-2 italic">O que definimos na seleção</h3>-->
+<!--                        <ul class="text-sm text-gray-400 space-y-2 italic">-->
+<!--                            <li>• Elétrico (White-E) ou pneumático (ar comprimido)</li>-->
+<!--                            <li>• On/Off ou modulante (ex.: 4–20mA)</li>-->
+<!--                            <li>• Interface de montagem e compatibilidade</li>-->
+<!--                            <li>• Ambiente e requisitos de proteção</li>-->
+<!--                        </ul>-->
+<!--                    </div>-->
+<!--                </div>-->
+
+<!--                <div class="mt-8 bg-bg-850 border border-bg-800 rounded p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">-->
+<!--                    <div>-->
+<!--                        <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black mb-1 italic">Atalho</p>-->
+<!--                        <p class="text-lg font-black italic">Enviar dados e receber indicação rápida</p>-->
+<!--                        <p class="text-sm text-gray-400 italic">Clique no WhatsApp e use o checklist pronto.</p>-->
+<!--                    </div>-->
+<!--                    <a href="#" data-wa data-cta="atalho_visao_tecnica" data-template="checklist"-->
+<!--                       class="bg-accent text-bg-900 px-6 py-3 rounded-sm font-black text-sm uppercase hover:bg-white transition italic text-center">-->
+<!--                        Enviar no WhatsApp-->
+<!--                    </a>-->
+<!--                </div>-->
+<!--            </div>-->
+
+<!--&lt;!&ndash;            <aside class="lg:col-span-5">&ndash;&gt;-->
+<!--&lt;!&ndash;                <div class="glass-card rounded-2xl p-6 border-bg-800">&ndash;&gt;-->
+<!--&lt;!&ndash;                    <h3 class="text-xl font-black uppercase italic mb-3">Galeria (placeholder)</h3>&ndash;&gt;-->
+<!--&lt;!&ndash;                    <p class="text-sm text-gray-400 italic mb-6">&ndash;&gt;-->
+<!--&lt;!&ndash;                        Reserve estes espaços para imagens que aumentam conversão: conjunto montado, instalação e aplicação real.&ndash;&gt;-->
+<!--&lt;!&ndash;                    </p>&ndash;&gt;-->
+
+<!--&lt;!&ndash;                    <div class="grid grid-cols-2 gap-4">&ndash;&gt;-->
+<!--&lt;!&ndash;                        <img src="https://bongas.com.br/wp-content/uploads/2025/09/atuador-eletrico-white_e-evolution.png"&ndash;&gt;-->
+<!--&lt;!&ndash;                             alt="Placeholder 1"&ndash;&gt;-->
+<!--&lt;!&ndash;                             class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800"&ndash;&gt;-->
+<!--&lt;!&ndash;                             loading="lazy" />&ndash;&gt;-->
+<!--&lt;!&ndash;                        <img src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-pneumatico-grey-p-aluminium-bongas.png"&ndash;&gt;-->
+<!--&lt;!&ndash;                             alt="Placeholder 2"&ndash;&gt;-->
+<!--&lt;!&ndash;                             class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800"&ndash;&gt;-->
+<!--&lt;!&ndash;                             loading="lazy" />&ndash;&gt;-->
+<!--&lt;!&ndash;                        <img src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-eletrico-grey_q_compact.png"&ndash;&gt;-->
+<!--&lt;!&ndash;                             alt="Placeholder 3"&ndash;&gt;-->
+<!--&lt;!&ndash;                             class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800"&ndash;&gt;-->
+<!--&lt;!&ndash;                             loading="lazy" />&ndash;&gt;-->
+<!--&lt;!&ndash;                        <img src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-eletrico-grey-mz-scaled.png"&ndash;&gt;-->
+<!--&lt;!&ndash;                             alt="Placeholder 4"&ndash;&gt;-->
+<!--&lt;!&ndash;                             class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800"&ndash;&gt;-->
+<!--&lt;!&ndash;                             loading="lazy" />&ndash;&gt;-->
+<!--&lt;!&ndash;                    </div>&ndash;&gt;-->
+
+<!--&lt;!&ndash;                    <div class="mt-6 border-t border-bg-800 pt-6">&ndash;&gt;-->
+<!--&lt;!&ndash;                        <h4 class="font-black uppercase italic text-accent mb-2">Sugestões de imagens</h4>&ndash;&gt;-->
+<!--&lt;!&ndash;                        <ul class="text-sm text-gray-400 italic space-y-2">&ndash;&gt;-->
+<!--&lt;!&ndash;                            <li>• Conjunto válvula + atuador (montado)</li>&ndash;&gt;-->
+<!--&lt;!&ndash;                            <li>• Instalação no campo (aplicação real)</li>&ndash;&gt;-->
+<!--&lt;!&ndash;                            <li>• Vista lateral / dimensões</li>&ndash;&gt;-->
+<!--&lt;!&ndash;                            <li>• Painel/controle (se houver)</li>&ndash;&gt;-->
+<!--&lt;!&ndash;                        </ul>&ndash;&gt;-->
+<!--&lt;!&ndash;                    </div>&ndash;&gt;-->
+<!--&lt;!&ndash;                </div>&ndash;&gt;-->
+<!--&lt;!&ndash;            </aside>&ndash;&gt;-->
+<!--        </div>-->
+<!--    </section>-->
+
+<!--    &lt;!&ndash; ESPECIFICAÇÃO (mantido, enriquecido com CTA) &ndash;&gt;-->
+<!--    <section id="especificacao" class="py-20 px-4 bg-bg-900">-->
+<!--        <div class="container mx-auto">-->
+<!--            <div class="max-w-4xl mx-auto glass-card p-8 lg:p-12 rounded-2xl border-bg-800 shadow-2xl relative">-->
+<!--                <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-accent text-bg-900 px-6 py-1 font-black text-[10px] uppercase tracking-tighter italic">-->
+<!--                    Checklist de Engenharia-->
+<!--                </div>-->
+
+<!--                <h2 class="text-2xl lg:text-3xl font-black mb-8 text-center uppercase italic">-->
+<!--                    Dados Necessários para Seleção-->
+<!--                </h2>-->
+
+<!--                <div class="grid md:grid-cols-2 gap-10 text-sm italic">-->
+<!--                    <ul class="space-y-4">-->
+<!--                        <li class="flex items-start gap-3">-->
+<!--                            <span class="text-accent font-bold">01.</span>-->
+<!--                            <span><strong class="text-white uppercase font-black">Tipo:</strong> Esfera, Globo ou Macho</span>-->
+<!--                        </li>-->
+<!--                        <li class="flex items-start gap-3">-->
+<!--                            <span class="text-accent font-bold">02.</span>-->
+<!--                            <span><strong class="text-white uppercase font-black">Dimensão:</strong> Diâmetro (DN/Pol) e Classe de Pressão</span>-->
+<!--                        </li>-->
+<!--                        <li class="flex items-start gap-3">-->
+<!--                            <span class="text-accent font-bold">03.</span>-->
+<!--                            <span><strong class="text-white uppercase font-black">Processo:</strong> Fluido e Temperatura de Operação</span>-->
+<!--                        </li>-->
+<!--                    </ul>-->
+<!--                    <ul class="space-y-4">-->
+<!--                        <li class="flex items-start gap-3">-->
+<!--                            <span class="text-accent font-bold">04.</span>-->
+<!--                            <span><strong class="text-white uppercase font-black">Modo:</strong> Acionamento On/Off ou Modulante (4-20mA)</span>-->
+<!--                        </li>-->
+<!--                        <li class="flex items-start gap-3">-->
+<!--                            <span class="text-accent font-bold">05.</span>-->
+<!--                            <span><strong class="text-white uppercase font-black">Atuador:</strong> Preferência Elétrica (White-E) ou Pneumática</span>-->
+<!--                        </li>-->
+<!--                        <li class="flex items-start gap-3">-->
+<!--                            <span class="text-accent font-bold">06.</span>-->
+<!--                            <span><strong class="text-white uppercase font-black">Ambiente:</strong> Grau de proteção ou área classificada</span>-->
+<!--                        </li>-->
+<!--                    </ul>-->
+<!--                </div>-->
+
+<!--                &lt;!&ndash; NOVO: botão direto (usa seu template checklist) &ndash;&gt;-->
+<!--                <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center">-->
+<!--                    <a href="#" data-wa data-cta="especificacao_checklist" data-template="checklist"-->
+<!--                       class="bg-accent text-bg-900 px-8 py-4 rounded-sm font-black text-center text-sm uppercase shadow-xl hover:bg-white transition italic">-->
+<!--                        Enviar checklist pronto-->
+<!--                    </a>-->
+<!--                    <a href="#" data-wa data-cta="especificacao_especialista" data-template="specialist"-->
+<!--                       class="border border-accent/40 text-white px-8 py-4 rounded-sm font-black text-center text-sm uppercase hover:bg-bg-800 transition italic">-->
+<!--                        Falar com especialista-->
+<!--                    </a>-->
+<!--                </div>-->
+
+<!--                <p class="mt-6 text-center text-xs text-gray-500 italic">-->
+<!--                    Você pode preencher com “não sei” em algum campo — nossa engenharia orienta.-->
+<!--                </p>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </section>-->
+
+<!--    &lt;!&ndash; MODELOS (mantido e enriquecido + placeholders corretos) &ndash;&gt;-->
+<!--    <section id="modelos" class="py-20 px-4 bg-bg-850">-->
+<!--        <div class="container mx-auto text-center mb-12">-->
+<!--            <h2 class="text-3xl font-black uppercase italic mb-4">Atuadores Compatíveis</h2>-->
+<!--            <p class="text-gray-400 italic">Soluções robustas para automação de ¼ de volta e linear.</p>-->
+<!--        </div>-->
+
+<!--        <div class="container mx-auto grid md:grid-cols-2 gap-8 max-w-5xl">-->
+
+<!--            &lt;!&ndash; White-E &ndash;&gt;-->
+<!--            <div class="group bg-bg-900 p-8 border-b-4 border-bg-800 hover:border-accent transition-all duration-300 flex flex-col">-->
+<!--                <img-->
+<!--                    src="https://bongas.com.br/wp-content/uploads/2025/09/atuador-eletrico-white_e-evolution.png"-->
+<!--                    alt="Atuador White-E"-->
+<!--                    class="w-full h-44 object-contain rounded bg-bg-850/40 border border-bg-800 mb-5"-->
+<!--                    loading="lazy"-->
+<!--                />-->
+<!--                <h4 class="text-2xl font-black text-accent uppercase italic mb-2 tracking-tighter">White-E</h4>-->
+<!--                <p class="text-[10px] text-gray-500 font-bold uppercase mb-4 tracking-widest italic underline decoration-bg-700">-->
+<!--                    Elétrico Heavy-Duty-->
+<!--                </p>-->
+
+<!--                &lt;!&ndash; Mantido &ndash;&gt;-->
+<!--                <p class="text-sm text-gray-300 leading-relaxed italic mb-6">-->
+<!--                    Alta performance para automação elétrica. Ideal para plantas onde não há infraestrutura de ar comprimido ou onde o controle modulante via cabo é exigido.-->
+<!--                </p>-->
+
+<!--                &lt;!&ndash; NOVO: mini bullets técnicos &ndash;&gt;-->
+<!--                <div class="text-xs text-gray-400 italic space-y-2 mb-6">-->
+<!--                    <p>• Indicado para: válvula esfera (¼ volta) e aplicações gerais</p>-->
+<!--                    <p>• Controle: On/Off e cenários com necessidade de sinalização/controle</p>-->
+<!--                    <p>• Diferencial: padroniza operação e reduz intervenção manual</p>-->
+<!--                </div>-->
+
+<!--                <a href="#" data-wa data-cta="card_whitee_especificar" data-template="specialist"-->
+<!--                   class="mt-auto block text-center border border-accent/30 text-accent py-3 font-black text-sm uppercase hover:bg-accent hover:text-bg-900 transition italic">-->
+<!--                    Me indique o ideal-->
+<!--                </a>-->
+
+<!--                <span class="mt-4 text-xs font-black uppercase italic text-accent opacity-0 group-hover:opacity-100 transition-opacity underline">-->
+<!--            Solicitar Especificação →-->
+<!--          </span>-->
+<!--            </div>-->
+
+<!--            &lt;!&ndash; Pneumáticos &ndash;&gt;-->
+<!--            <div class="group bg-bg-900 p-8 border-b-4 border-bg-800 hover:border-white transition-all duration-300 flex flex-col">-->
+<!--                &lt;!&ndash; Placeholder correto para pneumático &ndash;&gt;-->
+<!--                <img-->
+<!--                    src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-pneumatico-grey-p-aluminium-bongas.png"-->
+<!--                    alt="Atuador Pneumático"-->
+<!--                    class="w-full h-44 object-contain rounded bg-bg-850/40 border border-bg-800 mb-5"-->
+<!--                    loading="lazy"-->
+<!--                />-->
+<!--                <h4 class="text-2xl font-black text-white uppercase italic mb-2 tracking-tighter">Pneumáticos</h4>-->
+<!--                <p class="text-[10px] text-gray-500 font-bold uppercase mb-4 tracking-widest italic underline decoration-bg-700">-->
+<!--                    Ar Comprimido-->
+<!--                </p>-->
+
+<!--                &lt;!&ndash; Mantido &ndash;&gt;-->
+<!--                <p class="text-sm text-gray-300 leading-relaxed italic mb-6">-->
+<!--                    Velocidade de manobra e segurança intrínseca. Disponíveis em Dupla Ação ou Retorno por Mola (Fail-Safe), compatíveis com Esfera e Macho.-->
+<!--                </p>-->
+
+<!--                &lt;!&ndash; NOVO: mini bullets técnicos &ndash;&gt;-->
+<!--                <div class="text-xs text-gray-400 italic space-y-2 mb-6">-->
+<!--                    <p>• Indicado para: aplicações com ar comprimido disponível</p>-->
+<!--                    <p>• Perfil: robusto e rápido para abre/fecha (On/Off)</p>-->
+<!--                    <p>• Opcional: acessórios para controle e monitoramento (quando aplicável)</p>-->
+<!--                </div>-->
+
+<!--                <a href="#" data-wa data-cta="card_pneumatico_especificar" data-template="specialist"-->
+<!--                   class="mt-auto block text-center border border-accent/30 text-accent py-3 font-black text-sm uppercase hover:bg-accent hover:text-bg-900 transition italic">-->
+<!--                    Me indique o ideal-->
+<!--                </a>-->
+
+<!--                <span class="mt-4 text-xs font-black uppercase italic text-white opacity-0 group-hover:opacity-100 transition-opacity underline">-->
+<!--            Solicitar Especificação →-->
+<!--          </span>-->
+<!--            </div>-->
+<!--        </div>-->
+
+<!--        &lt;!&ndash; NOVO: quadro rápido de compatibilidade (sem prometer specs numéricas) &ndash;&gt;-->
+<!--        <div class="container mx-auto max-w-5xl mt-12">-->
+<!--            <div class="glass-card rounded-2xl p-8 border-bg-800">-->
+<!--                <h3 class="text-2xl font-black uppercase italic mb-3 text-accent text-center">Compatibilidade (resumo)</h3>-->
+<!--                <p class="text-sm text-gray-400 italic text-center mb-8">-->
+<!--                    A seleção final depende dos dados do processo. Use como referência inicial para acelerar a conversa no WhatsApp.-->
+<!--                </p>-->
+
+<!--                <div class="overflow-x-auto">-->
+<!--                    <table class="min-w-full text-sm">-->
+<!--                        <thead>-->
+<!--                        <tr class="text-left text-gray-300 uppercase tracking-widest text-[11px]">-->
+<!--                            <th class="py-3 px-3 border-b border-bg-800">Tipo</th>-->
+<!--                            <th class="py-3 px-3 border-b border-bg-800">Tendência</th>-->
+<!--                            <th class="py-3 px-3 border-b border-bg-800">Opções</th>-->
+<!--                            <th class="py-3 px-3 border-b border-bg-800">Enviar no checklist</th>-->
+<!--                        </tr>-->
+<!--                        </thead>-->
+<!--                        <tbody class="text-gray-400 italic">-->
+<!--                        <tr>-->
+<!--                            <td class="py-3 px-3 border-b border-bg-800 font-black text-white">Esfera</td>-->
+<!--                            <td class="py-3 px-3 border-b border-bg-800">¼ de volta</td>-->
+<!--                            <td class="py-3 px-3 border-b border-bg-800">White-E ou Pneumático</td>-->
+<!--                            <td class="py-3 px-3 border-b border-bg-800">DN, pressão, fluido, On/Off ou modulante</td>-->
+<!--                        </tr>-->
+<!--                        <tr>-->
+<!--                            <td class="py-3 px-3 border-b border-bg-800 font-black text-white">Globo</td>-->
+<!--                            <td class="py-3 px-3 border-b border-bg-800">Controle / processo</td>-->
+<!--                            <td class="py-3 px-3 border-b border-bg-800">Conforme aplicação</td>-->
+<!--                            <td class="py-3 px-3 border-b border-bg-800">Fluido, temperatura e modo de controle</td>-->
+<!--                        </tr>-->
+<!--                        <tr>-->
+<!--                            <td class="py-3 px-3 border-b border-bg-800 font-black text-white">Macho</td>-->
+<!--                            <td class="py-3 px-3 border-b border-bg-800">Robusta / processo</td>-->
+<!--                            <td class="py-3 px-3 border-b border-bg-800">White-E ou Pneumático</td>-->
+<!--                            <td class="py-3 px-3 border-b border-bg-800">Fluido, sólidos/viscosidade e ciclos</td>-->
+<!--                        </tr>-->
+<!--                        </tbody>-->
+<!--                    </table>-->
+<!--                </div>-->
+
+<!--                <div class="mt-8 text-center">-->
+<!--                    <a href="#" data-wa data-cta="compatibilidade_checklist" data-template="checklist"-->
+<!--                       class="bg-accent text-bg-900 px-10 py-4 rounded-sm font-black text-sm uppercase shadow-xl hover:bg-white transition italic inline-block">-->
+<!--                        Enviar checklist agora-->
+<!--                    </a>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </section>-->
+
+<!--    &lt;!&ndash; OUTRAS APLICAÇÕES (mantido) &ndash;&gt;-->
+<!--    <section class="py-16 px-4 bg-bg-900 border-t border-bg-800">-->
+<!--        <div class="container mx-auto">-->
+<!--            <p class="text-[10px] font-black uppercase tracking-[0.3em] text-accent mb-8 italic text-center">-->
+<!--                Explorar Outras Aplicações-->
+<!--            </p>-->
+
+<!--            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">-->
+<!--                <a href="/automacao-e-aplicacao-de-valvula-industrial/" class="p-4 bg-bg-850 border border-bg-800 hover:border-accent transition group text-center">-->
+<!--                    <span class="block text-xs font-black uppercase italic text-white group-hover:text-accent">Industrial Geral</span>-->
+<!--                </a>-->
+<!--                <a href="/automacao-e-aplicacao-de-valvula-gaveta/" class="p-4 bg-bg-850 border border-bg-800 hover:border-accent transition group text-center">-->
+<!--                    <span class="block text-xs font-black uppercase italic text-white group-hover:text-accent">Gaveta + Comporta</span>-->
+<!--                </a>-->
+<!--                <a href="/automacao-e-aplicacao-de-valvula-borboleta/" class="p-4 bg-bg-850 border border-bg-800 hover:border-accent transition group text-center">-->
+<!--                    <span class="block text-xs font-black uppercase italic text-white group-hover:text-accent">Válvula Borboleta</span>-->
+<!--                </a>-->
+<!--                <a href="/automacao-e-aplicacao-com-atuador-multivolta-1-4-volta/" class="p-4 bg-bg-850 border border-bg-800 hover:border-accent transition group text-center">-->
+<!--                    <span class="block text-xs font-black uppercase italic text-white group-hover:text-accent">Linha Atuadores</span>-->
+<!--                </a>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </section>-->
+
+<!--    &lt;!&ndash; CTA FINAL (mantido) &ndash;&gt;-->
+<!--    <section class="py-24 px-4 bg-accent text-bg-900 text-center">-->
+<!--        <div class="container mx-auto">-->
+<!--            <h2 class="text-4xl lg:text-5xl font-black uppercase italic mb-6">Pronto para Automatizar?</h2>-->
+<!--            <p class="text-xl font-bold uppercase italic tracking-tight mb-10 opacity-80">-->
+<!--                Receba uma cotação técnica em poucos minutos via WhatsApp.-->
+<!--            </p>-->
+
+<!--            &lt;!&ndash; Mantido: data-wa &ndash;&gt;-->
+<!--            <a href="#" data-wa data-cta="footer_final" data-template="specialist"-->
+<!--               class="bg-bg-900 text-white px-12 py-6 rounded-sm font-black text-2xl uppercase shadow-2xl hover:scale-105 transition inline-block italic">-->
+<!--                Cotar agora-->
+<!--            </a>-->
+<!--        </div>-->
+<!--    </section>-->
+
+<!--</main>-->
+
+<!--&lt;!&ndash; FOOTER &ndash;&gt;-->
+<!--<footer class="py-12 border-t border-bg-800 text-center text-gray-500 text-[10px] uppercase tracking-widest font-bold">-->
+<!--    <p class="text-sm text-slate-400">-->
+<!--        © <span id="year">2026</span> BONGAS. Todos os direitos reservados. |-->
+<!--        Desenvolvido por-->
+<!--        <a href="https://cliqis.com.br" target="_blank" rel="noopener noreferrer"-->
+<!--           class="text-slate-200 hover:text-accent underline underline-offset-4">-->
+<!--            Cliqis Lab-->
+<!--        </a>-->
+<!--    </p>-->
+<!--</footer>-->
+
+<!--&lt;!&ndash; MOBILE BAR &ndash;&gt;-->
+<!--<div class="fixed bottom-0 left-0 w-full h-16 bg-bg-850 grid grid-cols-2 border-t border-bg-700 md:hidden z-50">-->
+<!--    <a href="#" data-wa data-cta="mobile_fixed_wa" data-template="specialist"-->
+<!--       class="bg-accent text-bg-900 flex items-center justify-center font-black text-xs uppercase italic">-->
+<!--        WhatsApp-->
+<!--    </a>-->
+<!--    <a href="#especificacao"-->
+<!--       class="bg-bg-900 text-white flex items-center justify-center font-black text-xs uppercase italic">-->
+<!--        Especificar-->
+<!--    </a>-->
+<!--</div>-->
+
+<!--&lt;!&ndash; SCRIPT (mantido) &ndash;&gt;-->
+<!--<script>-->
+<!--    document.getElementById("year").textContent = new Date().getFullYear();-->
+
+<!--    const WA_PHONE = "551130933967";-->
+<!--    const PAGE_URL = window.location.href;-->
+
+<!--    // Mantive seu campaign atual-->
+<!--    const UTM_BASE = "utm_source=website&utm_medium=whatsapp&utm_campaign=lp_esfera_globo_macho";-->
+
+<!--    // Templates (mantém compatibilidade; você pode usar data-template="checklist" quando quiser)-->
+<!--    const templates = {-->
+<!--        specialist: ({ utm }) =>-->
+<!--            `Olá! Gostaria de automatizar válvula esfera/globo/macho.\n\n` +-->
+<!--            `Tipo (esfera/globo/macho): ___\n` +-->
+<!--            `Diâmetro (DN/pol): ___\n` +-->
+<!--            `Pressão/temperatura: ___\n` +-->
+<!--            `Fluido: ___\n` +-->
+<!--            `Controle (On/Off ou modulante): ___\n` +-->
+<!--            `Preferência de atuador (White-E/Pneumático): ___\n\n` +-->
+<!--            `Página: ${PAGE_URL}\n` +-->
+<!--            `UTM: ${utm}\n\n` +-->
+<!--            `Obrigado!`,-->
+<!--        checklist: ({ utm }) =>-->
+<!--            `Olá! Quero automatizar válvula esfera/globo/macho. Seguem os dados:\n\n` +-->
+<!--            `• Tipo: Esfera ( ) Globo ( ) Macho ( )\n` +-->
+<!--            `• Diâmetro (DN/pol): ___\n` +-->
+<!--            `• Pressão (bar): ___\n` +-->
+<!--            `• Temperatura: ___\n` +-->
+<!--            `• Fluido: ___\n` +-->
+<!--            `• Controle: On/Off ( ) Modulante ( )\n` +-->
+<!--            `• Preferência: Elétrico (White-E) ( ) Pneumático ( )\n\n` +-->
+<!--            `Página: ${PAGE_URL}\n` +-->
+<!--            `UTM: ${utm}`-->
+<!--    };-->
+
+<!--    function buildWaLink(message) {-->
+<!--        return `https://wa.me/${WA_PHONE}?text=${encodeURIComponent(message)}`;-->
+<!--    }-->
+
+<!--    // Preenche href direto (sem depender de click)-->
+<!--    document.querySelectorAll("[data-wa]").forEach((el) => {-->
+<!--        const cta = el.getAttribute("data-cta") || "cta";-->
+<!--        const tpl = el.getAttribute("data-template") || "specialist";-->
+<!--        const utm = `${UTM_BASE}&utm_content=${cta}`;-->
+<!--        const msg = (templates[tpl] || templates.specialist)({ utm });-->
+<!--        el.href = buildWaLink(msg);-->
+<!--    });-->
+<!--</script>-->
+<!--</body>-->
+<!--</html>-->
+
+
+<!--valvula gaveta-->
+
+<!--<!DOCTYPE html>-->
+<!--<html lang="pt-BR" class="scroll-smooth">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8"/>-->
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>-->
+
+<!--    &lt;!&ndash; Mantido (mesmo tema e intenção da campanha) &ndash;&gt;-->
+<!--    <title>Automação de Válvulas Gaveta e Comporta | BONGAS</title>-->
+<!--    <meta name="description"-->
+<!--          content="Suporte técnico para especificação de atuadores em válvulas gaveta e comporta. Grey-MZ e Grey-L. Orçamento rápido.">-->
+
+<!--    <script src="https://cdn.tailwindcss.com"></script>-->
+<!--    <script>-->
+<!--        tailwind.config = {-->
+<!--            theme: {-->
+<!--                extend: {-->
+<!--                    colors: {-->
+<!--                        'bg-900': '#232530',-->
+<!--                        'bg-850': '#2d3041',-->
+<!--                        'bg-800': '#3c3f54',-->
+<!--                        'bg-700': '#474b61',-->
+<!--                        'accent': '#ECBA46',-->
+<!--                        'white': '#fefefe',-->
+<!--                    }-->
+<!--                }-->
+<!--            }-->
+<!--        }-->
+<!--    </script>-->
+
+<!--    <style>-->
+<!--        body {-->
+<!--            font-family: system-ui, sans-serif;-->
+<!--            background-color: #232530;-->
+<!--            color: #fefefe;-->
+<!--        }-->
+
+<!--        .bg-gradient-industrial {-->
+<!--            background: linear-gradient(135deg, #232530 0%, #2d3041 100%);-->
+<!--        }-->
+
+<!--        .grid-dots {-->
+<!--            background-image: radial-gradient(rgba(236, 186, 70, 0.18) 1px, transparent 1px);-->
+<!--            background-size: 18px 18px;-->
+<!--        }-->
+<!--    </style>-->
+<!--</head>-->
+
+<!--<body class="antialiased">-->
+
+<!--&lt;!&ndash; HEADER (mantido / enriquecido visualmente + espaço logo) &ndash;&gt;-->
+<!--<header class="fixed top-0 w-full z-50 bg-900/95 border-b border-bg-800 backdrop-blur-md h-16 lg:h-20">-->
+<!--    <nav class="container mx-auto px-4 h-full flex items-center justify-between gap-3">-->
+<!--        &lt;!&ndash; LOGO (melhor no mobile/tablet) &ndash;&gt;-->
+<!--        <a href="https://bongas.com.br" class="flex items-center shrink-0" aria-label="Bongas">-->
+<!--            <img-->
+<!--                src="https://bongas.com.br/wp-content/uploads/2025/06/Logo_Bongas_branco_e_amarelo-1-e1744564774874.png"-->
+<!--                alt="Bongas"-->
+<!--                class="h-7 sm:h-8 md:h-9 lg:h-12 w-auto object-contain"-->
+<!--                loading="eager"-->
+<!--            />-->
+<!--        </a>-->
+
+<!--        &lt;!&ndash; MENU: só no desktop (evita apertar no tablet) &ndash;&gt;-->
+<!--        <ul class="hidden lg:flex space-x-6 text-xs font-bold uppercase tracking-widest text-gray-300">-->
+<!--            <li><a href="https://bongas.com.br" class="hover:text-accent transition">Home</a></li>-->
+<!--            <li><a href="#produtos" class="hover:text-accent transition">Produtos</a></li>-->
+<!--            <li><a href="#diferenciais" class="hover:text-accent transition">Diferenciais</a></li>-->
+<!--            <li><a href="#orcamento" class="hover:text-accent transition">Contato</a></li>-->
+<!--        </ul>-->
+
+<!--        <div class="flex items-center gap-2">-->
+<!--            &lt;!&ndash; BOTÃO VERMELHO: só no desktop (lg+) &ndash;&gt;-->
+<!--            <a-->
+<!--                href="https://bongas.com.br"-->
+<!--                class="hidden lg:inline-flex items-center bg-[#CA1118] px-5 py-2 rounded font-black text-xs uppercase hover:scale-105 transition"-->
+<!--            >-->
+<!--                Site principal-->
+<!--            </a>-->
+<!--            <a-->
+<!--                href="https://api.whatsapp.com/send/?phone=551130933967&text=Olá! Gostaria de automatizar válvula gaveta/comporta. Pode me ajudar com a especificação?"-->
+<!--                class="bg-accent text-bg-900 px-5 py-2 rounded font-black text-xs uppercase hover:scale-105 transition">-->
+<!--                Fale no WhatsApp-->
+<!--            </a>-->
+<!--        </div>-->
+
+<!--    </nav>-->
+<!--</header>-->
+
+<!--&lt;!&ndash; HERO (mantido e enriquecido com badges + placeholders) &ndash;&gt;-->
+<!--<section class="pt-32 pb-16 px-4 bg-gradient-industrial border-b border-bg-800 relative overflow-hidden">-->
+<!--    <div class="absolute inset-0 opacity-40 grid-dots pointer-events-none"></div>-->
+
+<!--    <div class="container mx-auto grid lg:grid-cols-12 gap-12 items-center relative">-->
+<!--        <div class="lg:col-span-7">-->
+<!--        <span class="text-accent font-bold tracking-widest uppercase text-sm">-->
+<!--          Gaveta + Comporta (Aplicação Industrial)-->
+<!--        </span>-->
+
+<!--            <h1 class="text-3xl lg:text-5xl font-black mt-4 mb-6 leading-tight uppercase italic">-->
+<!--                Automação de Válvula Gaveta e Comporta com-->
+<!--                <span class="text-accent">Especificação Técnica</span>-->
+<!--            </h1>-->
+
+<!--            <p class="text-lg text-gray-300 mb-8 max-w-2xl">-->
+<!--                Indicamos o atuador ideal para sua aplicação e enviamos cotação com base nos dados do processo.-->
+<!--                Compatibilidade recomendada:-->
+<!--                <span class="text-white font-bold italic">Grey-MZ e Grey-L (multivoltas).</span>-->
+<!--            </p>-->
+
+<!--            &lt;!&ndash; CTAs (mantidos) &ndash;&gt;-->
+<!--            <div class="flex flex-col sm:flex-row gap-4 mb-10">-->
+<!--                <a-->
+<!--                    href="https://api.whatsapp.com/send/?phone=551130933967&text=Olá! Gostaria de falar com um especialista sobre automação de válvulas Gaveta/Comporta."-->
+<!--                    class="bg-accent text-bg-900 px-8 py-4 rounded font-black text-center text-lg uppercase shadow-lg">-->
+<!--                    Falar com especialista-->
+<!--                </a>-->
+<!--                <a-->
+<!--                    href="#checklist"-->
+<!--                    class="border border-accent text-accent px-8 py-4 rounded font-black text-center text-lg uppercase hover:bg-accent hover:text-bg-900 transition">-->
+<!--                    Enviar dados da aplicação-->
+<!--                </a>-->
+<!--            </div>-->
+
+<!--            &lt;!&ndash; NOVO: “Badges” de foco técnico (não altera info, só reforça) &ndash;&gt;-->
+<!--            <div class="grid sm:grid-cols-3 gap-4 max-w-2xl">-->
+<!--                <div class="bg-bg-850/60 border border-bg-800 rounded p-4">-->
+<!--                    <p class="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">Foco</p>-->
+<!--                    <p class="text-sm font-bold">Multivoltas</p>-->
+<!--                    <p class="text-xs text-gray-400 mt-1">Gaveta / Comporta</p>-->
+<!--                </div>-->
+<!--                <div class="bg-bg-850/60 border border-bg-800 rounded p-4">-->
+<!--                    <p class="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">Saída</p>-->
+<!--                    <p class="text-sm font-bold">Cotação rápida</p>-->
+<!--                    <p class="text-xs text-gray-400 mt-1">Com dados do processo</p>-->
+<!--                </div>-->
+<!--                <div class="bg-bg-850/60 border border-bg-800 rounded p-4">-->
+<!--                    <p class="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">Apoio</p>-->
+<!--                    <p class="text-sm font-bold">Suporte técnico</p>-->
+<!--                    <p class="text-xs text-gray-400 mt-1">Especificação orientada</p>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+
+<!--        &lt;!&ndash; Card lateral (mantido / enriquecido + espaço para imagem) &ndash;&gt;-->
+<!--        <div class="lg:col-span-5 bg-bg-850 p-6 border border-bg-700 rounded shadow-2xl relative overflow-hidden">-->
+<!--            <div class="absolute top-0 right-0 bg-accent text-bg-900 px-3 py-1 font-bold text-[10px] uppercase italic">-->
+<!--                Foco: Multivoltas-->
+<!--            </div>-->
+
+<!--            <h3 class="text-xl font-black mb-4 uppercase italic">Checklist de Engenharia</h3>-->
+
+<!--            <ul class="space-y-3 text-sm mb-6">-->
+<!--                <li class="flex items-center gap-2">✔ <span class="font-bold uppercase">Atuadores:</span> Grey-MZ ou-->
+<!--                    Grey-L-->
+<!--                </li>-->
+<!--                <li class="flex items-center gap-2">✔ <span class="font-bold uppercase">Dados:</span> Diâmetro, Pressão-->
+<!--                    e Fluido-->
+<!--                </li>-->
+<!--                <li class="flex items-center gap-2">✔ <span class="font-bold uppercase">Cotação:</span> Resposta técnica-->
+<!--                    rápida-->
+<!--                </li>-->
+<!--            </ul>-->
+
+<!--            <div-->
+<!--                class="p-4 bg-bg-900/50 border border-dashed border-accent/30 rounded text-xs text-gray-400 mb-5 italic text-center">-->
+<!--                "A seleção correta evita paradas na linha e garante a vedação total."-->
+<!--            </div>-->
+
+<!--            &lt;!&ndash; NOVO: placeholder de imagem “conjunto montado” &ndash;&gt;-->
+<!--            <div class="bg-bg-900/40 border border-bg-800 rounded p-4">-->
+<!--                <p class="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">ATUADOR ELÉTRICO GREY-MZ</p>-->
+<!--                <img-->
+<!--                    src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-eletrico-grey-mz-scaled.png"-->
+<!--                    alt="Placeholder - conjunto válvula + atuador"-->
+<!--                    class="w-full h-44 object-contain rounded bg-bg-900/40 border border-bg-800"-->
+<!--                    loading="lazy"-->
+<!--                />-->
+<!--                <p class="text-[10px] text-gray-500 mt-2">-->
+<!--                    O melhor para automatização de válvulas gaveta.-->
+<!--                </p>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</section>-->
+
+<!--&lt;!&ndash; NOVO: visão técnica (enriquece sem mudar info) &ndash;&gt;-->
+<!--<section class="py-20 px-4 bg-bg-900 border-b border-bg-800">-->
+<!--    <div class="container mx-auto grid lg:grid-cols-12 gap-10 items-start">-->
+<!--        <div class="lg:col-span-7">-->
+<!--            <h2 class="text-3xl font-black mb-4 uppercase italic">-->
+<!--                Como aceleramos sua especificação-->
+<!--            </h2>-->
+<!--            <p class="text-gray-300 mb-6">-->
+<!--                Nesta página, o foco é <span class="font-bold">automação de válvulas gaveta e comporta</span> com-->
+<!--                <span class="font-bold">atuadores multivoltas</span> (Grey-MZ / Grey-L). Quanto mais completo o-->
+<!--                checklist,-->
+<!--                mais rápido conseguimos orientar e preparar a cotação.-->
+<!--            </p>-->
+
+<!--            <div class="grid md:grid-cols-2 gap-6">-->
+<!--                <div class="bg-bg-850 border border-bg-800 rounded p-6">-->
+<!--                    <h3 class="font-black uppercase text-accent mb-2">Dados que mais ajudam</h3>-->
+<!--                    <ul class="text-sm text-gray-400 space-y-2">-->
+<!--                        <li>• Tipo: Gaveta ou Comporta</li>-->
+<!--                        <li>• Diâmetro (DN/pol)</li>-->
+<!--                        <li>• Pressão e temperatura</li>-->
+<!--                        <li>• Fluido (água, gás, vapor etc.)</li>-->
+<!--                        <li>• Ambiente (interno/externo)</li>-->
+<!--                    </ul>-->
+<!--                </div>-->
+
+<!--                <div class="bg-bg-850 border border-bg-800 rounded p-6">-->
+<!--                    <h3 class="font-black uppercase text-accent mb-2">Detalhes que refinam</h3>-->
+<!--                    <ul class="text-sm text-gray-400 space-y-2">-->
+<!--                        <li>• Controle: On/Off ou modulante</li>-->
+<!--                        <li>• Frequência (ciclos/dia), se souber</li>-->
+<!--                        <li>• Condição do processo (informações gerais)</li>-->
+<!--                        <li>• Preferência elétrica ou pneumática (se houver)</li>-->
+<!--                        <li>• Foto/placa da válvula (quando possível)</li>-->
+<!--                    </ul>-->
+<!--                </div>-->
+<!--            </div>-->
+
+<!--            <div-->
+<!--                class="mt-8 bg-bg-850 border border-bg-800 rounded p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">-->
+<!--                <div>-->
+<!--                    <p class="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">Atalho</p>-->
+<!--                    <p class="text-lg font-black">Enviar checklist completo no WhatsApp</p>-->
+<!--                </div>-->
+<!--                <a-->
+<!--                    href="https://api.whatsapp.com/send/?phone=551130933967&text=Olá! Quero automatizar válvula gaveta/comporta. Seguem os dados:%0A• Tipo: %0A• Diâmetro: %0A• Pressão: %0A• Temperatura: %0A• Fluido: %0A• Controle: On/Off ou Modulante %0A• Ambiente: Interno/Externo"-->
+<!--                    class="bg-accent text-bg-900 px-6 py-3 rounded font-black text-sm uppercase hover:scale-105 transition text-center">-->
+<!--                    Enviar no WhatsApp-->
+<!--                </a>-->
+<!--            </div>-->
+<!--        </div>-->
+
+<!--        &lt;!&ndash; NOVO: galeria técnica (placeholders) &ndash;&gt;-->
+<!--&lt;!&ndash;        <aside class="lg:col-span-5">&ndash;&gt;-->
+<!--&lt;!&ndash;            <div class="bg-bg-850 border border-bg-800 rounded p-6">&ndash;&gt;-->
+<!--&lt;!&ndash;                <h3 class="text-xl font-black uppercase mb-4">Galeria (placeholder)</h3>&ndash;&gt;-->
+<!--&lt;!&ndash;                <p class="text-sm text-gray-400 mb-6">&ndash;&gt;-->
+<!--&lt;!&ndash;                    Reserve estes espaços para imagens que “vendem”: conjunto montado, instalação, detalhes e aplicação.&ndash;&gt;-->
+<!--&lt;!&ndash;                </p>&ndash;&gt;-->
+
+<!--&lt;!&ndash;                <div class="grid grid-cols-2 gap-4">&ndash;&gt;-->
+<!--&lt;!&ndash;                    <img src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-eletrico-grey-mz-scaled.png"&ndash;&gt;-->
+<!--&lt;!&ndash;                         alt="Placeholder 1"&ndash;&gt;-->
+<!--&lt;!&ndash;                         class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800" loading="lazy"/>&ndash;&gt;-->
+<!--&lt;!&ndash;                    <img&ndash;&gt;-->
+<!--&lt;!&ndash;                        src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-pneumatico-grey-p-aluminium-bongas.png"&ndash;&gt;-->
+<!--&lt;!&ndash;                        alt="Placeholder 2" class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800"&ndash;&gt;-->
+<!--&lt;!&ndash;                        loading="lazy"/>&ndash;&gt;-->
+<!--&lt;!&ndash;                    <img src="https://bongas.com.br/wp-content/uploads/2025/09/atuador-eletrico-white_e-evolution.png"&ndash;&gt;-->
+<!--&lt;!&ndash;                         alt="Placeholder 3"&ndash;&gt;-->
+<!--&lt;!&ndash;                         class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800" loading="lazy"/>&ndash;&gt;-->
+<!--&lt;!&ndash;                    <img src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-eletrico-grey_q_compact.png"&ndash;&gt;-->
+<!--&lt;!&ndash;                         alt="Placeholder 4"&ndash;&gt;-->
+<!--&lt;!&ndash;                         class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800" loading="lazy"/>&ndash;&gt;-->
+<!--&lt;!&ndash;                </div>&ndash;&gt;-->
+
+<!--&lt;!&ndash;                <div class="mt-6 border-t border-bg-800 pt-6">&ndash;&gt;-->
+<!--&lt;!&ndash;                    <h4 class="font-black uppercase text-accent mb-2">Sugestões de imagens</h4>&ndash;&gt;-->
+<!--&lt;!&ndash;                    <ul class="text-sm text-gray-400 space-y-2">&ndash;&gt;-->
+<!--&lt;!&ndash;                        <li>• Conjunto válvula + atuador (montado)</li>&ndash;&gt;-->
+<!--&lt;!&ndash;                        <li>• Aplicação instalada em campo</li>&ndash;&gt;-->
+<!--&lt;!&ndash;                        <li>• Vista lateral / dimensões</li>&ndash;&gt;-->
+<!--&lt;!&ndash;                        <li>• Detalhe do atuador em operação</li>&ndash;&gt;-->
+<!--&lt;!&ndash;                    </ul>&ndash;&gt;-->
+<!--&lt;!&ndash;                </div>&ndash;&gt;-->
+<!--&lt;!&ndash;            </div>&ndash;&gt;-->
+<!--&lt;!&ndash;        </aside>&ndash;&gt;-->
+<!--    </div>-->
+<!--</section>-->
+
+<!--&lt;!&ndash; ATUADORES (Grey-MZ / Grey-L) - MANTIDO, com placeholders corrigidos &ndash;&gt;-->
+<!--<section id="produtos" class="py-20 px-4 bg-bg-900">-->
+<!--    <div class="container mx-auto text-center">-->
+<!--        <h2 class="text-3xl font-black mb-4 uppercase italic">Atuadores Recomendados</h2>-->
+<!--        <p class="text-gray-400 mb-12 max-w-xl mx-auto">-->
+<!--            A seleção depende de torque, diâmetro, pressão e condições do processo.-->
+<!--        </p>-->
+
+<!--        <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">-->
+
+<!--            &lt;!&ndash; Grey-MZ &ndash;&gt;-->
+<!--            <div class="bg-bg-850 p-8 border border-bg-800 rounded text-left h-full flex flex-col">-->
+<!--                <img-->
+<!--                    src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-eletrico-grey-mz-scaled.png"-->
+<!--                    alt="Atuador Grey-MZ"-->
+<!--                    class="w-full h-44 object-contain rounded bg-bg-900/40 border border-bg-800 mb-5"-->
+<!--                    loading="lazy"-->
+<!--                />-->
+
+<!--                <h4 class="text-accent font-black text-2xl mb-1 uppercase italic">Grey-MZ</h4>-->
+
+<!--                <p class="text-xs font-bold text-gray-400 mb-5 uppercase tracking-widest italic">-->
+<!--                    Multivoltas • Aplicações Industriais-->
+<!--                </p>-->
+
+<!--                &lt;!&ndash; Conteúdo com 3 blocos (igual ao Grey-L) &ndash;&gt;-->
+<!--                <div class="text-sm text-gray-200 space-y-4 leading-relaxed flex-1">-->
+<!--                    <p>-->
+<!--                        <span class="font-semibold">Serve para:</span>-->
+<!--                        automação multivoltas em válvulas lineares (gaveta e comporta; também globo quando aplicável),-->
+<!--                        quando a operação exige abertura/fechamento por várias voltas no eixo/haste.-->
+<!--                    </p>-->
+
+<!--                    <p>-->
+<!--                        <span class="font-semibold">Onde usar:</span>-->
+<!--                        infraestrutura e processos contínuos: água/saneamento, utilidades, energia, mineração,-->
+<!--                        petroquímica e plantas com operação frequente e necessidade de padronização.-->
+<!--                    </p>-->
+
+<!--                    <p>-->
+<!--                        <span class="font-semibold">Perfil:</span>-->
+<!--                        a “escolha robusta” para multivoltas: foco em confiabilidade e repetibilidade.-->
+<!--                        Ideal quando você quer uma solução estável para operação industrial (sem ficar “no limite”).-->
+<!--                    </p>-->
+<!--                </div>-->
+
+<!--                <a-->
+<!--                    href="https://api.whatsapp.com/send/?phone=551130933967&text=Tenho%20interesse%20no%20Grey-MZ%20para%20automacao%20de%20valvula%20gaveta%2Fcomporta.%20Pode%20me%20ajudar%20na%20especificacao%3F"-->
+<!--                    class="mt-6 block text-center border border-accent/30 text-accent py-3 font-black text-sm uppercase hover:bg-accent hover:text-bg-900 transition italic"-->
+<!--                >-->
+<!--                    Me indique o ideal-->
+<!--                </a>-->
+<!--            </div>-->
+
+
+<!--            &lt;!&ndash; Grey-L &ndash;&gt;-->
+<!--            <div class="bg-bg-850 p-8 border border-bg-800 rounded text-left h-full flex flex-col">-->
+<!--                <img-->
+<!--                    src="https://bongas.com.br/wp-content/uploads/2025/10/atuador-multivoltas-grey-l-smart-integral.png"-->
+<!--                    alt="Atuador Grey-L"-->
+<!--                    class="w-full h-44 object-contain rounded bg-bg-900/40 border border-bg-800 mb-5"-->
+<!--                    loading="lazy"-->
+<!--                />-->
+
+<!--                <h4 class="text-accent font-black text-2xl mb-1 uppercase italic">Grey-L</h4>-->
+
+<!--                <p class="text-xs font-bold text-gray-400 mb-5 uppercase tracking-widest italic">-->
+<!--                    Multivoltas • Torques Específicos-->
+<!--                </p>-->
+
+<!--                &lt;!&ndash; Conteúdo com 3 blocos (igual ao Grey-MZ) &ndash;&gt;-->
+<!--                <div class="text-sm text-gray-200 space-y-4 leading-relaxed flex-1">-->
+<!--                    <p>-->
+<!--                        <span class="font-semibold">Serve para:</span>-->
+<!--                        válvulas lineares com exigência de torque/robustez mais “direcionada” (gaveta e comporta e variações),-->
+<!--                        quando o dimensionamento pede uma solução dedicada para o esforço do conjunto.-->
+<!--                    </p>-->
+
+<!--                    <p>-->
+<!--                        <span class="font-semibold">Onde usar:</span>-->
+<!--                        aplicações industriais mais pesadas ou críticas: ciclos exigentes, ambientes severos-->
+<!--                        e necessidade de alta confiabilidade operacional (utilidades, infraestrutura e plantas industriais).-->
+<!--                    </p>-->
+
+<!--                    <p>-->
+<!--                        <span class="font-semibold">Perfil:</span>-->
+<!--                        multivoltas “sob medida”: para quando o processo pede ajuste fino de seleção-->
+<!--                        (torque, esforço e condições) e não basta escolher apenas o padrão.-->
+<!--                    </p>-->
+<!--                </div>-->
+
+<!--                <a-->
+<!--                    href="https://api.whatsapp.com/send/?phone=551130933967&text=Quero%20saber%20mais%20sobre%20o%20Grey-L%20para%20automacao%20de%20valvula%20comporta.%20Pode%20me%20ajudar%20na%20especificacao%3F"-->
+<!--                    class="mt-6 block text-center border border-accent/30 text-accent py-3 font-black text-sm uppercase hover:bg-accent hover:text-bg-900 transition italic"-->
+<!--                >-->
+<!--                    Me indique o ideal-->
+<!--                </a>-->
+<!--            </div>-->
+
+<!--        </div>-->
+
+<!--        &lt;!&ndash; compatibilidade &ndash;&gt;-->
+<!--        <div class="mt-12 bg-bg-850 border border-bg-800 rounded p-8 max-w-4xl mx-auto text-left">-->
+<!--            <h3 class="text-2xl font-black uppercase mb-3 text-accent">Compatibilidade</h3>-->
+<!--            <p class="text-gray-400 text-sm mb-6">-->
+<!--                Para gaveta/comporta, a automação costuma ser multivoltas. A seleção final depende dos dados do-->
+<!--                processo.-->
+<!--            </p>-->
+<!--            <div class="overflow-x-auto">-->
+<!--                <table class="min-w-full text-sm">-->
+<!--                    <thead>-->
+<!--                    <tr class="text-left text-gray-300 uppercase tracking-widest text-[11px]">-->
+<!--                        <th class="py-3 px-3 border-b border-bg-800">Tipo</th>-->
+<!--                        <th class="py-3 px-3 border-b border-bg-800">Família</th>-->
+<!--                        <th class="py-3 px-3 border-b border-bg-800">Controle</th>-->
+<!--                        <th class="py-3 px-3 border-b border-bg-800">O que enviar</th>-->
+<!--                    </tr>-->
+<!--                    </thead>-->
+<!--                    <tbody class="text-gray-400">-->
+<!--                    <tr>-->
+<!--                        <td class="py-3 px-3 border-b border-bg-800 font-bold text-white">Gaveta/Comporta</td>-->
+<!--                        <td class="py-3 px-3 border-b border-bg-800">Grey-MZ / Grey-L (multivoltas)</td>-->
+<!--                        <td class="py-3 px-3 border-b border-bg-800">On/Off ou modulante*</td>-->
+<!--                        <td class="py-3 px-3 border-b border-bg-800">DN, pressão, fluido, ambiente</td>-->
+<!--                    </tr>-->
+<!--                    </tbody>-->
+<!--                </table>-->
+<!--            </div>-->
+<!--            <p class="text-[11px] text-gray-500 mt-3 italic">-->
+<!--                *Informe no checklist se é On/Off ou modulante para orientar a especificação.-->
+<!--            </p>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</section>-->
+
+<!--&lt;!&ndash; CHECKLIST (mantido e enriquecido com “extras”) &ndash;&gt;-->
+<!--<section id="checklist" class="py-20 px-4 bg-bg-850 border-y border-bg-800">-->
+<!--    <div class="container mx-auto max-w-4xl">-->
+<!--        <h2 class="text-3xl font-black mb-8 text-center uppercase italic text-accent">-->
+<!--            Dados para Orçamento Gaveta/Comporta:-->
+<!--        </h2>-->
+
+<!--        <div class="grid md:grid-cols-2 gap-8 bg-bg-900 p-8 rounded-lg shadow-xl border border-bg-800">-->
+<!--            <div>-->
+<!--                <h4 class="font-black text-lg mb-4 text-white uppercase italic underline decoration-accent">A-->
+<!--                    Válvula</h4>-->
+<!--                <ul class="space-y-3 text-sm text-gray-300 font-medium">-->
+<!--                    <li>• Tipo: Gaveta ( ) Comporta ( )</li>-->
+<!--                    <li>• Diâmetro (DN/pol)</li>-->
+<!--                    <li>• Pressão (bar/psi) e Temperatura</li>-->
+<!--                </ul>-->
+
+<!--                &lt;!&ndash; NOVO &ndash;&gt;-->
+<!--                <div class="mt-6 bg-bg-850 border border-bg-800 rounded p-4">-->
+<!--                    <p class="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Complemento (se-->
+<!--                        souber)</p>-->
+<!--                    <ul class="space-y-2 text-sm text-gray-400">-->
+<!--                        <li>• Classe/linha da válvula (se houver)</li>-->
+<!--                        <li>• Tempo desejado de abertura</li>-->
+<!--                        <li>• Foto/placa de identificação</li>-->
+<!--                    </ul>-->
+<!--                </div>-->
+<!--            </div>-->
+
+<!--            <div>-->
+<!--                <h4 class="font-black text-lg mb-4 text-white uppercase italic underline decoration-accent">O-->
+<!--                    Processo</h4>-->
+<!--                <ul class="space-y-3 text-sm text-gray-300 font-medium">-->
+<!--                    <li>• Fluido (Água, Gás, Vapor, etc)</li>-->
+<!--                    <li>• Controle: On/Off ou Modulante</li>-->
+<!--                    <li>• Ambiente: Interno ou Externo</li>-->
+<!--                </ul>-->
+
+<!--                &lt;!&ndash; NOVO &ndash;&gt;-->
+<!--                <div class="mt-6 bg-bg-850 border border-bg-800 rounded p-4">-->
+<!--                    <p class="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Complemento (se-->
+<!--                        souber)</p>-->
+<!--                    <ul class="space-y-2 text-sm text-gray-400">-->
+<!--                        <li>• Ciclos/dia (frequência)</li>-->
+<!--                        <li>• Se há ar comprimido disponível</li>-->
+<!--                        <li>• Preferência de alimentação (se houver)</li>-->
+<!--                    </ul>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+
+<!--        <div class="mt-12 text-center">-->
+<!--            <a-->
+<!--                href="https://api.whatsapp.com/send/?phone=551130933967&text=Olá! Quero automatizar válvula gaveta/comporta. Seguem os dados:%0A• Tipo: Gaveta ( ) Comporta ( )%0A• Diâmetro: %0A• Pressão: %0A• Fluido: %0A• Controle: On/Off ( ) Modulante ( )"-->
+<!--                class="bg-accent text-bg-900 px-10 py-5 rounded font-black text-xl uppercase shadow-2xl hover:scale-105 transition inline-block italic">-->
+<!--                Enviar checklist pronto-->
+<!--            </a>-->
+<!--            <p class="mt-4 text-gray-500 text-sm font-bold uppercase italic">-->
+<!--                Você pode escrever “não sei” em algum campo e nossa engenharia orienta.-->
+<!--            </p>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</section>-->
+
+<!--&lt;!&ndash; OUTRAS APLICAÇÕES (mantido + placeholders) &ndash;&gt;-->
+<!--<section id="paginas" class="py-20 px-4">-->
+<!--    <div class="container mx-auto">-->
+<!--        <h2 class="text-3xl font-black mb-4 text-center uppercase italic">Outras Aplicações Industriais</h2>-->
+<!--        <p class="text-center text-gray-400 mb-12">-->
+<!--            Se preferir, escolha um tipo diferente para acelerar a cotação.-->
+<!--        </p>-->
+
+<!--        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">-->
+<!--            <a href="/automacao-e-aplicacao-de-valvula-industrial/"-->
+<!--               class="bg-bg-850 p-6 rounded border-b-2 border-accent hover:bg-bg-800 transition">-->
+<!--                <img-->
+<!--                    src="https://bongas.com.br/wp-content/uploads/2025/09/atuador-eletrico-white_e-evolution.png"-->
+<!--                    alt="Industrial Geral"-->
+<!--                    class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800 mb-4"-->
+<!--                    loading="lazy"-->
+<!--                />-->
+<!--                <h4 class="font-black mb-2 uppercase text-white italic">Industrial Geral</h4>-->
+<!--                <p class="text-[10px] text-gray-400 uppercase font-bold">White-E • Grey-MZ • Grey-Q</p>-->
+<!--            </a>-->
+
+<!--            <a href="/automacao-e-aplicacao-de-valvula-esfera/"-->
+<!--               class="bg-bg-850 p-6 rounded border-b-2 border-accent hover:bg-bg-800 transition">-->
+<!--                <img-->
+<!--                    src="https://bongas.com.br/wp-content/uploads/2025/09/atuador-eletrico-white_e-evolution.png"-->
+<!--                    alt="Esfera e Globo"-->
+<!--                    class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800 mb-4"-->
+<!--                    loading="lazy"-->
+<!--                />-->
+<!--                <h4 class="font-black mb-2 uppercase text-white italic">Esfera + Globo</h4>-->
+<!--                <p class="text-[10px] text-gray-400 uppercase font-bold">White-E • Pneumático</p>-->
+<!--            </a>-->
+
+<!--            <a href="/automacao-e-aplicacao-de-valvula-borboleta/"-->
+<!--               class="bg-bg-850 p-6 rounded border-b-2 border-accent hover:bg-bg-800 transition">-->
+<!--                <img-->
+<!--                    src="https://bongas.com.br/wp-content/uploads/2025/09/atuador-eletrico-white_e-evolution.png"-->
+<!--                    alt="Borboleta"-->
+<!--                    class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800 mb-4"-->
+<!--                    loading="lazy"-->
+<!--                />-->
+<!--                <h4 class="font-black mb-2 uppercase text-white italic">Borboleta</h4>-->
+<!--                <p class="text-[10px] text-gray-400 uppercase font-bold">White-E • Pneumático • Grey-Q</p>-->
+<!--            </a>-->
+
+<!--            <a href="/automacao-e-aplicacao-com-atuador-multivolta-1-4-volta/"-->
+<!--               class="bg-bg-850 p-6 rounded border-b-2 border-accent hover:bg-bg-800 transition">-->
+<!--                <img-->
+<!--                    src="https://bongas.com.br/wp-content/uploads/2025/09/atuador-eletrico-white_e-evolution.png"-->
+<!--                    alt="Atuadores"-->
+<!--                    class="w-full h-28 object-contain rounded bg-bg-900/40 border border-bg-800 mb-4"-->
+<!--                    loading="lazy"-->
+<!--                />-->
+<!--                <h4 class="font-black mb-2 uppercase text-white italic">Atuadores</h4>-->
+<!--                <p class="text-[10px] text-gray-400 uppercase font-bold">¼ Volta • Multivoltas</p>-->
+<!--            </a>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</section>-->
+
+<!--&lt;!&ndash; CTA FINAL (mantido e reforçado visualmente) &ndash;&gt;-->
+<!--<section id="orcamento" class="py-24 px-4 bg-bg-850 text-center border-t border-bg-800">-->
+<!--    <div class="container mx-auto max-w-5xl">-->
+<!--        <h2 class="text-4xl font-black mb-6 uppercase italic leading-none">Pronto para automatizar?</h2>-->
+<!--        <p class="text-xl text-accent font-bold mb-10 italic uppercase">-->
+<!--            Clique no WhatsApp e envie seus dados para orientação técnica.-->
+<!--        </p>-->
+
+<!--        <a-->
+<!--            href="https://api.whatsapp.com/send/?phone=551130933967&text=Olá! Quero cotar a automação de minhas válvulas."-->
+<!--            class="bg-accent text-bg-900 px-12 py-6 rounded-full font-black text-2xl uppercase shadow-2xl hover:scale-110 transition inline-block">-->
+<!--            Falar no WhatsApp-->
+<!--        </a>-->
+
+<!--        &lt;!&ndash; NOVO: nota de “o que enviar” (sem mudar a promessa) &ndash;&gt;-->
+<!--        <p class="mt-6 text-sm text-gray-400 max-w-2xl mx-auto">-->
+<!--            Dica: se puder, envie também foto da válvula (placa/etiqueta) e o tipo de controle (On/Off ou modulante).-->
+<!--        </p>-->
+<!--    </div>-->
+<!--</section>-->
+
+<!--&lt;!&ndash; FOOTER (mantido) &ndash;&gt;-->
+<!--<footer class="py-12 border-t border-bg-800 text-center text-gray-500 text-[10px] uppercase tracking-widest font-bold">-->
+<!--    <p class="text-sm text-slate-400">-->
+<!--        © 2026 BONGAS. Todos os direitos reservados. |-->
+<!--        Desenvolvido por-->
+<!--        <a href="https://cliqis.com.br" target="_blank" rel="noopener noreferrer"-->
+<!--           class="text-slate-200 hover:text-accent underline underline-offset-4">-->
+<!--            Cliqis Lab-->
+<!--        </a>-->
+<!--    </p>-->
+<!--</footer>-->
+
+<!--&lt;!&ndash; MOBILE BAR (mantido) &ndash;&gt;-->
+<!--<div class="fixed bottom-0 left-0 w-full h-16 bg-bg-850 grid grid-cols-2 border-t border-bg-700 md:hidden z-50">-->
+<!--    <a href="https://api.whatsapp.com/send/?phone=551130933967"-->
+<!--       class="bg-accent text-bg-900 flex items-center justify-center font-black text-xs uppercase italic">-->
+<!--        WhatsApp-->
+<!--    </a>-->
+<!--    <a href="#checklist"-->
+<!--       class="bg-bg-800 text-white flex items-center justify-center font-black text-xs uppercase italic">-->
+<!--        Checklist-->
+<!--    </a>-->
+<!--</div>-->
+
+<!--</body>-->
+<!--</html>-->
 
 
 <!--valvula gerais-->
