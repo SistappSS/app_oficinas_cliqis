@@ -250,7 +250,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         // Ações (botões)
         Route::get('/{partOrder}/pdf', [PartOrderController::class, 'pdf'])->name('part-order.pdf');
         Route::get('/{partOrder}/pdf/download', [PartOrderController::class, 'pdfDownload'])->name('part-order.pdf.download');
-        Route::post('/{partOrder}/email', [PartOrderController::class, 'sendPdfEmail'])->name('part-orders.email');
+        Route::post('/{partOrder}/send', [PartOrderController::class, 'send'])->name('part-orders.email');
         Route::post('/{partOrder}/duplicate', [PartOrderController::class, 'duplicate'])->name('part-orders.duplicate');
 
         /*
