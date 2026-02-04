@@ -84,7 +84,7 @@ class ServiceOrderController extends Controller
 
         // ----- FILTRO STATUS (chips da tela) -----
         if ($status = $request->input('status')) {
-            $allowed = ['draft', 'pending', 'approved', 'completed', 'rejected'];
+            $allowed = ['draft', 'pending', 'approved', 'completed', 'rejected', 'nf_emitida'];
             if (in_array($status, $allowed, true)) {
                 $q->where('status', $status);
             }

@@ -65,7 +65,7 @@
                         class="px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100">
                     Aprovada
                 </button>
-                <button data-status-filter="invoiced"
+                <button data-status-filter="nf_emitida"
                         class="px-3 py-1.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100">
                     NF EMITIDA
                 </button>

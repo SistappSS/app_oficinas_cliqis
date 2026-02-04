@@ -39,23 +39,21 @@ document.addEventListener("DOMContentLoaded", () => {
 function normalizeStatus(os) {
     const s = String(os?.status || "draft").toLowerCase();
 
-    // se o back vier com nomes diferentes
-    if (["invoiced", "nf_emitida", "nf_emitted", "nf-emitida"].includes(s)) return "invoiced";
+    // garante compatibilidade caso algum endpoint ainda mande "invoiced"
+    if (["nf_emitida", "nf-emitida", "invoiced"].includes(s)) return "nf_emitida";
 
-    // fallback por flags (se existir)
-    if (os?.nf_emitted === true || !!os?.invoice_id) return "invoiced";
+    // fallback por campos/flags se existirem
+    if (os?.nf_emitida === true || os?.nf_emitted === true || !!os?.invoice_id) return "nf_emitida";
 
     return s;
 }
 
 function getStatusLabel(os, normalizedStatus) {
-    if (normalizedStatus === "invoiced") return "NF EMITIDA";
+    if (normalizedStatus === "nf_emitida") return "NF EMITIDA";
 
-    // se o back já manda um label bom, usa
     const raw = (os?.status_label || "").trim();
     if (raw) return raw;
 
-    // fallback amigável
     const map = {
         draft: "Rascunho",
         pending: "Pendente",
@@ -147,8 +145,8 @@ function renderRow(os) {
         pending: "bg-amber-50 text-amber-700",
         approved: "bg-emerald-50 text-emerald-700",
         rejected: "bg-rose-50 text-rose-700",
-        completed: "bg-slate-100 text-slate-700",     // se ainda existir
-        invoiced: "bg-blue-50 text-blue-700",         // NF EMITIDA azul
+        completed: "bg-slate-100 text-slate-700",
+        nf_emitida: "bg-blue-50 text-blue-700",
     };
 
     const badgeClass = badgeMap[status] || "bg-slate-100 text-slate-700";
@@ -208,8 +206,12 @@ function buildMenuByStatus(os) {
 
     const idAttr = (extra = "") => `data-id="${os.id}" data-status="${status}" ${extra}`.trim();
 
-    // detecta “NF emitida” se teu back tiver algum campo
-    const isInvoiced = status === "invoiced" || os.nf_emitted === true || os.invoice_id;
+    const isInvoiced =
+        status === "nf_emitida" ||
+        status === "invoiced" || // compat
+        os.nf_emitida === true ||
+        os.nf_emitted === true ||
+        !!os.invoice_id;
 
     const S = {
         draft: [
@@ -259,7 +261,7 @@ function buildMenuByStatus(os) {
             `<li class="border-t border-slate-200 mt-1 pt-1"></li>`,
             liBtn({ label: "Excluir OS",    attr: `data-del ${idAttr()}`, danger: true }),
         ],
-        invoiced: [
+        nf_emitida: [
             liBtn({ label: "Visualizar OS", attr: `data-view ${idAttr()}` }),
             liBtn({ label: "Baixar PDF",    attr: `data-download ${idAttr()}` }),
             liBtn({ label: "Duplicar OS",   attr: `data-dup ${idAttr()}` }),
@@ -269,7 +271,7 @@ function buildMenuByStatus(os) {
         ],
     };
 
-    const key = isInvoiced ? "invoiced" : status;
+    const key = isInvoiced ? "nf_emitida" : status;
     return (S[key] || S.draft).join("");
 }
 
