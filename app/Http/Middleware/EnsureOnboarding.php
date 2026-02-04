@@ -25,6 +25,8 @@ class EnsureOnboarding
             'profile.show',
             'google.redirect',
             'google.callback',
+            'service-orders.signature.public.show',
+            'service-orders.signature.public.store',
         ];
         if (in_array(optional($request->route())->getName(), $whitelist)) {
             return $next($request);

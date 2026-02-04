@@ -1848,9 +1848,16 @@ document.addEventListener("DOMContentLoaded", () => {
             return id;
         }
 
+        const ORIGINAL_STATUS = (window.__SO__?.status || "").toLowerCase();
+
         async function submitServiceOrder(status) {
+
             if (state.saving) return null;
             state.saving = true;
+
+            if (orderIdInput?.value && ORIGINAL_STATUS === "approved" && status === "draft") {
+                status = "pending";
+            }
 
             try {
                 const techId = await ensureTechnicianIdOrCreate();
@@ -1912,28 +1919,24 @@ document.addEventListener("DOMContentLoaded", () => {
 // { status: "draft"|"pending", opts: {...}, redirectTo: string|null, openSignature: bool }
 
         async function runCatalogPipelineAndContinue(status, opts, after) {
-            // after: { redirectTo?: string, openSignature?: boolean }
-
             const payloadPreview = await buildPayload(status);
             const missing = await detectMissingCatalogs(payloadPreview);
 
             if (!missing) {
-                // segue normal
                 const result = await submitServiceOrder(status);
                 if (!result) return;
 
-                // (depois a gente remove o saveCatalogsFromOs, pq agora é tudo aqui)
+                // ✅ AQUI
+                if (after?.afterSave) await after.afterSave(result);
+
                 if (after?.openSignature) openSignatureModal();
                 if (after?.redirectTo) window.location.href = after.redirectTo;
                 return;
             }
 
-            // tem pendências → abre modal e espera confirmar
-            pendingAfterCatalog = {status, opts, after};
+            pendingAfterCatalog = { status, opts, after };
             renderCatalogChecklist(missing);
             openCatalogModal();
-
-            // guarda missing no modal
             catalogModal._missing = missing;
         }
 
@@ -1982,8 +1985,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 e.preventDefault();
                 if (!ensureTechnicianSelected()) return;
 
-                const hasEmail =
-                    clientEmailInput && clientEmailInput.value.trim() !== "";
+                const hasEmail = clientEmailInput && clientEmailInput.value.trim() !== "";
                 const emailBtn = q("#os-finalize-email");
                 if (emailBtn) emailBtn.disabled = !hasEmail;
 
@@ -1991,14 +1993,100 @@ document.addEventListener("DOMContentLoaded", () => {
                 finalizeModal.classList.add("flex");
             });
 
-            document
-                .querySelectorAll("[data-os-finalize-cancel]")
-                .forEach((btn) => {
-                    btn.addEventListener("click", () => {
-                        finalizeModal.classList.add("hidden");
-                        finalizeModal.classList.remove("flex");
-                    });
+            document.querySelectorAll("[data-os-finalize-cancel]").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    finalizeModal.classList.add("hidden");
+                    finalizeModal.classList.remove("flex");
                 });
+            });
+            const btnEmail = q("#os-finalize-email");
+            const btnTablet = q("#os-finalize-tablet");
+            const btnNew = q("#os-finalize-new");
+
+            const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+            const emailBtnInitial = btnEmail
+                ? { html: btnEmail.innerHTML, className: btnEmail.className }
+                : null;
+
+            function lockFinalizeButtons(lock) {
+                [btnEmail, btnTablet, btnNew].forEach((b) => {
+                    if (!b) return;
+                    b.disabled = lock;
+                });
+            }
+
+            function setEmailBtnLoading() {
+                if (!btnEmail) return;
+                btnEmail.disabled = true;
+
+                // mantém layout e só “mostra” loading
+                btnEmail.innerHTML = `
+      <span class="inline-flex items-center gap-2 font-semibold text-slate-800">
+        <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+        </svg>
+        Enviando...
+      </span>
+      <span class="text-[11px] text-slate-500">Aguarde</span>
+    `;
+            }
+
+            function setEmailBtnSuccess() {
+                if (!btnEmail) return;
+
+                btnEmail.classList.remove("bg-slate-50", "border-slate-200");
+                btnEmail.classList.add("bg-emerald-600", "border-emerald-600", "text-white");
+                btnEmail.innerHTML = `
+      <span class="font-semibold">✅ Enviado</span>
+      <span class="text-[11px] opacity-90">Redirecionando...</span>
+    `;
+            }
+
+            function setEmailBtnError() {
+                if (!btnEmail) return;
+
+                btnEmail.classList.remove("bg-slate-50", "border-slate-200");
+                btnEmail.classList.add("bg-red-600", "border-red-600", "text-white");
+                btnEmail.innerHTML = `
+      <span class="font-semibold">❌ Falha</span>
+      <span class="text-[11px] opacity-90">Tente novamente</span>
+    `;
+            }
+
+            function resetEmailBtn() {
+                if (!btnEmail || !emailBtnInitial) return;
+                btnEmail.className = emailBtnInitial.className;
+                btnEmail.innerHTML = emailBtnInitial.html;
+            }
+
+            async function sendSignatureEmail(serviceOrderId) {
+                const csrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
+                const email = (clientEmailInput?.value || "").trim() || null;
+
+                const res = await fetch(`/service-orders/${serviceOrderId}/signature-link/send`, {
+                    method: "POST",
+                    headers: {
+                        "Accept": "application/json",
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": csrf,
+                    },
+                    body: JSON.stringify({ email }),
+                });
+
+                let j = null;
+                try { j = await res.json(); } catch {}
+
+                const ok = (j?.ok ?? j?.success) === true;
+
+                if (!res.ok || !ok) {
+                    console.error("Erro ao enviar link:", j);
+                    return false;
+                }
+
+                return true;
+            }
 
             async function handleFinalize(action) {
                 const opts = {
@@ -2009,25 +2097,61 @@ document.addEventListener("DOMContentLoaded", () => {
                     saveEquipments: q("#final_save_equipments")?.checked || false,
                 };
 
-                finalizeModal.classList.add("hidden");
-                finalizeModal.classList.remove("flex");
+                if (action === "email") {
+                    lockFinalizeButtons(true);
+                    resetEmailBtn();
+                    setEmailBtnLoading();
+                } else {
+                    // tablet/new: fecha o modal normal
+                    finalizeModal.classList.add("hidden");
+                    finalizeModal.classList.remove("flex");
+                }
+
+                const startedAt = Date.now();
 
                 await runCatalogPipelineAndContinue("pending", opts, {
+                    // ✅ tablet abre assinatura e NÃO redireciona
                     openSignature: action === "tablet",
-                    redirectTo: action === "new" ? "/service-orders/service-order/create" : null,
+
+                    // ✅ só “new” redireciona aqui
+                    redirectTo: action === "new" ? "/service-orders/service-order" : null,
+
+                    // ✅ email controla redirect aqui, depois do feedback do botão
+                    afterSave: async ({ data }) => {
+                        if (action !== "email") return;
+
+                        const ok = await sendSignatureEmail(data.id);
+
+                        // garante 2s de loading
+                        const elapsed = Date.now() - startedAt;
+                        if (elapsed < 2000) await sleep(2000 - elapsed);
+
+                        if (ok) {
+                            setEmailBtnSuccess();
+                            await sleep(600);
+                            window.location.href = "/service-orders/service-order";
+                            return;
+                        }
+
+                        setEmailBtnError();
+
+                        // libera de novo pra tentar
+                        await sleep(800);
+                        lockFinalizeButtons(false);
+                        resetEmailBtn(); // volta pro layout normal (sem ficar travado no vermelho)
+                    },
                 });
+
+                // se não for email, terminou aqui
+                if (action !== "email") return;
+
+                // se caiu em catálogo (modal), a continuidade acontece no confirm do catálogo
+                // e o afterSave acima roda do mesmo jeito.
             }
 
-            const btnEmail = q("#os-finalize-email");
-            const btnTablet = q("#os-finalize-tablet");
-            const btnNew = q("#os-finalize-new");
-
-            if (btnEmail)
-                btnEmail.addEventListener("click", () => handleFinalize("email"));
-            if (btnTablet)
-                btnTablet.addEventListener("click", () => handleFinalize("tablet"));
-            if (btnNew)
-                btnNew.addEventListener("click", () => handleFinalize("new"));
+            if (btnEmail) btnEmail.addEventListener("click", () => handleFinalize("email"));
+            if (btnTablet) btnTablet.addEventListener("click", () => handleFinalize("tablet"));
+            if (btnNew) btnNew.addEventListener("click", () => handleFinalize("new"));
         }
 
         // ========== ASSINATURA ==========
@@ -2043,6 +2167,11 @@ document.addEventListener("DOMContentLoaded", () => {
         let lastX = 0;
         let lastY = 0;
         let signatureInitDone = false;
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("open_signature") === "1") {
+            openSignatureModal();
+        }
 
         function openSignatureModal() {
             if (!signatureModal) return;
@@ -2165,18 +2294,18 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                // cria antes
                 await createSelectedCatalogs(missing);
                 normalizeLaborExecutedKeysAfterCatalog();
-
                 closeCatalogModal();
 
-                // agora salva OS (com IDs preenchidos)
-                const {status, after} = pendingAfterCatalog;
+                const { status, after } = pendingAfterCatalog;
                 pendingAfterCatalog = null;
 
                 const result = await submitServiceOrder(status);
                 if (!result) return;
+
+                // ✅ AQUI
+                if (after?.afterSave) await after.afterSave(result);
 
                 if (after?.openSignature) openSignatureModal();
                 if (after?.redirectTo) window.location.href = after.redirectTo;

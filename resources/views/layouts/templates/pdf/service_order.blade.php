@@ -114,7 +114,7 @@
 
 @php
     $clienteNome = optional($os->secondaryCustomer)->name ?? $os->client_name ?? '-';
-    $clienteDoc  = optional($os->secondaryCustomer)->document_number ?? $os->customer_document ?? '-';
+    $clienteDoc  = optional($os->secondaryCustomer)->cpfCnpj ?? $os->cpfCnpj ?? '-';
     $clienteEmail = optional($os->secondaryCustomer)->email ?? $os->requester_email ?? '-';
 
     $dt = $os->order_date ?? $os->created_at;

@@ -23,10 +23,10 @@ document.addEventListener("DOMContentLoaded", () => {
         searchKeys: ["name", "email", "cityName"],
         normalize: (json) => json.data || [],
         renderRow: (r) => `
-<tr class="hover:bg-slate-50">
-  <td class="px-3 py-3">${r.name}</td>
+<tr class="hover:bg-slate-50 text-center">
+  <td class="px-3 py-3 text-left">${r.name}</td>
   <td class="px-3 py-3">${r.cpfCnpj || "-"}</td>
-  <td class="px-3 py-3">${r.company_email || "-"}</td>
+  <td class="px-3 py-3">${r.email || "-"}</td>
                 <td class="px-3 py-3"><span class="inline-flex items-center rounded-md bg-${
             r.is_active ? "blue" : "purple"
         }-400/10 px-2 py-1 text-xs font-medium text-${

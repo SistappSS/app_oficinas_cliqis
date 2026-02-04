@@ -1,7 +1,7 @@
 @extends('layouts.templates.template')
 
 @section('content')
-    <main class="mx-auto max-w-6xl px-4 sm:px-6 pb-32 pt-6">
+    <main class="mx-auto max-w-7xl px-4 sm:px-6 py-8">
         @php
             $userAuth = auth()->user();
 
@@ -16,18 +16,13 @@
                     ->first();
             }
 
-            // prioridade:
-            // 1) técnico já definido na OS (edição)
-            // 2) técnico do login (se for funcionário)
-            // 3) null (se for usuário principal e não existir técnico)
             $technician = $serviceOrder->technician ?? $technicianEmployee;
 
             $technicianName = $technician?->full_name ?? null;
             $technicianId   = $technician?->id ?? null;
 
-            // fallback de exibição se não tiver técnico
             if (! $technicianName) {
-                $technicianName = $userAuth->name; // ou deixa vazio, se preferir
+                $technicianName = $userAuth->name;
             }
 
             $laborHourDefault = old(
@@ -35,6 +30,14 @@
                 $serviceOrder->labor_hour_value
                     ?? ($technician?->hourly_rate ?? null)
             );
+
+            $path = request()->path();
+
+            $isEdit = request()->is('service-orders/service-order/*/edit');
+
+            $isDuplicate = request()->is('service-orders/service-order/create/*') && request('mode') === 'duplicate';
+
+            $title = $isDuplicate ? 'Duplicando OS' : ($isEdit ? 'Editando OS' : 'Nova OS');
         @endphp
 
         {{-- HERO --}}
@@ -52,7 +55,7 @@
                             </span>
                         </div>
                         <h1 class="mt-3 text-2xl md:text-3xl font-extrabold tracking-tight">
-                            {{ isset($serviceOrder) ? 'Duplicando ordem de serviço' : 'Nova ordem de serviço' }}
+                            {{ $title }}
                         </h1>
                         <p class="mt-1 text-sm md:text-base text-sky-50/90">
                             Preencha e finalize. Mobile-first.
@@ -119,7 +122,7 @@
                         <input id="service_responsible"
                                class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm"
                                placeholder="Digite o nome do técnico..."
-                               value="{{ old('service_responsible', $technicianName ?? '') }}" />
+                               value="{{ old('service_responsible', $technicianName ?? '') }}"/>
                         <input type="hidden" id="technician_id" value="{{ $technicianId ?? '' }}">
                     </div>
                 </div>
@@ -199,7 +202,8 @@
                             </label>
                             <input id="addressNumber" name="addressNumber"
                                    class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-300 focus:ring-2 focus:ring-sky-100 focus:outline-none transition"
-                                   placeholder="000" value="{{ old('addressNumber', $serviceOrder->addressNumber ?? '') }}"/>
+                                   placeholder="000"
+                                   value="{{ old('addressNumber', $serviceOrder->addressNumber ?? '') }}"/>
                         </div>
                         <div>
                             <label class="block text-sm text-slate-600 mb-1">
@@ -458,8 +462,10 @@
         </form>
 
         {{-- BARRA INFERIOR FIXA --}}
-        <div class="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-18px_40px_rgba(15,23,42,0.12)]">
-            <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div
+            class="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-18px_40px_rgba(15,23,42,0.12)]">
+            <div
+                class="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div class="flex-1 flex flex-wrap gap-6 text-xs text-slate-600">
                     <div class="flex flex-col leading-4">
                         <span>Serviços</span>
@@ -488,21 +494,25 @@
                 </div>
 
                 <div class="flex gap-2">
+                    <a href="{{route('service-order.view')}}" type="button"
+                       class="inline-flex items-center gap-2 rounded-2xl border border-red-700 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-600 hover:text-red-50">
+                        <span>Cancelar</span>
+                    </a>
                     <button type="button" id="btn-save-os"
-                            class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100">
-                        💾<span>Salvar</span></button>
+                            class="inline-flex items-center gap-2 rounded-2xl border border-slate-950 bg-slate-800 px-3 py-2 text-sm font-medium text-slate-100 hover:bg-slate-900">
+                        <span>Salvar rascunho</span>
+                    </button>
                     <button type="button" id="btn-finish-os"
                             class="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700">
-                        ✉️
-                        <span>Finalizar</span>
+                        <span>Emitir OS</span>
                     </button>
-
                 </div>
             </div>
         </div>
 
         {{-- Modal salvar cadastros --}}
-        <div id="os-save-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+        <div id="os-save-modal"
+             class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm">
             <div class="w-full max-w-md rounded-2xl bg-white shadow-xl">
                 <div class="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
                     <h2 class="text-sm font-semibold text-slate-900">
@@ -556,19 +566,14 @@
                         <button type="button" id="os-finalize-email"
                                 class="flex flex-col items-start gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs hover:border-brand-300 hover:bg-brand-50/60 disabled:opacity-60 disabled:cursor-not-allowed">
                             <span class="font-semibold text-slate-800">Enviar para e-mail</span>
-                            <span class="text-[11px] text-slate-500">Link de assinatura digital por e-mail do cliente.</span>
+                            <span
+                                class="text-[11px] text-slate-500">Link de assinatura digital por e-mail do cliente.</span>
                         </button>
 
                         <button type="button" id="os-finalize-tablet"
                                 class="flex flex-col items-start gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs hover:border-brand-300 hover:bg-brand-50/60">
                             <span class="font-semibold text-slate-800">Assinar no tablet</span>
                             <span class="text-[11px] text-slate-500">Abrir área de assinatura na tela.</span>
-                        </button>
-
-                        <button type="button" id="os-finalize-new"
-                                class="flex flex-col items-start gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs hover:border-brand-300 hover:bg-brand-50/60">
-                            <span class="font-semibold text-slate-800">Gerar nova OS</span>
-                            <span class="text-[11px] text-slate-500">Salva a OS como rascunho e redireciona para uma nova OS em branco.</span>
                         </button>
                     </div>
                 </div>
@@ -577,6 +582,10 @@
                     <button type="button" data-os-finalize-cancel
                             class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
                         Cancelar
+                    </button>
+                    <button type="button" id="os-finalize-new"
+                            class="inline-flex items-center rounded-xl bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-500">
+                        Salvar apenas
                     </button>
                 </div>
             </div>
@@ -629,7 +638,9 @@
                                 Os registros abaixo não existem no banco. Marque o que deseja salvar antes de continuar.
                             </p>
                         </div>
-                        <button type="button" data-os-catalog-cancel class="rounded-xl p-2 text-slate-500 hover:bg-slate-50">✕</button>
+                        <button type="button" data-os-catalog-cancel
+                                class="rounded-xl p-2 text-slate-500 hover:bg-slate-50">✕
+                        </button>
                     </div>
                 </div>
 

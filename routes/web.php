@@ -36,7 +36,11 @@ use App\Http\Controllers\Application\Services\ServiceItemController;
 use App\Http\Controllers\Application\Services\ServiceTypeController;
 use App\Http\Controllers\General\ImportExport\ImportExportController;
 use App\Http\Controllers\General\Notifications\NotificationController;
+use App\Http\Controllers\PartOrderSettingController;
+use App\Http\Controllers\Public\ServiceOrderPublicSignatureController;
+use App\Http\Controllers\ServiceOrderSignatureLinkController;
 use App\Http\Middleware\CheckSubscription;
+use App\Http\Middleware\EnsureOnboarding;
 use Illuminate\Support\Facades\Route;
 
 // HUMAN RESOURCES
@@ -152,6 +156,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
 
         // Supplier
         Route::get('/supplier', [SupplierController::class, 'view'])->name('supplier.view');
+        Route::get('/supplier/typeahead', [SupplierController::class, 'partOrderConfig']);
         Route::resource('/supplier-api', SupplierController::class);
     });
 
@@ -226,11 +231,16 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::resource('/completed-service-order-api', CompletedServiceOrderController::class)->except('store');
         Route::post('/{serviceOrder}/client-signature', [CompletedServiceOrderController::class, 'store'])->name('service-orders.client-signature');
 
+        // Link assinatura
+        Route::post('/{serviceOrder}/signature-link/send', [ServiceOrderSignatureLinkController::class, 'send'])->name('service-orders.signature.send');
+
         // Ações botão
         Route::get('/{serviceOrder}/pdf', [ServiceOrderController::class, 'pdf'])->name('service-order.pdf');
         Route::get('/{serviceOrder}/pdf/download', [ServiceOrderController::class, 'pdfDownload'])->name('service-order.pdf.download');
         Route::post('{serviceOrder}/email', [ServiceOrderController::class, 'sendPdfEmail'])->name('service-orders.email');
         Route::post('{serviceOrder}/duplicate', [ServiceOrderController::class, 'duplicate'])->name('service-orders.duplicate');
+        Route::post('/{serviceOrder}/status', [ServiceOrderController::class, 'setStatus']);
+
 
 
         // API para a tabela de cobranças + NF
@@ -240,7 +250,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
     });
 
     Route::group(['prefix' => 'part-orders'], function () {
-
         // Part Orders (Pedidos de Peças)
         Route::get('/part-order', [PartOrderController::class, 'view'])->name('part-order.view');
         Route::get('/part-order/create/{id?}', [PartOrderController::class, 'create'])->name('part-order.create');
@@ -251,7 +260,11 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::get('/{partOrder}/pdf', [PartOrderController::class, 'pdf'])->name('part-order.pdf');
         Route::get('/{partOrder}/pdf/download', [PartOrderController::class, 'pdfDownload'])->name('part-order.pdf.download');
         Route::post('/{partOrder}/send', [PartOrderController::class, 'send'])->name('part-orders.email');
+        Route::post('/{id}/resend', [PartOrderController::class, 'resend'])->name('part-orders.resend-email');
         Route::post('/{partOrder}/duplicate', [PartOrderController::class, 'duplicate'])->name('part-orders.duplicate');
+
+        Route::get('/settings', [PartOrderSettingController::class, 'show']);
+        Route::put('/settings', [PartOrderSettingController::class, 'upsert']);
 
         /*
         // Itens do pedido (se existir módulo separado)
@@ -351,6 +364,20 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
     Route::post('/modules/feature', [ModuleController::class, 'storeFeature'])->name('feature.store');
 });
+
+// Link público para assinatura
+Route::middleware(['throttle:30,1'])
+    ->withoutMiddleware([
+        CheckSubscription::class,
+        EnsureOnboarding::class,
+    ])
+    ->group(function () {
+        Route::get('/service-orders/sign/{token}', [ServiceOrderPublicSignatureController::class, 'show'])
+            ->name('service-orders.signature.public.show');
+
+        Route::post('/os/assinar/{token}', [ServiceOrderPublicSignatureController::class, 'store'])
+            ->name('service-orders.signature.public.store');
+    });
 
 Route::get('/run/{tenantId}', [DashboardController::class, 'run']);
 

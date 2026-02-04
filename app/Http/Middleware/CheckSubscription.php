@@ -45,7 +45,8 @@ class CheckSubscription
             'addons.index',                   'addons.store',
             'verification.notice', 'verification.verify',
             'verification.send',   'two-factor.login',
-            'io.options'
+            'io.options',
+            'service-orders.signature.public.show', 'service-orders.signature.public.store'
         ];
 
         if (!$isEmployeeCustomer) {
@@ -73,7 +74,9 @@ class CheckSubscription
                 'verificar-pix-pendente',
                 'gerar-qrcode.module',
                 'checar-pagamento.module',
-                'io.options'
+                'io.options',
+                'service-orders.signature.public.show',
+                'service-orders.signature.public.store'
             ];
 
             if (! in_array($routeName, $billingWhite, true)) {

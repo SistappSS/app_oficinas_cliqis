@@ -136,6 +136,7 @@
                         OS -
                     </p>
                 </div>
+                <div id="nf-alert" class="hidden mt-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"></div>
                 <button id="nf-close" class="rounded-lg p-2 hover:bg-slate-100">
                     <svg class="h-5 w-5 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                          stroke-width="2">
@@ -148,19 +149,21 @@
                 @csrf
 
                 <input type="hidden" name="service_order_id" id="nf-os-id">
+                <input type="hidden" name="use_down_payment" value="0">
 
                 <div class="grid sm:grid-cols-2 gap-3">
                     <div>
                         <label class="text-sm font-medium">Primeiro vencimento</label>
 
-                        <input id="nf-payment-date" type="date" name="first_due_date" required
+                        <input id="nf-payment-date" type="text" name="first_due_date" required
                                class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5">
                     </div>
 
                     <div>
                         <label class="text-sm font-medium">Forma de pagamento</label>
-                        <select id="nf-payment-method" name="payment_method" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
-                        <option value="">Selecione...</option>
+                        <select id="nf-payment-method" name="payment_method" required
+                                class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
+                            <option value="">Selecione...</option>
                             <option value="pix">Pix</option>
                             <option value="boleto">Boleto</option>
                             <option value="cartao_credito">Cartão de crédito</option>
@@ -190,10 +193,13 @@
                             type="checkbox"
                             name="use_down_payment"
                             id="use_down_payment"
+                            value="1"
                             class="sr-only peer"
                         >
+
                         <span class="h-6 w-11 rounded-full bg-slate-300 transition peer-checked:bg-blue-600"></span>
-                        <span class="absolute left-0.5 top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-white shadow transition peer-checked:translate-x-5"></span>
+                        <span
+                            class="absolute left-0.5 top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-white shadow transition peer-checked:translate-x-5"></span>
                     </label>
                 </div>
 
@@ -224,9 +230,22 @@
                             class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
                         Cancelar
                     </button>
-                    <button type="submit"
-                            class="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800">
-                        Gerar NF (simulado)
+                    <button id="nf-submit" type="submit"
+                            class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800">
+                        <span id="nf-submit-label">Gerar NF (simulado)</span>
+
+                        <svg id="nf-submit-spinner" class="hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" opacity=".25"></circle>
+                            <path d="M21 12a9 9 0 0 1-9 9" stroke="currentColor" stroke-width="3"></path>
+                        </svg>
+
+                        <svg id="nf-submit-ok" class="hidden h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 6 9 17l-5-5"/>
+                        </svg>
+
+                        <svg id="nf-submit-x" class="hidden h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6 6 18M6 6l12 12"/>
+                        </svg>
                     </button>
                 </div>
             </form>
@@ -234,50 +253,12 @@
     </div>
 
     @push('scripts')
-{{--        <script>--}}
-{{--            const form = document.getElementById('billing-form');--}}
-{{--            const useDown = document.getElementById('use_down_payment');--}}
-{{--            const wrapDown = document.getElementById('down-payment-wrap');--}}
-{{--            const wrapNo   = document.getElementById('no-down-payment-wrap');--}}
+        {{-- Flatpickr --}}
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
-{{--            useDown.addEventListener('change', () => {--}}
-{{--                const on = useDown.checked;--}}
-{{--                wrapDown.classList.toggle('hidden', !on);--}}
-{{--                wrapNo.classList.toggle('hidden', on);--}}
-{{--            });--}}
 
-{{--            form.addEventListener('submit', async (e) => {--}}
-{{--                e.preventDefault();--}}
-
-{{--                const osId = document.getElementById('billing-os-id').value;--}}
-{{--                const fd = new FormData(form);--}}
-{{--                fd.set('use_down_payment', useDown.checked ? 1 : 0);--}}
-
-{{--                const res = await fetch(`/service-orders/${osId}/billing/generate`, {--}}
-{{--                    method: 'POST',--}}
-{{--                    headers: {--}}
-{{--                        'Accept': 'application/json',--}}
-{{--                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''--}}
-{{--                    },--}}
-{{--                    body: fd--}}
-{{--                });--}}
-
-{{--                if (!res.ok) {--}}
-{{--                    console.error(await res.text());--}}
-{{--                    alert('Erro ao gerar cobrança.');--}}
-{{--                    return;--}}
-{{--                }--}}
-
-{{--                const j = await res.json();--}}
-{{--                if (!j.ok) {--}}
-{{--                    alert(j.error || 'Erro ao gerar cobrança.');--}}
-{{--                    return;--}}
-{{--                }--}}
-
-{{--                // sucesso → fecha modal, recarrega lista de invoices/OS--}}
-{{--            });--}}
-{{--        </script>--}}
-        <script src="{{ asset('assets/js/template/views/service-orders/service-order-billing.js') }}"></script>
+        <script src="{{ asset('assets/js/template/views/service-orders/service-order-billing.js') }}" defer></script>
     @endpush
 
 @endsection

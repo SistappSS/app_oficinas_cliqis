@@ -1,5 +1,3 @@
-// assets/js/template/views/service-orders/service-order-index.js
-
 document.addEventListener("DOMContentLoaded", () => {
     const searchInput = document.querySelector("#search");
     const statusButtons = document.querySelectorAll("[data-status-filter]");
@@ -37,6 +35,37 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
+
+function normalizeStatus(os) {
+    const s = String(os?.status || "draft").toLowerCase();
+
+    // se o back vier com nomes diferentes
+    if (["invoiced", "nf_emitida", "nf_emitted", "nf-emitida"].includes(s)) return "invoiced";
+
+    // fallback por flags (se existir)
+    if (os?.nf_emitted === true || !!os?.invoice_id) return "invoiced";
+
+    return s;
+}
+
+function getStatusLabel(os, normalizedStatus) {
+    if (normalizedStatus === "invoiced") return "NF EMITIDA";
+
+    // se o back já manda um label bom, usa
+    const raw = (os?.status_label || "").trim();
+    if (raw) return raw;
+
+    // fallback amigável
+    const map = {
+        draft: "Rascunho",
+        pending: "Pendente",
+        approved: "Aprovada",
+        rejected: "Rejeitada",
+        completed: "Concluída",
+    };
+
+    return map[normalizedStatus] || normalizedStatus;
+}
 
 function debounce(fn, delay = 300) {
     let t;
@@ -107,19 +136,19 @@ function renderRow(os) {
         if (isNaN(d.getTime())) return value;
 
         const date = d.toLocaleDateString("pt-BR");
-        const time = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-        return `${date} ás ${time}`;
+        return `${date}`;
     }
 
-    const status = os.status || "draft";
-    const label  = os.status_label || status;
+    const status = normalizeStatus(os);
+    const label  = getStatusLabel(os, status);
 
     const badgeMap = {
         draft: "bg-slate-100 text-slate-700",
         pending: "bg-amber-50 text-amber-700",
         approved: "bg-emerald-50 text-emerald-700",
         rejected: "bg-rose-50 text-rose-700",
-        completed: "bg-sky-50 text-sky-700",
+        completed: "bg-slate-100 text-slate-700",     // se ainda existir
+        invoiced: "bg-blue-50 text-blue-700",         // NF EMITIDA azul
     };
 
     const badgeClass = badgeMap[status] || "bg-slate-100 text-slate-700";
@@ -132,78 +161,116 @@ function renderRow(os) {
     const total = Number(os.grand_total || 0).toFixed(2);
     const orderDate = formatDatePtBR(os.order_date || os.created_at);
 
+    const menuHtml = buildMenuByStatus(os);
+
     return `
-        <tr class="hover:bg-slate-50">
-    <td class="px-6 py-3 text-left whitespace-nowrap">
-        ${os.order_number || "-"}
-    </td>
-    <td class="px-3 py-3 text-left">
-        ${customerName}
-    </td>
-    <td class="px-3 py-3 text-center whitespace-nowrap">
-        R$ ${total}
-    </td>
+  <tr class="hover:bg-slate-50" data-status="${status}">
+    <td class="px-6 py-3 text-left whitespace-nowrap">${os.order_number || "-"}</td>
+    <td class="px-3 py-3 text-left">${customerName}</td>
+    <td class="px-3 py-3 text-center whitespace-nowrap">R$ ${total}</td>
     <td class="px-3 py-3 text-center">
-        <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${badgeClass}">
-            ${label}
-        </span>
+      <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${badgeClass}">
+        ${label}
+      </span>
     </td>
+    <td class="px-3 py-3 text-center whitespace-nowrap">${orderDate}</td>
 
-    <td class="px-3 py-3 text-center whitespace-nowrap">
-        ${orderDate}
-    </td>
     <td class="px-6 py-3 text-center whitespace-nowrap">
-        <div class="relative inline-block text-left">
-            <button type="button"
-                    class="rounded-lg p-2 hover:bg-slate-100 focus:outline-none"
-                    data-menu-trigger
-                    data-id="${os.id}"
-                    aria-haspopup="true"
-                    aria-expanded="false">⋮</button>
+      <div class="relative inline-block text-left">
+        <button type="button"
+                class="rounded-lg p-2 hover:bg-slate-100 focus:outline-none"
+                data-menu-trigger
+                data-id="${os.id}"
+                aria-haspopup="true"
+                aria-expanded="false">⋮</button>
 
-            <div id="menu-${os.id}"
-                 class="hidden absolute right-0 top-full z-50 mt-2 w-48 rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-xl ring-1 ring-black/5"
-                 data-menu
-                 data-for="${os.id}">
-                <ul class="py-1 text-sm text-slate-700">
-                    <li>
-                        <button type="button"
-                                class="block w-full px-3 py-2 text-left bg-transparent rounded-none hover:bg-slate-50 focus:outline-none"
-                                data-view
-                                data-id="${os.id}">
-                            Visualizar OS
-                        </button>
-                    </li>
-                    <li>
-                      <button type="button" class="block w-full px-3 py-2 text-left bg-transparent rounded-none hover:bg-slate-50 focus:outline-none" data-download data-id="${os.id}">Baixar PDF</button>
-                    </li>
-                    <li>
-                      <button type="button" class="block w-full px-3 py-2 text-left bg-transparent rounded-none hover:bg-slate-50 focus:outline-none" data-email data-to="${os.secondary_customer?.email || ""}" data-number="${os.order_number}" data-id="${os.id}">Enviar por e-mail</button>
-                    </li>
-                    <li>
-                      <button type="button" class="block w-full px-3 py-2 text-left bg-transparent rounded-none hover:bg-slate-50 focus:outline-none" data-dup data-id="${os.id}">Duplicar OS</button>
-                    </li>
-                    <li>
-                        <button type="button"
-                                class="block w-full px-3 py-2 text-left bg-transparent rounded-none hover:bg-slate-50 focus:outline-none"
-                                data-edit
-                                data-id="${os.id}">
-                            Editar OS
-                        </button>
-                    </li>
-                    <li class="border-t border-slate-200 mt-1 pt-1">
-                        <button type="button"
-                                class="block w-full px-3 py-2 text-left bg-transparent rounded-none text-rose-600 hover:bg-rose-50 focus:outline-none"
-                                data-del
-                                data-id="${os.id}">
-                            Excluir OS
-                        </button>
-                    </li>
-                </ul>
-            </div>
+        <div id="menu-${os.id}"
+             class="hidden absolute right-0 top-full z-50 mt-2 w-56 rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-xl ring-1 ring-black/5"
+             data-menu
+             data-for="${os.id}">
+          <ul class="py-1 text-sm text-slate-700">
+            ${menuHtml}
+          </ul>
         </div>
+      </div>
     </td>
-</tr>`;
+  </tr>`;
+}
+
+function liBtn({ label, attr, danger = false }) {
+    const base = "block w-full px-3 py-2 text-left bg-transparent rounded-none hover:bg-slate-50 focus:outline-none";
+    const cls = danger ? `${base} text-rose-600 hover:bg-rose-50` : base;
+    return `<li><button type="button" class="${cls}" ${attr}>${label}</button></li>`;
+}
+
+function buildMenuByStatus(os) {
+    const status = os.status || "draft";
+
+    const idAttr = (extra = "") => `data-id="${os.id}" data-status="${status}" ${extra}`.trim();
+
+    // detecta “NF emitida” se teu back tiver algum campo
+    const isInvoiced = status === "invoiced" || os.nf_emitted === true || os.invoice_id;
+
+    const S = {
+        draft: [
+            liBtn({ label: "Duplicar OS", attr: `data-dup ${idAttr()}` }),
+            liBtn({ label: "Editar OS",   attr: `data-edit ${idAttr()}` }),
+            `<li class="border-t border-slate-200 mt-1 pt-1"></li>`,
+            liBtn({ label: "Excluir OS",  attr: `data-del ${idAttr()}`, danger: true }),
+        ],
+        pending: [
+            liBtn({ label: "Visualizar OS", attr: `data-view ${idAttr()}` }),
+            liBtn({ label: "Baixar PDF",    attr: `data-download ${idAttr()}` }),
+            liBtn({
+                label: "Assinatura Digital",
+                attr: `data-sign ${idAttr(`data-sign-mode="sign" data-email="${os.secondary_customer?.email || ""}"`)}`
+            }),
+            liBtn({ label: "Duplicar OS",   attr: `data-dup ${idAttr()}` }),
+            liBtn({ label: "Editar OS",     attr: `data-edit ${idAttr()}` }),
+            liBtn({ label: "Recusado",      attr: `data-reject ${idAttr()}` }),
+            `<li class="border-t border-slate-200 mt-1 pt-1"></li>`,
+            liBtn({ label: "Excluir OS",    attr: `data-del ${idAttr()}`, danger: true }),
+        ],
+        approved: [
+            liBtn({ label: "Visualizar OS", attr: `data-view ${idAttr()}` }),
+            liBtn({ label: "Baixar PDF",    attr: `data-download ${idAttr()}` }),
+            liBtn({ label: "Duplicar OS",   attr: `data-dup ${idAttr()}` }),
+            liBtn({ label: "Editar OS",     attr: `data-edit ${idAttr()}` }),
+            `<li class="border-t border-slate-200 mt-1 pt-1"></li>`,
+            liBtn({ label: "Excluir OS",    attr: `data-del ${idAttr()}`, danger: true }),
+        ],
+        rejected: [
+            liBtn({ label: "Visualizar OS", attr: `data-view ${idAttr()}` }),
+            liBtn({ label: "Baixar PDF",    attr: `data-download ${idAttr()}` }),
+            liBtn({
+                label: "Nova aprovação",
+                attr: `data-sign ${idAttr(`data-sign-mode="reapprove" data-email="${os.secondary_customer?.email || ""}"`)}`
+            }),
+            liBtn({ label: "Duplicar OS",   attr: `data-dup ${idAttr()}` }),
+            liBtn({ label: "Editar OS",     attr: `data-edit ${idAttr()}` }),
+            `<li class="border-t border-slate-200 mt-1 pt-1"></li>`,
+            liBtn({ label: "Excluir OS",    attr: `data-del ${idAttr()}`, danger: true }),
+        ],
+        completed: [
+            liBtn({ label: "Visualizar OS", attr: `data-view ${idAttr()}` }),
+            liBtn({ label: "Baixar PDF",    attr: `data-download ${idAttr()}` }),
+            liBtn({ label: "Duplicar OS",   attr: `data-dup ${idAttr()}` }),
+            liBtn({ label: "Enviar cópia e-mail", attr: `data-email ${idAttr(`data-to="${os.secondary_customer?.email || ""}" data-number="${os.order_number || ""}"`)}` }),
+            `<li class="border-t border-slate-200 mt-1 pt-1"></li>`,
+            liBtn({ label: "Excluir OS",    attr: `data-del ${idAttr()}`, danger: true }),
+        ],
+        invoiced: [
+            liBtn({ label: "Visualizar OS", attr: `data-view ${idAttr()}` }),
+            liBtn({ label: "Baixar PDF",    attr: `data-download ${idAttr()}` }),
+            liBtn({ label: "Duplicar OS",   attr: `data-dup ${idAttr()}` }),
+            liBtn({ label: "Enviar cópia e-mail", attr: `data-email ${idAttr(`data-to="${os.secondary_customer?.email || ""}" data-number="${os.order_number || ""}"`)}` }),
+            `<li class="border-t border-slate-200 mt-1 pt-1"></li>`,
+            liBtn({ label: "Excluir OS",    attr: `data-del ${idAttr()}`, danger: true }),
+        ],
+    };
+
+    const key = isInvoiced ? "invoiced" : status;
+    return (S[key] || S.draft).join("");
 }
 
 
@@ -221,6 +288,8 @@ document.addEventListener("click", async (e) => {
     const actionDownload = e.target.closest("[data-download]");
     const actionEmail = e.target.closest("[data-email]");
     const actionDup = e.target.closest("[data-dup]");
+    const actionSign = e.target.closest("[data-sign]");
+    const actionReject = e.target.closest("[data-reject]");
 
     // clicou fora de qualquer menu/trigger -> fecha
     if (!trigger && !menuEl) closeAllMenus();
@@ -251,8 +320,46 @@ document.addEventListener("click", async (e) => {
     if (actionEdit) {
         e.preventDefault();
         closeAllMenus();
+
         const id = actionEdit.dataset.id;
+        const st = actionEdit.dataset.status;
+
+        if (st === "approved") {
+            openApprovedEditDialog(id);
+            return;
+        }
+
         if (id) window.location.href = `/service-orders/service-order/${id}/edit`;
+        return;
+    }
+
+    if (actionSign) {
+        e.preventDefault();
+        closeAllMenus();
+
+        const id = actionSign.dataset.id;
+        if (!id) return;
+
+        const mode = actionSign.dataset.signMode || "sign";
+        const email = actionSign.dataset.email || "";
+
+        openSignatureDialog({ id, mode, email });
+        return;
+    }
+
+    if (actionReject) {
+        e.preventDefault();
+        closeAllMenus();
+
+        const id = actionReject.dataset.id;
+        if (!id) return;
+
+        const tr = actionReject.closest("tr");
+        const osNumber = tr?.querySelector("td")?.textContent?.trim() || "";
+        const client = tr?.querySelectorAll("td")[1]?.textContent?.trim() || "";
+        const meta = osNumber && client ? `OS ${osNumber} • ${client}` : "";
+
+        openRejectDialog(id, meta);
         return;
     }
 
@@ -261,11 +368,17 @@ document.addEventListener("click", async (e) => {
         closeAllMenus();
 
         const id = actionDel.dataset.id;
+        const st = actionDel.dataset.status;
         const tr = actionDel.closest("tr");
         const osNumber = tr?.querySelector("td")?.textContent?.trim() || "";
         const client = tr?.querySelectorAll("td")[1]?.textContent?.trim() || "";
 
-        if (id) openDeleteDialog(id, osNumber && client ? `OS ${osNumber} • ${client}` : "");
+        let warn = "";
+        if (st === "approved") warn = "Ao excluir, remove também cobranças/contas a receber.";
+        if (st === "completed" || st === "invoiced") warn = "Ao excluir, sai de cobranças/contas a receber e precisa cancelar a NF (se emitida).";
+
+        const meta = osNumber && client ? `OS ${osNumber} • ${client}` : "";
+        openDeleteDialog(id, warn ? `${meta}\n${warn}` : meta);
         return;
     }
 
@@ -335,9 +448,103 @@ async function duplicateOs(id) {
         return;
     }
 
-    // aqui sim vai pra tela de editar (create com id)
-    window.location.href = `/service-orders/service-order/create/${newId}`;
+    window.location.href = `/service-orders/service-order/create/${newId}?mode=duplicate&from=${encodeURIComponent(id)}`;
 }
+
+// ===== Modal assinatura (index) =====
+const dlgSig = document.querySelector("#signature-actions");
+const sigTitle = document.querySelector("#sig-title");
+const sigSubtitle = document.querySelector("#sig-subtitle");
+const sigBtnTablet = document.querySelector("#sig-tablet");
+const sigBtnEmail = document.querySelector("#sig-email");
+const sigBtnCancel = document.querySelector("#sig-cancel");
+const sigBtnClose = document.querySelector("#sig-close");
+const sigFeedback = document.querySelector("#sig-feedback");
+
+function openSignatureDialog({ id, mode = "sign", email = "" }) {
+    if (!dlgSig) return;
+
+    // guarda no dataset (fonte da verdade)
+    dlgSig.dataset.targetId = id || "";
+    dlgSig.dataset.mode = mode || "sign";
+    dlgSig.dataset.email = (email || "").trim();
+
+    if (sigTitle) sigTitle.textContent = (mode === "reapprove") ? "Nova aprovação" : "Assinatura Digital";
+    if (sigSubtitle) sigSubtitle.textContent = "Escolha como deseja coletar a assinatura.";
+    if (sigFeedback) { sigFeedback.classList.add("hidden"); sigFeedback.textContent = ""; }
+
+    dlgSig.showModal();
+}
+
+function closeSignatureDialog() {
+    if (!dlgSig) return;
+    dlgSig.close();
+    dlgSig.dataset.targetId = "";
+    dlgSig.dataset.mode = "sign";
+    dlgSig.dataset.email = "";
+}
+
+sigBtnCancel?.addEventListener("click", closeSignatureDialog);
+sigBtnClose?.addEventListener("click", closeSignatureDialog);
+
+function sigGetTargetId() {
+    const id = dlgSig?.dataset?.targetId || "";
+    return id && id !== "null" && id !== "undefined" ? id : "";
+}
+
+function showSigMsg(text) {
+    if (!sigFeedback) return;
+    sigFeedback.textContent = text;
+    sigFeedback.classList.remove("hidden");
+}
+
+sigBtnTablet?.addEventListener("click", () => {
+    const id = sigGetTargetId();
+    if (!id) {
+        showSigMsg("ID da OS não encontrado. Feche e abra o menu novamente.");
+        return;
+    }
+    closeSignatureDialog();
+    window.location.href = `/service-orders/service-order/${id}/edit?open_signature=1`;
+});
+
+sigBtnEmail?.addEventListener("click", async () => {
+    const id = sigGetTargetId();
+    if (!id) {
+        showSigMsg("ID da OS não encontrado. Feche e abra o menu novamente.");
+        return;
+    }
+
+    const defaultEmail = (dlgSig?.dataset?.email || "").trim();
+    const email = defaultEmail || prompt("E-mail para enviar o link:", "") || "";
+    const cleanEmail = email.trim();
+
+    sigBtnEmail.disabled = true;
+
+    try {
+        const resp = await fetch(`/service-orders/${id}/signature-link/send`, {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": getCsrfToken(),
+            },
+            body: JSON.stringify({ email: cleanEmail || null }),
+        });
+
+        const j = await resp.json().catch(() => ({}));
+        const ok = (j?.ok ?? j?.success) === true;
+
+        if (!resp.ok || !ok) throw new Error("Falha ao enviar");
+
+        showSigMsg("Link de assinatura enviado por e-mail.");
+    } catch (e) {
+        console.error(e);
+        showSigMsg("Falha ao enviar o link. Tente novamente.");
+    } finally {
+        sigBtnEmail.disabled = false;
+    }
+});
 
 // ===== Modal delete (dialog) =====
 const dlgDelete = document.querySelector("#confirm-delete");
@@ -537,6 +744,63 @@ function clearEmailFeedback() {
     if (box) box.style.display = "none";
 }
 
+// ===== Modal editar aprovada =====
+const dlgApproved = document.querySelector("#confirm-approved-edit");
+const btnApprovedYes = document.querySelector("#approved-edit-yes");
+const btnApprovedNo  = document.querySelector("#approved-edit-no");
+let approvedEditTargetId = null;
+
+function openApprovedEditDialog(id) {
+    approvedEditTargetId = id;
+    dlgApproved?.showModal();
+}
+function closeApprovedEditDialog() {
+    approvedEditTargetId = null;
+    dlgApproved?.close();
+}
+btnApprovedNo?.addEventListener("click", closeApprovedEditDialog);
+dlgApproved?.addEventListener("close", () => (approvedEditTargetId = null));
+btnApprovedYes?.addEventListener("click", () => {
+    const id = approvedEditTargetId;
+    closeApprovedEditDialog();
+    if (id) window.location.href = `/service-orders/service-order/${id}/edit`;
+});
+
+// ===== Modal recusar =====
+const dlgReject = document.querySelector("#confirm-reject");
+const btnRejectYes = document.querySelector("#reject-yes");
+const btnRejectNo  = document.querySelector("#reject-no");
+const rejectMeta   = document.querySelector("#reject-meta");
+let rejectTargetId = null;
+
+function openRejectDialog(id, metaText = "") {
+    rejectTargetId = id;
+    if (rejectMeta) rejectMeta.textContent = metaText || "";
+    dlgReject?.showModal();
+}
+function closeRejectDialog() {
+    rejectTargetId = null;
+    dlgReject?.close();
+}
+btnRejectNo?.addEventListener("click", closeRejectDialog);
+dlgReject?.addEventListener("close", () => (rejectTargetId = null));
+
+btnRejectYes?.addEventListener("click", async () => {
+    if (!rejectTargetId) return;
+    btnRejectYes.disabled = true;
+
+    try {
+        await setOsStatus(rejectTargetId, "rejected");
+        closeRejectDialog();
+        await loadOrders({ status: getCurrentStatusFilter() });
+    } catch (e) {
+        console.error(e);
+        alert("Não foi possível recusar esta OS.");
+    } finally {
+        btnRejectYes.disabled = false;
+    }
+});
+
 function getCurrentStatusFilter() {
     const active = document.querySelector("[data-status-filter].active-status");
     return active ? active.getAttribute("data-status-filter") || "" : "";
@@ -546,3 +810,26 @@ function getCsrfToken() {
     const meta = document.querySelector('meta[name="csrf-token"]');
     return meta ? meta.getAttribute("content") : "";
 }
+
+async function setOsStatus(id, status) {
+    const resp = await fetch(`/service-orders/${id}/status`, {
+        method: "POST",
+        headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+            "X-CSRF-TOKEN": getCsrfToken(),
+        },
+        body: JSON.stringify({ status }),
+    });
+
+    const json = await resp.json().catch(() => ({}));
+
+    if (!resp.ok || !(json?.ok ?? true)) {
+        console.error("setOsStatus error:", json);
+        throw new Error("Falha ao alterar status");
+    }
+
+    return json;
+}
+

@@ -650,4 +650,20 @@ class ServiceOrderController extends Controller
             ]);
         });
     }
+
+    public function setStatus(Request $request, ServiceOrder $serviceOrder)
+    {
+        $data = $request->validate([
+            'status' => ['required', 'string', 'in:draft,pending,approved,completed,rejected'],
+        ]);
+
+        $serviceOrder->status = $data['status'];
+        $serviceOrder->save();
+
+        return response()->json([
+            'ok' => true,
+            'status' => $serviceOrder->status,
+            'status_label' => $serviceOrder->status_label,
+        ]);
+    }
 }

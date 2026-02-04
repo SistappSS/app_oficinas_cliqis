@@ -15,6 +15,7 @@
         destroy: (id) => `${API_BASE}/${encodeURIComponent(id)}`,
         duplicate: (id) => `${GROUP_PREFIX}/${encodeURIComponent(id)}/duplicate`,
         send: (id) => `${GROUP_PREFIX}/${encodeURIComponent(id)}/send`,
+        resend: (id) => `${GROUP_PREFIX}/${encodeURIComponent(id)}/resend`,
     };
 
     const csrf = () =>
@@ -111,12 +112,222 @@
     const badgeDraftView = document.getElementById('badge-draft-view');
     const btnEditDraft = document.getElementById('btn-edit-draft');
 
+    const elConfirmTo      = document.getElementById('confirm-to');
+    const elConfirmNoEmail = document.getElementById('confirm-no-email');
+
+    const elConfirmSubject = document.getElementById('confirm-subject');
+    const elConfirmBody    = document.getElementById('confirm-body');
+    const elConfirmPdfName = document.getElementById('confirm-pdf-name');
+
+    const btnOpenSettings  = document.getElementById('btn-open-part-order-settings');
+
+    const btnCloseX        = document.getElementById('btn-confirm-x');
+    const btnReturnEdit    = document.getElementById('btn-return-edit');
+
+// IDs do teu modal de configurações (AJUSTE se forem outros)
+    const inpSubjectTpl = document.getElementById('settings-email-subject-tpl');
+    const inpBodyTpl    = document.getElementById('settings-email-body-tpl');
+
+    const openModalById = (id) => document.getElementById(id)?.classList.remove('hidden');
+    const closeModalById = (id) => document.getElementById(id)?.classList.add('hidden');
+
     // Form refs
     const form = q('#form-parts');
     const itemsBody = q('#items-body');
     const ufSelect = q('#pp-uf');
     const cnpjInput = q('#pp-cnpj');
     const sumICMSTag = q('#sum-icms-tag');
+
+    // ===== Supplier change confirm (Item 5) =====
+    const modalSupplierChoice = document.getElementById('modal-supplier-choice');
+    const supChoiceName = document.getElementById('sup-choice-name');
+    const btnSupOrderOnly = document.getElementById('btn-sup-order-only');
+    const btnSupSetDefault = document.getElementById('btn-sup-set-default');
+
+    const openSupplierChoice = () => modalSupplierChoice?.classList.remove('hidden');
+    const closeSupplierChoice = () => modalSupplierChoice?.classList.add('hidden');
+
+    let supplierBaseline = { id: '', name: '' };   // fornecedor “original” ao abrir o modal do pedido
+    let supplierCurrent  = { id: '', name: '', email: '' };
+    let supplierPending  = null;
+    let supplierPrompted = new Set();
+    let suppressSupplierPrompt = false;
+
+    function readSupplierFields() {
+        const sid = document.getElementById('pp-supplier-id')?.value || '';
+        const sname = document.getElementById('pp-supplier-name')?.value || '';
+        const semail = document.getElementById('pp-supplier-email')?.value || '';
+        return { id: sid, name: sname, email: semail };
+    }
+
+    function setSupplierFields({ id, name, email }) {
+        const sid = document.getElementById('pp-supplier-id');
+        const sname = document.getElementById('pp-supplier-name');
+        const semail = document.getElementById('pp-supplier-email');
+
+        if (sid) sid.value = id || '';
+        if (sname) sname.value = name || '';
+        if (semail) semail.value = email || '';
+    }
+
+    function captureSupplierBaseline() {
+        const v = readSupplierFields();
+        supplierBaseline = { id: v.id, name: v.name, email: v.email };
+        supplierCurrent  = { id: v.id, name: v.name, email: v.email };
+        supplierPending  = null;
+        supplierPrompted = new Set();
+    }
+
+    document.addEventListener('click', (ev) => {
+        if (ev.target.closest('[data-close-supplier-choice]')) {
+            // cancelou: volta pro baseline
+            suppressSupplierPrompt = true;
+            setSupplierFields(supplierBaseline);
+            suppressSupplierPrompt = false;
+            closeSupplierChoice();
+        }
+    });
+
+    modalSupplierChoice?.addEventListener('click', (e) => {
+        if (e.target === modalSupplierChoice) {
+            suppressSupplierPrompt = true;
+            setSupplierFields(supplierBaseline);
+            suppressSupplierPrompt = false;
+            closeSupplierChoice();
+        }
+    });
+
+    // ===== Recipient edit =====
+    const btnEditRecipient = document.getElementById('btn-edit-recipient');
+
+    const modalRecipientEdit  = document.getElementById('modal-recipient-edit');
+    const recName  = document.getElementById('rec-name');
+    const recEmail = document.getElementById('rec-email');
+    const recError = document.getElementById('rec-error');
+    const btnRecSave   = document.getElementById('btn-rec-save');
+    const btnRecCancel = document.getElementById('btn-rec-cancel');
+
+    const modalRecipientScope = document.getElementById('modal-recipient-scope');
+    const recScopeName  = document.getElementById('rec-scope-name');
+    const recScopeEmail = document.getElementById('rec-scope-email');
+    const btnRecOrderOnly    = document.getElementById('btn-rec-order-only');
+    const btnRecUpdateSystem = document.getElementById('btn-rec-update-system');
+    const recScopeHint = document.getElementById('rec-scope-hint');
+
+    const SUPPLIER_API = root.dataset?.supplierApi || '/entities/supplier-api';
+    const supplierUpdateUrl = (id) => `${SUPPLIER_API}/${encodeURIComponent(id)}`;
+
+    let recipientPending = null;
+
+    const openRecipientEdit  = () => modalRecipientEdit?.classList.remove('hidden');
+    const closeRecipientEdit = () => modalRecipientEdit?.classList.add('hidden');
+
+    const openRecipientScope  = () => modalRecipientScope?.classList.remove('hidden');
+    const closeRecipientScope = () => modalRecipientScope?.classList.add('hidden');
+
+    const setRecError = (msg) => {
+        if (!recError) return;
+        recError.textContent = msg || '';
+        recError.classList.toggle('hidden', !msg);
+    };
+
+// abre modal editar
+    btnEditRecipient?.addEventListener('click', () => {
+        const name  = document.getElementById('pp-supplier-name')?.value || supplierCurrent.name || '';
+        const email = document.getElementById('pp-supplier-email')?.value || supplierCurrent.email || '';
+
+        if (recName)  recName.value  = (name || '').trim();
+        if (recEmail) recEmail.value = normalizeEmail(email);
+
+        setRecError('');
+        openRecipientEdit();
+    });
+
+// fechar por botões
+    btnRecCancel?.addEventListener('click', closeRecipientEdit);
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('[data-close-recipient-edit]')) closeRecipientEdit();
+        if (e.target.closest('[data-close-recipient-scope]')) closeRecipientScope();
+    });
+    modalRecipientEdit?.addEventListener('click', (e) => { if (e.target === modalRecipientEdit) closeRecipientEdit(); });
+    modalRecipientScope?.addEventListener('click', (e) => { if (e.target === modalRecipientScope) closeRecipientScope(); });
+
+// salvar edição -> abre escolha de escopo
+    btnRecSave?.addEventListener('click', () => {
+        const name  = (recName?.value || '').trim();
+        const email = normalizeEmail(recEmail?.value);
+
+        if (!name) return setRecError('Informe o nome do destinatário.');
+        if (!isValidEmail(email)) return setRecError('E-mail inválido. Corrija para enviar.');
+
+        recipientPending = { name, email };
+
+        // prepara scope
+        if (recScopeName)  recScopeName.textContent = name;
+        if (recScopeEmail) recScopeEmail.textContent = email;
+
+        const supplierId = document.getElementById('pp-supplier-id')?.value || '';
+        const canUpdateSystem = !!supplierId;
+
+        if (btnRecUpdateSystem) {
+            btnRecUpdateSystem.disabled = !canUpdateSystem;
+            btnRecUpdateSystem.classList.toggle('opacity-50', !canUpdateSystem);
+            btnRecUpdateSystem.classList.toggle('cursor-not-allowed', !canUpdateSystem);
+        }
+        recScopeHint?.classList.toggle('hidden', canUpdateSystem);
+
+        closeRecipientEdit();
+        openRecipientScope();
+    });
+
+// aplica "apenas neste pedido"
+    btnRecOrderOnly?.addEventListener('click', () => {
+        if (!recipientPending) return;
+
+        const supplierId = document.getElementById('pp-supplier-id')?.value || null;
+
+        // aplica nos campos do pedido (snapshot do pedido)
+        setSupplierFields({ id: supplierId, name: recipientPending.name, email: recipientPending.email });
+        supplierCurrent = { id: supplierId || '', name: recipientPending.name, email: recipientPending.email };
+
+        // re-render preview
+        currentOrderForSend = buildPreviewOrderFromForm();
+        renderConfirmPreview(currentOrderForSend, confirmTpl.subject, confirmTpl.body);
+
+        closeRecipientScope();
+        toast('Destinatário atualizado neste pedido');
+    });
+
+// aplica "no sistema" (update supplier-api)
+    btnRecUpdateSystem?.addEventListener('click', async () => {
+        if (!recipientPending) return;
+
+        const supplierId = document.getElementById('pp-supplier-id')?.value || '';
+        if (!supplierId) return;
+
+        try {
+            await apiFetch(supplierUpdateUrl(supplierId), {
+                method: 'PUT',
+                body: JSON.stringify({
+                    name: recipientPending.name,
+                    email: recipientPending.email,
+                }),
+            });
+
+            // aplica também no pedido atual
+            setSupplierFields({ id: supplierId, name: recipientPending.name, email: recipientPending.email });
+            supplierCurrent = { id: supplierId, name: recipientPending.name, email: recipientPending.email };
+            supplierBaseline = { ...supplierBaseline, id: supplierId, name: recipientPending.name, email: recipientPending.email };
+
+            currentOrderForSend = buildPreviewOrderFromForm();
+            renderConfirmPreview(currentOrderForSend, confirmTpl.subject, confirmTpl.body);
+
+            closeRecipientScope();
+            toast('Cadastro do fornecedor atualizado');
+        } catch (e) {
+            toast(e.message || 'Falha ao atualizar fornecedor.');
+        }
+    });
 
     // ===== Catalog (continua localStorage por enquanto) =====
     const getLS = (k, f) => {
@@ -147,9 +358,26 @@
         return catalog.find((p) => String(p.codigo || '').toLowerCase() === c) || null;
     }
 
-    function formatBRDate(iso) {
-        try { const [y, m, d] = String(iso || '').split('-'); return `${d}/${m}/${y}`; } catch { return iso; }
+    function ymdFromAny(v) {
+        if (!v) return '';
+        const s = String(v);
+
+        // pega "YYYY-MM-DD" mesmo se vier "YYYY-MM-DDTHH:mm..."
+        const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (m) return m[1];
+
+        // fallback (casos estranhos)
+        const d = new Date(s);
+        return Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
     }
+
+    function formatBRDate(v) {
+        const ymd = ymdFromAny(v);
+        if (!ymd) return '—';
+        const [y, m, d] = ymd.split('-');
+        return `${d}/${m}/${y}`;
+    }
+
     function diffDays(d1, d2) {
         try {
             const a = new Date(d1), b = new Date(d2);
@@ -176,6 +404,26 @@
             .join('')
             .replace(/undefined/g, '');
     }
+
+    const normalizeEmail = (v) => String(v ?? '').trim();
+
+    const isValidEmail = (v) => {
+        const e = normalizeEmail(v).toLowerCase();
+        if (!e) return false;
+        if (e === 'undefined' || e === 'null') return false;
+        // simples e suficiente pro front (o backend continua validando)
+        return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+    };
+
+    const bindCnpjMask = (id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', (e) => (e.target.value = formatCNPJ(e.target.value)));
+        el.addEventListener('blur', (e) => (e.target.value = formatCNPJ(e.target.value)));
+    };
+
+    bindCnpjMask('pp-cnpj');
+    bindCnpjMask('ps-cnpj');
 
     function rateFromUF(uf) {
         if (!uf) return 0;
@@ -259,7 +507,9 @@
                 ? `<span class="ml-2 inline-flex rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700">Rascunho</span>`
                 : '';
 
-        const canEdit = String(o.status || '').toLowerCase() === 'draft';
+        const isDraft = String(o.status || '').toLowerCase() === 'draft';
+        const canEdit = isDraft;
+        const canResend = !isDraft;
 
         return `
       <tr class="hover:bg-slate-50/60">
@@ -273,6 +523,10 @@
           <div class="flex justify-end gap-2">
             <button data-act="view" data-id="${o.id}" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">Visualizar</button>
             ${canEdit ? `<button data-act="edit" data-id="${o.id}" class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100">Editar</button>` : ''}
+            ${canResend ? `<button data-act="resend" data-id="${o.id}"
+  class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">
+  Reenviar
+</button>` : ''}
             <button data-act="clone" data-id="${o.id}" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">Clonar</button>
             <button data-act="del" data-id="${o.id}" class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100">Excluir</button>
           </div>
@@ -290,6 +544,9 @@
 
         tbody.querySelectorAll('[data-act="view"]').forEach((b) => b.addEventListener('click', () => openView(b.dataset.id)));
         tbody.querySelectorAll('[data-act="edit"]').forEach((b) => b.addEventListener('click', () => openEdit(b.dataset.id)));
+        tbody.querySelectorAll('[data-act="resend"]').forEach((b) =>
+            b.addEventListener('click', () => openResendConfirm(b.dataset.id))
+        );
         tbody.querySelectorAll('[data-act="clone"]').forEach((b) => b.addEventListener('click', () => cloneOrder(b.dataset.id)));
         tbody.querySelectorAll('[data-act="del"]').forEach((b) => b.addEventListener('click', () => delOrder(b.dataset.id)));
 
@@ -301,18 +558,43 @@
     function updateBanner() {
         if (!banner) return;
 
+        const drafts = orders
+            .filter(o => String(o.status || '').toLowerCase() === 'draft')
+            .sort((a,b) => ((b.updated_at || b.created_at || '')).localeCompare(a.updated_at || a.created_at || ''));
+
+        banner.classList.toggle('hidden', drafts.length === 0);
+        if (!drafts.length) return;
+
+        const picker = document.getElementById('draft-picker');
+        const count  = document.getElementById('draft-count');
+
         const lastId = sessionStorage.getItem(DRAFT_KEY);
-        const draft = lastId && orders.find((o) => o.id === lastId && String(o.status || '').toLowerCase() === 'draft');
+        const cur = drafts.find(d => d.id === lastId) || drafts[0];
 
-        banner.classList.toggle('hidden', !draft);
-        if (!draft) return;
+        if (count) count.textContent = `(${drafts.length} rascunho${drafts.length > 1 ? 's' : ''})`;
 
-        btnDraftView.onclick = () => openView(draft.id);
-        btnDraftSend.onclick = () => openEdit(draft.id);
+        if (picker) {
+            picker.innerHTML = drafts.map(d =>
+                `<option value="${d.id}">${escapeHTML(d.order_number || d.title || 'Rascunho')}</option>`
+            ).join('');
+            picker.value = cur.id;
+
+            picker.onchange = () => {
+                sessionStorage.setItem(DRAFT_KEY, picker.value);
+                updateBanner();
+            };
+        }
+
+        btnDraftView.onclick = () => openView(cur.id);
+        btnDraftSend.onclick = () => openEdit(cur.id);
         btnDraftDismiss.onclick = async () => {
             try {
-                await apiFetch(URL.destroy(draft.id), { method: 'DELETE' });
-                sessionStorage.removeItem(DRAFT_KEY);
+                await apiFetch(URL.destroy(cur.id), { method: 'DELETE' });
+
+                if (sessionStorage.getItem(DRAFT_KEY) === cur.id) {
+                    sessionStorage.removeItem(DRAFT_KEY);
+                }
+
                 toast('Rascunho excluído');
                 await loadList();
             } catch (e) {
@@ -442,16 +724,21 @@
         };
 
         const openList = async () => {
-            const term = input.value.trim();
+            try {
+                const term = input.value.trim();
 
-            if (abortController) abortController.abort();
-            abortController = new AbortController();
+                if (abortController) abortController.abort();
+                abortController = new AbortController();
 
-            // no foco: top 5
-            const list = term ? await fetchPartsTypeahead(term, 8, abortController.signal)
-                : await fetchPartsTypeahead('', 5, abortController.signal);
+                const list = term
+                    ? await fetchPartsTypeahead(term, 8, abortController.signal)
+                    : await fetchPartsTypeahead('', 5, abortController.signal);
 
-            render(list, term);
+                render(list, term);
+            } catch (err) {
+                if (err?.name === 'AbortError') return; // ✅ ignora
+                console.warn(err);
+            }
         };
 
         input.addEventListener('focus', openList);
@@ -471,11 +758,320 @@
     // ===== MODALS =====
     function openModal() { modal?.classList.remove('hidden'); }
     function closeModal(reset = false) { modal?.classList.add('hidden'); if (reset) resetForm(); }
-    function openConfirm() { modalConfirm?.classList.remove('hidden'); }
-    function closeConfirm() { modalConfirm?.classList.add('hidden'); }
+
+    let currentOrderForSend = null;
+    let confirmTpl = { subject: '', body: '' };
+
+    let confirmMode = 'send';      // 'send' | 'resend'
+    let confirmOrderId = null;     // usado no resend
+
+    function buildPreviewOrderFromForm() {
+        const supplierName =
+            document.getElementById('pp-supplier-name')?.value?.trim() ||
+            supplierCurrent.name ||
+            '';
+
+        const supplierEmail =
+            document.getElementById('pp-supplier-email')?.value?.trim() ||
+            supplierCurrent.email ||
+            '';
+
+        const uf = q('#pp-uf')?.value || '';
+        const rate = rateFromUF(uf);
+        const totals = sumTotal(formItems, rate);
+
+        return {
+            order_number: form.dataset.orderNumber || '',      // ✅ vem do openEdit
+            order_date: q('#pp-date')?.value || todayISO(),
+            items_count: totals.count,
+            grand_total: totals.totalFinal,
+            supplier: { name: supplierName, email: supplierEmail },
+        };
+    }
+
+    function getVarsFromOrder(order) {
+        const supplierName  = order?.supplier?.name || '';
+        const supplierEmail = order?.supplier?.email || '';
+        const itemsCount    = (order?.items_count ?? 0);
+
+        return {
+            partOrderNumber: order?.order_number || 'RASCUNHO',
+            supplierName,
+            supplierEmail,
+            orderDate: formatDateBR(order?.order_date),
+            itemsCount: String(itemsCount),
+            total: moneyBR(order?.grand_total),
+        };
+    }
+
+    function renderConfirmPreview(order, subjectTpl, bodyTpl) {
+        const vars = getVarsFromOrder(order);
+
+        const name  = (vars.supplierName || '').trim();
+        const email = normalizeEmail(vars.supplierEmail);
+
+        const hasEmail = !!email;
+        const okEmail  = hasEmail && isValidEmail(email);
+
+        // destinatário
+        if (elConfirmTo) {
+            elConfirmTo.textContent = okEmail
+                ? `${name || 'Fornecedor'} <${email}>`
+                : (name || 'Fornecedor');
+        }
+
+        // problema do e-mail (mostra claramente)
+        const problem = !hasEmail
+            ? 'Sem e-mail cadastrado para este fornecedor.'
+            : (!okEmail ? `E-mail inválido: ${email}` : '');
+
+        if (elConfirmNoEmail) {
+            elConfirmNoEmail.textContent = problem || '';
+            elConfirmNoEmail.classList.toggle('hidden', !problem);
+        }
+
+        // assunto/corpo
+        const subject = applyTpl(subjectTpl, vars);
+        const body    = applyTpl(bodyTpl, vars);
+
+        if (elConfirmSubject) elConfirmSubject.textContent = subject || '—';
+        if (elConfirmBody) elConfirmBody.textContent = body || '—';
+
+        // pdf
+        if (elConfirmPdfName) {
+            elConfirmPdfName.textContent = `Proposta-${vars.partOrderNumber || 'pedido'}.pdf`;
+        }
+
+        // botão enviar: só habilita com e-mail válido
+        const btnConfirm = document.getElementById('btn-confirm-send');
+        if (btnConfirm) {
+            btnConfirm.disabled = !okEmail;
+            btnConfirm.classList.toggle('opacity-50', !okEmail);
+            btnConfirm.classList.toggle('cursor-not-allowed', !okEmail);
+        }
+    }
+
+    async function hydrateConfirmModalFromCache() {
+        const settings = await PartsSettings.get();
+
+        confirmTpl.subject = settings?.email_subject_tpl || 'Pedido de peças @{{partOrderNumber}}';
+        confirmTpl.body    = settings?.email_body_tpl || 'Olá @{{supplierName}},\n\nSegue o pedido @{{partOrderNumber}}.\n\nObrigado.';
+
+        currentOrderForSend = buildPreviewOrderFromForm();
+        renderConfirmPreview(currentOrderForSend, confirmTpl.subject, confirmTpl.body);
+    }
+
+    async function openConfirm() {
+        // ✅ abre modal e já renderiza preview
+        modalConfirm?.classList.remove('hidden');
+        await hydrateConfirmModalFromCache();
+    }
+
+    async function openSendConfirm() {
+        confirmMode = 'send';
+        confirmOrderId = null;
+
+        modalConfirm?.classList.remove('hidden');
+        await hydrateConfirmModalFromCache(); // já renderiza preview pelo form
+    }
+
+    async function openResendConfirm(id) {
+        confirmMode = 'resend';
+        confirmOrderId = id;
+
+        const o = await apiFetch(URL.show(id));
+
+        // monta um "order" compatível com renderConfirmPreview
+        currentOrderForSend = {
+            order_number: o.order_number || '',
+            order_date: o.order_date || todayISO(),
+            items_count: o.items_count ?? (o.items?.length ?? 0),
+            grand_total: o.grand_total ?? 0,
+            supplier: {
+                name: o.supplier?.name || o.supplier_name || 'Fornecedor',
+                email: o.supplier_email_used || o.supplier?.email || o.supplier_email || '',
+            },
+        };
+
+        // usa snapshot do envio; se não tiver, cai no template atual
+        const subject = (o.email_subject_used || '').trim();
+        const body = (o.email_body_used || '').trim();
+
+        if (subject && body) {
+            renderConfirmPreview(currentOrderForSend, subject, body);
+        } else {
+            const settings = await PartsSettings.get();
+            renderConfirmPreview(
+                currentOrderForSend,
+                settings?.email_subject_tpl || 'Pedido de peças {{partOrderNumber}}',
+                settings?.email_body_tpl || 'Olá {{supplierName}},\n\nSegue o pedido {{partOrderNumber}}.\n\nObrigado.'
+            );
+        }
+
+        modalConfirm?.classList.remove('hidden');
+    }
+
+    btnOpenSettings?.addEventListener('click', async () => {
+        const settings = await PartsSettings.get();
+        PartsSettings.applyToSettingsModal(settings);
+        openModalById('modal-parts-settings');
+    });
+
+    document.getElementById('ps-email-subject')?.addEventListener('input', (e) => {
+        if (!currentOrderForSend) return;
+        if (modalConfirm?.classList.contains('hidden')) return;
+
+        const subj = e.target.value || '';
+        const body = document.getElementById('ps-email-body')?.value || '';
+        renderConfirmPreview(currentOrderForSend, subj, body);
+    });
+
+    document.getElementById('ps-email-body')?.addEventListener('input', (e) => {
+        if (!currentOrderForSend) return;
+        if (modalConfirm?.classList.contains('hidden')) return;
+
+        const subj = document.getElementById('ps-email-subject')?.value || '';
+        const body = e.target.value || '';
+        renderConfirmPreview(currentOrderForSend, subj, body);
+    });
+
+// quando salvar settings, re-render no confirm (se estiver aberto)
+    document.addEventListener('partOrderSettingsSaved', async () => {
+        if (modalConfirm?.classList.contains('hidden')) return;
+        await hydrateConfirmModalFromCache();
+    });
+
+    function formatDateBR(isoOrDate) {
+        if (!isoOrDate) return '';
+        // pode vir Date/Carbon serializado ou string "YYYY-MM-DD"
+        const s = typeof isoOrDate === 'string' ? isoOrDate : String(isoOrDate);
+        const p = s.split('T')[0].split('-');
+        if (p.length !== 3) return s;
+        const [y, m, d] = p;
+        return `${d}/${m}/${y}`;
+    }
+
+    function moneyBR(v) {
+        const n = Number(v || 0);
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n);
+    }
+
+    function applyTpl(tpl, vars) {
+        return String(tpl || '').replace(/@?{{\s*([a-zA-Z0-9_]+)\s*}}/g, (_, key) => {
+            const val = vars[key];
+            return (val === undefined || val === null) ? '' : String(val);
+        });
+    }
+
+    function openSettingsModal() {
+        document.getElementById('modal-part-order-settings')?.classList.remove('hidden');
+    }
+
+    btnOpenSettings?.addEventListener('click', openSettingsModal);
+
+    function refreshPreviewFromSettingsInputs() {
+        if (!currentOrderForSend) return;
+        const subj = inpSubjectTpl?.value ?? '';
+        const body = inpBodyTpl?.value ?? '';
+        renderConfirmPreview(currentOrderForSend, subj, body);
+    }
+    inpSubjectTpl?.addEventListener('input', refreshPreviewFromSettingsInputs);
+    inpBodyTpl?.addEventListener('input', refreshPreviewFromSettingsInputs);
+
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+    function isColorClass(c) {
+        return (
+            /^bg-(slate|gray|zinc|neutral|stone|red|rose|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink)-\d+$/.test(c) ||
+            /^hover:bg-(slate|gray|zinc|neutral|stone|red|rose|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink)-\d+$/.test(c) ||
+            /^text-(white|black|(slate|gray|zinc|neutral|stone|red|rose|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink)-\d+)$/.test(c) ||
+            /^border-(slate|gray|zinc|neutral|stone|red|rose|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink)-\d+$/.test(c)
+        );
+    }
+
+    function setBtnState(btn, state) {
+        if (!btn) return;
+
+        // salva base 1x
+        if (!btn.dataset.baseHtml) btn.dataset.baseHtml = btn.innerHTML;
+        if (!btn.dataset.baseClass) btn.dataset.baseClass = btn.className;
+
+        // reset
+        btn.innerHTML = btn.dataset.baseHtml;
+        btn.className = btn.dataset.baseClass;
+        btn.disabled = false;
+
+        const stripColors = () => {
+            [...btn.classList].forEach((c) => { if (isColorClass(c)) btn.classList.remove(c); });
+        };
+
+        if (state === 'loading') {
+            stripColors();
+            btn.disabled = true;
+            btn.classList.add('bg-slate-400', 'text-white', 'cursor-wait', 'inline-flex', 'items-center', 'gap-2');
+
+            btn.innerHTML = `
+      <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity="0.25"></circle>
+        <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="4" stroke-linecap="round"></path>
+      </svg>
+      Enviando...
+    `;
+        }
+
+        if (state === 'success') {
+            stripColors();
+            btn.disabled = true;
+            btn.classList.add('bg-emerald-600', 'text-white', 'inline-flex', 'items-center', 'gap-2');
+
+            btn.innerHTML = `
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+        <path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Enviado
+    `;
+        }
+
+        if (state === 'error') {
+            stripColors();
+            btn.disabled = false;
+            btn.classList.add('bg-rose-600', 'text-white', 'inline-flex', 'items-center', 'gap-2');
+
+            btn.innerHTML = `
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+        <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      Erro ao enviar
+    `;
+        }
+    }
+
+    function closeConfirm() {
+        modalConfirm?.classList.add('hidden');
+        if (btnConfirm) {
+            btnConfirm.dataset.busy = '0';
+            setBtnState(btnConfirm, 'idle');
+        }
+    }
+
     function openSuccess(id) { lastSentId = id; succModal?.classList.remove('hidden'); }
     function closeSuccess() { succModal?.classList.add('hidden'); }
-    function openViewModal() { modalView?.classList.remove('hidden'); }
+
+    function openViewModal() {
+        const btnViewResend = document.getElementById('btn-view-resend');
+
+        btnViewResend?.classList.toggle('hidden', String(o.status || '').toLowerCase() === 'draft');
+
+        if (btnViewResend) {
+            btnViewResend.onclick = () => {
+                closeViewModal();
+                openResendConfirm(o.id);
+            };
+        }
+
+        modalView?.classList.remove('hidden');
+    }
+
     function closeViewModal() { modalView?.classList.add('hidden'); }
 
     document.addEventListener('click', (ev) => {
@@ -520,13 +1116,342 @@
         if (act === 'importParts') openImport();
     });
 
-    if (!window.__cliqisPartsNewBtnPatch_v2) {
-        window.__cliqisPartsNewBtnPatch_v2 = true;
+    if (!window.__cliqisPartsNewBtnPatch_v3) {
+        window.__cliqisPartsNewBtnPatch_v3 = true;
+
         document.addEventListener('click', (ev) => {
             const trg = ev.target.closest('#btn-new-parts');
-            if (trg) { ev.preventDefault(); openNew(); }
+            if (!trg) return;
+
+            ev.preventDefault();
+            ev.stopPropagation();
+            ev.stopImmediatePropagation();
+
+            openNew();
+        }, true); // ✅ CAPTURE
+    }
+
+    const UF_ALL = ["AC","AL","AM","AP","BA","CE","DF","ES","GO","MA","MG","MS","MT","PA","PB","PE","PI","PR","RJ","RN","RO","RR","RS","SC","SE","SP","TO"];
+    const UF_DEFAULT = ["SP","RJ","MG","PR","SC"];
+
+    function showDropdown(dd, html) {
+        dd.innerHTML = html;
+        dd.classList.remove('hidden');
+    }
+    function hideDropdown(dd) {
+        dd.classList.add('hidden');
+        dd.innerHTML = '';
+    }
+
+    function insertAtCursor(el, text) {
+        const start = el.selectionStart ?? el.value.length;
+        const end = el.selectionEnd ?? el.value.length;
+        el.value = el.value.slice(0, start) + text + el.value.slice(end);
+        const pos = start + text.length;
+        el.setSelectionRange(pos, pos);
+        el.focus();
+    }
+
+    async function fetchJSON(url, opts = {}) {
+        const token = csrf(); // <- chama a função
+
+        const res = await fetch(url, {
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                ...(opts.body ? { 'Content-Type': 'application/json' } : {}),
+                ...(token ? { 'X-CSRF-TOKEN': token } : {}),
+                ...(opts.headers || {}),
+            },
+            ...opts,
+        });
+
+        const data = await res.json().catch(() => null);
+
+        if (!res.ok) {
+            throw new Error(data?.message || data?.error || `Erro HTTP ${res.status}`);
+        }
+
+        return data;
+    }
+
+    const PartsSettings = {
+        cache: null,
+
+        async get() {
+            if (this.cache) return this.cache;
+            const json = await fetchJSON('/part-orders/settings');
+            this.cache = json.data;
+            return this.cache;
+        },
+
+        async save(payload) {
+            const json = await fetchJSON('/part-orders/settings', {
+                method: 'PUT',
+                body: JSON.stringify(payload),
+            });
+            this.cache = json.data;
+            return this.cache;
+        },
+
+        async suppliers(q = '') {
+            const url = `/entities/supplier/typeahead?q=${encodeURIComponent(q)}`;
+            const json = await fetchJSON(url);
+            return json.data || [];
+        },
+
+        applyToOrderModal(settings) {
+            const sid = document.getElementById('pp-supplier-id');
+            const sname = document.getElementById('pp-supplier-name');
+            const semail = document.getElementById('pp-supplier-email');
+
+            if (sid && sname) {
+                sid.value = settings?.default_supplier_id || '';
+                sname.value = settings?.supplier?.name || '';
+            }
+            if (semail) {
+                semail.value = settings?.supplier?.email || '';
+            }
+
+            supplierCurrent.email = settings?.supplier?.email || '';
+
+            const cnpj = document.getElementById('pp-cnpj');
+            if (cnpj) cnpj.value = formatCNPJ(settings?.billing_cnpj || '');
+
+            const uf = document.getElementById('pp-uf');
+            if (uf && settings?.billing_uf) uf.value = settings.billing_uf;
+        },
+
+        applyToSettingsModal(settings) {
+            document.getElementById('ps-supplier-id').value = settings?.default_supplier_id || '';
+            document.getElementById('ps-supplier-name').value = settings?.supplier?.name || '';
+            document.getElementById('ps-cnpj').value = formatCNPJ(settings?.billing_cnpj || '');
+            document.getElementById('ps-uf').value = settings?.billing_uf || '';
+            document.getElementById('ps-email-subject').value = settings?.email_subject_tpl || '';
+            document.getElementById('ps-email-body').value = settings?.email_body_tpl || '';
+        },
+    };
+
+    function bindUfTypeahead(inputId, ddId) {
+        const input = document.getElementById(inputId);
+        const dd = document.getElementById(ddId);
+        if (!input || !dd) return;
+
+        function render(list) {
+            const html = list.map(uf => `
+      <button type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-slate-50"
+              data-uf="${uf}">${uf}</button>
+    `).join('');
+            showDropdown(dd, html || `<div class="px-3 py-2 text-sm text-slate-500">Nada encontrado</div>`);
+        }
+
+        input.addEventListener('focus', () => {
+            const v = input.value.trim().toUpperCase();
+            if (!v) render(UF_DEFAULT);
+        });
+
+        input.addEventListener('input', () => {
+            const v = input.value.trim().toUpperCase();
+            input.value = v;
+            const list = v ? UF_ALL.filter(x => x.includes(v)).slice(0, 8) : UF_DEFAULT;
+            render(list);
+        });
+
+        dd.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-uf]');
+            if (!btn) return;
+            input.value = btn.dataset.uf;
+            hideDropdown(dd);
+            input.dispatchEvent(new Event('change'));
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target === input || dd.contains(e.target)) return;
+            hideDropdown(dd);
         });
     }
+
+    function bindSupplierTypeahead(inputId, hiddenId, ddId) {
+        const input = document.getElementById(inputId);
+        const hidden = document.getElementById(hiddenId);
+        const dd = document.getElementById(ddId);
+        if (!input || !hidden || !dd) return;
+
+        let timer = null;
+
+        async function search(q) {
+            const rows = await PartsSettings.suppliers(q);
+            const html = rows.map(s => `
+      <button type="button" class="w-full text-left px-3 py-2 hover:bg-slate-50"
+              data-id="${s.id}" data-name="${(s.name||'').replaceAll('"','&quot;')}" data-email="${s.email||''}">
+        <div class="text-sm font-medium text-slate-800">${s.name || '—'}</div>
+        <div class="text-xs text-slate-500">${s.email || 'Sem e-mail'} • ${s.cpfCnpj || 'Sem CNPJ'}</div>
+      </button>
+    `).join('');
+
+            showDropdown(dd, html || `<div class="px-3 py-2 text-sm text-slate-500">Nenhum fornecedor</div>`);
+        }
+
+        input.addEventListener('focus', () => search(''));
+
+        input.addEventListener('input', () => {
+            clearTimeout(timer);
+            timer = setTimeout(() => search(input.value.trim()), 180);
+        });
+
+        dd.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-id]');
+            if (!btn) return;
+
+            hidden.value = btn.dataset.id;
+            input.value = btn.dataset.name;
+
+            const emailHidden = document.getElementById('pp-supplier-email');
+            if (emailHidden && input.id === 'pp-supplier-name') {
+                emailHidden.value = btn.dataset.email || '';
+            }
+
+            hideDropdown(dd);
+
+            input.dispatchEvent(new Event('change'));
+
+            input.dispatchEvent(new CustomEvent('cliqis:supplier-selected', {
+                bubbles: true,
+                detail: { id: hidden.value, name: input.value, email: btn.dataset.email || '' }
+            }));
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target === input || dd.contains(e.target)) return;
+            hideDropdown(dd);
+        });
+    }
+
+    // function openModal(id) { document.getElementById(id)?.classList.remove('hidden'); }
+    // function closeModal(id) { document.getElementById(id)?.classList.add('hidden'); }
+
+    async function initPartsSettingsUI() {
+        // binds typeaheads
+        bindSupplierTypeahead('ps-supplier-name', 'ps-supplier-id', 'ps-supplier-dd');
+        bindSupplierTypeahead('pp-supplier-name', 'pp-supplier-id', 'pp-supplier-dd');
+
+        bindUfTypeahead('ps-uf', 'ps-uf-dd');
+        bindUfTypeahead('pp-uf', 'pp-uf-dd');
+
+        // abrir modal config
+        document.getElementById('btn-parts-settings')?.addEventListener('click', async () => {
+            const settings = await PartsSettings.get();
+            PartsSettings.applyToSettingsModal(settings);
+            openModalById('modal-parts-settings');
+        });
+
+        // fechar modal config
+        document.querySelectorAll('[data-close-settings]').forEach(el => {
+            el.addEventListener('click', () => closeModalById('modal-parts-settings'));
+        });
+
+        // salvar config
+        document.getElementById('btn-save-settings')?.addEventListener('click', async (e) => {
+            e.preventDefault();
+
+            const payload = {
+                default_supplier_id: document.getElementById('ps-supplier-id').value || null,
+                billing_cnpj: document.getElementById('ps-cnpj').value || null,
+                billing_uf: (document.getElementById('ps-uf').value || '').toUpperCase() || null,
+                email_subject_tpl: document.getElementById('ps-email-subject').value || null,
+                email_body_tpl: document.getElementById('ps-email-body').value || null,
+            };
+
+            const settings = await PartsSettings.save(payload);
+
+            // ✅ aplica imediatamente no modal de pedidos (sem refresh)
+            PartsSettings.applyToOrderModal(settings);
+
+            document.dispatchEvent(new Event('partOrderSettingsSaved'));
+
+            closeModalById('modal-parts-settings');
+            toast('Configurações salvas');
+        });
+
+        // inserir variáveis no body (clique nos botões)
+        document.querySelectorAll('.ps-var').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const v = btn.getAttribute('data-var');
+                const textarea = document.getElementById('ps-email-body');
+                if (textarea && v) insertAtCursor(textarea, v);
+            });
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPartsSettingsUI);
+    } else {
+        initPartsSettingsUI();
+    }
+
+    document.addEventListener('cliqis:supplier-selected', async (ev) => {
+        // só interessa no pedido
+        if (ev.target?.id !== 'pp-supplier-name') return;
+
+        // se modal do pedido não está aberto, ignora
+        if (modal?.classList.contains('hidden')) return;
+
+        if (suppressSupplierPrompt) return;
+
+        const d = ev.detail || {};
+        const newId = d.id || '';
+        const newName = d.name || '';
+
+        // atualiza current
+        supplierCurrent = { id: newId, name: newName, email: d.email || '' };
+
+        // se não mudou, sai
+        if ((supplierBaseline.id || '') === (newId || '')) return;
+
+        // evita ficar perguntando pro mesmo ID nessa sessão
+        if (supplierPrompted.has(newId)) return;
+
+        supplierPending = { ...supplierCurrent };
+
+        if (supChoiceName) supChoiceName.textContent = newName || '—';
+        openSupplierChoice();
+    });
+
+    btnSupOrderOnly?.addEventListener('click', () => {
+        if (supplierPending?.id) supplierPrompted.add(supplierPending.id);
+        closeSupplierChoice();
+    });
+
+    btnSupSetDefault?.addEventListener('click', async () => {
+        if (!supplierPending?.id) return;
+
+        try {
+            // garante settings carregado e faz merge (não perde campos)
+            const cur = await PartsSettings.get();
+            const payload = {
+                default_supplier_id: supplierPending.id,
+                billing_cnpj: cur?.billing_cnpj || null,
+                billing_uf: cur?.billing_uf || null,
+                email_subject_tpl: cur?.email_subject_tpl || null,
+                email_body_tpl: cur?.email_body_tpl || null,
+            };
+
+            const saved = await PartsSettings.save(payload);
+
+            // baseline vira o novo (não pergunta mais)
+            supplierBaseline = { id: supplierPending.id, name: supplierPending.name || '' };
+            supplierPrompted.add(supplierPending.id);
+
+            toast('Fornecedor padrão atualizado');
+            closeSupplierChoice();
+
+            // opcional: mantém settings modal coerente se abrir depois
+            // PartsSettings.applyToSettingsModal(saved);
+        } catch (e) {
+            toast(e.message || 'Falha ao salvar fornecedor padrão.');
+        }
+    });
 
     // ===== FORM =====
     let formItems = [];
@@ -791,23 +1716,46 @@
     function resetForm() {
         form?.reset();
         form.dataset.editId = '';
+        form.dataset.orderNumber = ''; // ✅ ADD
         q('#pp-date').value = todayISO();
         formItems = [];
         itemsBody.innerHTML = '';
         updateSummary();
     }
 
-    function openNew() {
-        resetForm();
-        q('#parts-modal-title').textContent = 'Novo pedido de peças';
-        formItems = Array.from({ length: 5 }, (_, idx) => ({ ...blankItem(), position: idx }));
-        renderItems();
-        openModal();
+    let openingNew = false;
+
+    async function openNew() {
+        if (openingNew) return;
+        openingNew = true;
+
+        try {
+            resetForm();
+
+            try {
+                const settings = await PartsSettings.get();
+                PartsSettings.applyToOrderModal(settings);
+            } catch (e) {
+                console.warn('Falha ao carregar settings', e);
+            }
+
+            captureSupplierBaseline();
+
+            q('#parts-modal-title').textContent = 'Novo pedido de peças';
+            formItems = Array.from({ length: 5 }, (_, idx) => ({ ...blankItem(), position: idx }));
+            renderItems();
+            openModal();
+        } finally {
+            setTimeout(() => { openingNew = false; }, 0);
+        }
     }
 
     async function openEdit(id) {
         try {
             const o = await apiFetch(URL.show(id));
+
+            supplierCurrent.email = o?.supplier?.email || supplierCurrent.email || '';
+
             if (String(o.status || '').toLowerCase() !== 'draft') {
                 toast('Só rascunho pode editar.');
                 return;
@@ -816,11 +1764,41 @@
             resetForm();
             q('#parts-modal-title').textContent = `Editar ${o.order_number || ''}`;
             form.dataset.editId = o.id;
+            form.dataset.orderNumber = o.order_number || '';
 
             q('#pp-title').value = o.title || '';
             q('#pp-cnpj').value = o.billing_cnpj || '';
             q('#pp-date').value = o.order_date || todayISO();
             q('#pp-uf').value = o.billing_uf || '';
+
+            // ✅ 1) Preenche fornecedor ANTES do baseline
+            try {
+                const settings = await PartsSettings.get();
+
+                suppressSupplierPrompt = true;
+
+                // aplica defaults do sistema (se pedido não tiver fornecedor salvo)
+                PartsSettings.applyToOrderModal(settings);
+
+                // se o pedido tiver fornecedor, sobrescreve
+                const orderSupplierId =
+                    o.supplier_id || o.supplier?.id || o.default_supplier_id || '';
+                const orderSupplierName =
+                    o.supplier_name || o.supplier?.name || '';
+
+                const orderSupplierEmail = o.supplier?.email || o.supplier_email || '';
+
+                if (orderSupplierId || orderSupplierName || orderSupplierEmail) {
+                    setSupplierFields({ id: orderSupplierId, name: orderSupplierName, email: orderSupplierEmail });
+                }
+
+                suppressSupplierPrompt = false;
+            } catch {
+                suppressSupplierPrompt = false;
+            }
+
+            // ✅ 2) Agora sim captura baseline correto
+            captureSupplierBaseline();
 
             formItems = (o.items || []).map((it, idx) => ({
                 id: it.id || null,
@@ -835,7 +1813,9 @@
                 position: Number(it.position ?? idx),
             }));
 
-            if (!formItems.length) formItems = Array.from({ length: 5 }, (_, idx) => ({ ...blankItem(), position: idx }));
+            if (!formItems.length) {
+                formItems = Array.from({ length: 5 }, (_, idx) => ({ ...blankItem(), position: idx }));
+            }
 
             renderItems();
             openModal();
@@ -863,6 +1843,15 @@
 
     function buildProposalHTML(o, st) {
         const items = Array.isArray(o.items) ? o.items : [];
+
+        const supplierName  = o.supplier?.name  || o.supplier_name  || '';
+        const supplierEmail = o.supplier?.email || o.supplier_email || '';
+
+        const supplierLine = supplierName ? ` • Fornecedor: ${escapeHTML(supplierName)}` : '';
+        const supplierEmailLine = supplierEmail
+            ? `<div class="text-xs text-slate-500">E-mail fornecedor: ${escapeHTML(supplierEmail)}</div>`
+            : '';
+
         const rows = items.map((it, idx) => {
             const unit = Number(it.unit_price || 0);
             const qty = Number(it.quantity || 0);
@@ -915,8 +1904,11 @@
       <div class="mb-6 flex items-start justify-between">
         <div>
           <div class="text-2xl font-semibold">Proposta • ${escapeHTML(o.order_number || '—')}</div>
-          <div class="text-sm text-slate-600">Data: ${formatBRDate(o.order_date)} • CNPJ: ${escapeHTML(o.billing_cnpj || '—')}</div>
-          <div class="mt-2">${chip(st)}</div>
+<div class="text-sm text-slate-600">
+  Data: ${formatBRDate(o.order_date)} • CNPJ: ${escapeHTML(o.billing_cnpj || '—')}${supplierLine}
+</div>
+${supplierEmailLine}
+                  <div class="mt-2">${chip(st)}</div>
         </div>
         <div class="text-right">
           <div class="text-sm text-slate-600">Cliqis</div>
@@ -966,6 +1958,10 @@
         const uf = q('#pp-uf').value || '';
         const itemsClean = cleanItems(formItems);
 
+        const supplierId    = document.getElementById('pp-supplier-id')?.value || null;
+        const supplierName  = (document.getElementById('pp-supplier-name')?.value || '').trim() || null;
+        const supplierEmail = normalizeEmail(document.getElementById('pp-supplier-email')?.value) || null;
+
         return {
             title: (q('#pp-title').value || '').trim(),
             billing_cnpj: (q('#pp-cnpj').value || '').trim(),
@@ -973,6 +1969,11 @@
             order_date: q('#pp-date').value || todayISO(),
             status,
             icms_rate: rateFromUF(uf),
+
+            supplier_id: supplierId,
+            supplier_name: supplierName,
+            supplier_email: supplierEmail,
+
             items: itemsClean.map((it, idx) => ({
                 id: it.id || null,
                 part_id: it.part_id || null,
@@ -1037,7 +2038,13 @@
 
     function sendOrderFlow() {
         if (!validateHeader()) return;
-        openConfirm();
+
+        openSendConfirm();
+
+        const email = normalizeEmail(document.getElementById('pp-supplier-email')?.value || supplierCurrent.email);
+        if (!isValidEmail(email)) {
+            toast('Corrija o e-mail do destinatário para enviar.');
+        }
     }
 
     // Modal Confirm
@@ -1049,30 +2056,61 @@
     btnConfirmX?.addEventListener('click', closeConfirm);
 
     btnConfirm?.addEventListener('click', async () => {
+        if (btnConfirm.dataset.busy === '1') return;
+        btnConfirm.dataset.busy = '1';
+
+        const minDelay = sleep(3000);
+        setBtnState(btnConfirm, 'loading');
+
         try {
-            let id = form.dataset.editId || null;
-            const payload = buildPayload('draft');
+            let id = null;
 
-            const res = id
-                ? await apiFetch(URL.update(id), { method: 'PUT', body: JSON.stringify(payload) })
-                : await apiFetch(URL.store(), { method: 'POST', body: JSON.stringify(payload) });
+            if (confirmMode === 'send') {
+                // mantém teu fluxo atual (salva draft antes)
+                id = form.dataset.editId || null;
+                const payload = buildPayload('draft');
 
-            const saved = res.data || res;
-            id = saved.id;
+                const res = id
+                    ? await apiFetch(URL.update(id), { method: 'PUT', body: JSON.stringify(payload) })
+                    : await apiFetch(URL.store(), { method: 'POST', body: JSON.stringify(payload) });
 
-            await apiFetch(URL.send(id), { method: 'POST' });
+                const saved = res.data || res;
+                id = saved.id;
 
-            sessionStorage.removeItem(DRAFT_KEY);
+                await apiFetch(URL.send(id), { method: 'POST' });
+
+                sessionStorage.removeItem(DRAFT_KEY);
+                closeModal(true); // fecha modal de edição (send)
+                toast('Pedido enviado');
+            } else {
+                // resend direto
+                id = confirmOrderId;
+                await apiFetch(URL.resend(id), { method: 'POST' });
+                toast('Pedido reenviado');
+            }
+
+            await minDelay;
+            setBtnState(btnConfirm, 'success');
+            await sleep(650);
 
             await loadList();
             closeConfirm();
-            closeModal(true);
             openSuccess(id);
-            toast('Pedido enviado');
         } catch (e) {
-            toast(e.message || 'Falha ao enviar pedido.');
-            closeConfirm();
+            await minDelay;
+
+            setBtnState(btnConfirm, 'error');
+            toast(e.message || 'Falha no envio.');
+
+            setTimeout(() => {
+                setBtnState(btnConfirm, 'idle');
+                btnConfirm.dataset.busy = '0';
+            }, 1200);
+
+            return;
         }
+
+        btnConfirm.dataset.busy = '0';
     });
 
     // Sucesso modal

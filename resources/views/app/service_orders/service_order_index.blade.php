@@ -1,6 +1,14 @@
 @extends('layouts.templates.template')
 
 @section('content')
+    @push('styles')
+        <style>
+            #signature-actions::backdrop {
+                background: rgba(2, 6, 23, .55);
+            }
+        </style>
+    @endpush
+
     <div class="mx-auto max-w-7xl px-4 sm:px-6">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-4">
             <h1 class="text-xl font-semibold">Ordens de serviço</h1>
@@ -57,9 +65,9 @@
                         class="px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100">
                     Aprovada
                 </button>
-                <button data-status-filter="completed"
-                        class="px-3 py-1.5 rounded-full border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100">
-                    Concluída
+                <button data-status-filter="invoiced"
+                        class="px-3 py-1.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100">
+                    NF EMITIDA
                 </button>
                 <button data-status-filter="rejected"
                         class="px-3 py-1.5 rounded-full border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100">
@@ -155,6 +163,83 @@
             </div>
         </div>
     </dialog>
+
+    <dialog id="signature-actions"
+            class="w-full max-w-xl rounded-3xl p-0 overflow-hidden shadow-2xl">
+        <div class="p-6">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h3 id="sig-title" class="text-base font-semibold text-slate-900">Assinatura Digital</h3>
+                    <p id="sig-subtitle" class="mt-1 text-sm text-slate-600">
+                        Escolha como deseja coletar a assinatura.
+                    </p>
+                </div>
+
+                <button type="button" id="sig-close"
+                        class="rounded-xl p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+                    ✕
+                </button>
+            </div>
+
+            <div id="sig-feedback"
+                 class="mt-4 hidden rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700"></div>
+
+            <div class="mt-5 grid gap-3 sm:grid-cols-1">
+                <button type="button" id="sig-email"
+                        class="flex flex-col items-start gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs hover:border-brand-300 hover:bg-brand-50/60 disabled:opacity-60 disabled:cursor-not-allowed">
+                    <span class="font-semibold text-slate-800">Enviar para e-mail</span>
+                    <span class="text-[11px] text-slate-500">Link de assinatura digital por e-mail do cliente.</span>
+                </button>
+
+                <button type="button" id="sig-tablet"
+                        class="flex flex-col items-start gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs hover:border-brand-300 hover:bg-brand-50/60">
+                    <span class="font-semibold text-slate-800">Assinar no tablet</span>
+                    <span class="text-[11px] text-slate-500">Abrir área de assinatura na tela.</span>
+                </button>
+            </div>
+
+            <div class="mt-6 flex justify-end">
+                <button type="button" id="sig-cancel"
+                        class="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Modal: editar OS aprovada -->
+    <dialog id="confirm-approved-edit" class="rounded-2xl p-0 backdrop:bg-black/40">
+        <div class="w-[520px] max-w-[90vw] bg-white rounded-2xl overflow-hidden">
+            <div class="p-5 border-b border-slate-200">
+                <div class="text-base font-semibold text-slate-900">Atenção</div>
+                <div class="text-sm text-slate-600 mt-1">
+                    Se você alterar algo, esta OS volta para <b>PENDENTE</b>. Continuar?
+                </div>
+            </div>
+            <div class="p-4 flex justify-end gap-2">
+                <button id="approved-edit-no" class="rounded-xl border border-slate-200 px-4 py-2 text-sm">Cancelar</button>
+                <button id="approved-edit-yes" class="rounded-xl bg-slate-900 px-4 py-2 text-sm text-white">Continuar</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Modal: recusar OS -->
+    <dialog id="confirm-reject" class="rounded-2xl p-0 backdrop:bg-black/40">
+        <div class="w-[520px] max-w-[90vw] bg-white rounded-2xl overflow-hidden">
+            <div class="p-5 border-b border-slate-200">
+                <div class="text-base font-semibold text-slate-900">Recusar OS</div>
+                <div class="text-sm text-slate-600 mt-1">
+                    Marcar esta OS como <b>RECUSADA</b>?
+                </div>
+                <div id="reject-meta" class="mt-2 text-xs text-slate-500"></div>
+            </div>
+            <div class="p-4 flex justify-end gap-2">
+                <button id="reject-no" class="rounded-xl border border-slate-200 px-4 py-2 text-sm">Cancelar</button>
+                <button id="reject-yes" class="rounded-xl bg-rose-600 px-4 py-2 text-sm text-white">Recusar</button>
+            </div>
+        </div>
+    </dialog>
+
 
     @include('layouts.common.modal.modal_delete')
 @endsection
