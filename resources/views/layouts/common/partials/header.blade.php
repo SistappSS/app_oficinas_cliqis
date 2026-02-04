@@ -80,6 +80,17 @@
             'roles' => ['admin'],
         ],
 
+        // ------- PART ORDERS -------
+        [
+            'key'   => 'part-order',
+            'label' => 'Pedidos',
+            'route' => route('part-order.view'),
+            'icon'  => '<i class="fa-regular fa-file-zipper"></i>',
+            'group' => 'Pedidos',
+            'description' => 'Solicitação de peças',
+            'permissions' => ["{$tenantId}_visualizar_pedidos"],
+        ],
+
         // ------- FINANCEIRO -------
         [
             'key'   => 'account-receivable',
@@ -342,7 +353,7 @@
             data-tenant="{{ $tenantId }}"
             data-user="{{ $user->id }}"
              class="no-scrollbar flex items-center gap-2 overflow-x-auto rounded-3xl px-2 py-2 justify-start sm:justify-center">
-            
+
 
             {{-- server render padrão (JS vai reordenar pelo localStorage) --}}
             @foreach($defaultTopItems as $item)

@@ -20,6 +20,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const nfPaymentMethod = q("#nf-payment-method");
     const nfInstallments  = q("#nf-installments");
     const nfAmount        = q("#nf-amount");
+    const nfAlert = q("#nf-alert");
+
+    const nfSubmit = q("#nf-submit");
+    const nfSubmitLabel = q("#nf-submit-label");
+    const nfSpinner = q("#nf-submit-spinner");
+    const nfOk = q("#nf-submit-ok");
+    const nfX = q("#nf-submit-x");
 
     const state = {
         search: "",
@@ -40,6 +47,16 @@ document.addEventListener("DOMContentLoaded", () => {
             t = setTimeout(() => fn(...args), delay);
         };
     };
+
+    const useDown = q("#use_down_payment");
+    const downWrap = q("#down-payment-wrap");
+    const noDownWrap = q("#no-down-payment-wrap");
+
+    const downPct = nfForm.querySelector('[name="down_payment_percent"]');
+    const remainInst = nfForm.querySelector('[name="remaining_installments"]');
+    const installments = q("#nf-installments");
+
+    useDown?.addEventListener("change", syncDownPaymentUI);
 
     // === LOAD ===
     async function loadApprovedOrders() {
@@ -210,6 +227,18 @@ document.addEventListener("DOMContentLoaded", () => {
     function openNfModal(os) {
         if (!nfModal) return;
 
+        nfAlertHide();
+        setBtnState("idle");
+
+        if (nfPaymentDate && !nfPaymentDate._flatpickr) {
+            flatpickr(nfPaymentDate, {
+                altInput: true,
+                altFormat: 'd/m/Y',
+                dateFormat: 'Y-m-d',
+                allowInput: true,
+            });
+        }
+
         nfOsIdInput.value = os.id || "";
         const customerName =
             (os.secondary_customer && os.secondary_customer.name) ||
@@ -237,26 +266,76 @@ document.addEventListener("DOMContentLoaded", () => {
         nfModal.classList.add("hidden");
     }
 
-    const useDown  = q("#use_down_payment");
+    function nfAlertHide() {
+        if (!nfAlert) return;
+        nfAlert.classList.add("hidden");
+        nfAlert.textContent = "";
+    }
+
+    function nfAlertShow(msg) {
+        if (!nfAlert) return;
+        nfAlert.textContent = msg || "Erro ao gerar NF.";
+        nfAlert.classList.remove("hidden");
+    }
+
+    function setBtnState(state) {
+        // state: idle | loading | ok | error
+        if (!nfSubmit) return;
+
+        nfSubmit.disabled = (state === "loading");
+        nfSpinner?.classList.toggle("hidden", state !== "loading");
+        nfOk?.classList.toggle("hidden", state !== "ok");
+        nfX?.classList.toggle("hidden", state !== "error");
+
+        // reset classes
+        nfSubmit.classList.remove("bg-blue-700","hover:bg-blue-800","bg-emerald-600","hover:bg-emerald-700","bg-rose-600","hover:bg-rose-700");
+
+        if (state === "idle" || state === "loading") {
+            nfSubmit.classList.add("bg-blue-700","hover:bg-blue-800");
+            if (nfSubmitLabel) nfSubmitLabel.textContent = state === "loading" ? "Gerando..." : "Gerar NF (simulado)";
+        }
+
+        if (state === "ok") {
+            nfSubmit.classList.add("bg-emerald-600","hover:bg-emerald-700");
+            if (nfSubmitLabel) nfSubmitLabel.textContent = "Gerado";
+        }
+
+        if (state === "error") {
+            nfSubmit.classList.add("bg-rose-600","hover:bg-rose-700");
+            if (nfSubmitLabel) nfSubmitLabel.textContent = "Erro";
+        }
+    }
+
     const wrapDown = q("#down-payment-wrap");
     const wrapNo   = q("#no-down-payment-wrap");
 
     function syncDownPaymentUI() {
         const on = !!useDown?.checked;
 
-        wrapDown?.classList.toggle("hidden", !on);
-        wrapNo?.classList.toggle("hidden", on);
+        downWrap.classList.toggle("hidden", !on);
+        noDownWrap.classList.toggle("hidden", on);
 
-        const downPercent = wrapDown?.querySelector('input[name="down_payment_percent"]');
-        const remainInst  = wrapDown?.querySelector('input[name="remaining_installments"]');
-        const inst        = wrapNo?.querySelector('input[name="installments"]');
+        // required (UX)
+        downPct.required = on;
+        remainInst.required = on;
+        installments.required = !on;
 
-        if (downPercent) downPercent.required = on;
-        if (remainInst)  remainInst.required  = on;
-        if (inst)        inst.required        = !on;
+        // disabled (garante que não envia hidden)
+        downPct.disabled = !on;
+        remainInst.disabled = !on;
+        installments.disabled = on;
+
+        // limpa campos do bloco escondido
+        if (on) {
+            installments.value = installments.value || 1;
+        } else {
+            downPct.value = "";
+            remainInst.value = "";
+        }
     }
 
     useDown?.addEventListener("change", syncDownPaymentUI);
+
     syncDownPaymentUI();
 
     if (nfClose)  nfClose.addEventListener("click", closeNfModal);
@@ -266,35 +345,51 @@ document.addEventListener("DOMContentLoaded", () => {
         nfForm.addEventListener("submit", async (e) => {
             e.preventDefault();
 
+            nfAlertHide();
+            setBtnState("loading");
+
             const osId = nfOsIdInput.value;
-            if (!osId) return alert("OS inválida.");
-
-            const fd = new FormData(nfForm);
-
-            // garante o switch indo como 1/0
-            const useDown = document.querySelector("#use_down_payment")?.checked;
-            fd.set("use_down_payment", useDown ? "1" : "0");
-
-            const res = await fetch(`/service-orders/${osId}/billing/generate`, {
-                method: "POST",
-                headers: {
-                    "Accept": "application/json",
-                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.content || ""
-                },
-                body: fd
-            });
-
-            const j = await res.json().catch(() => null);
-
-            if (!res.ok || !j?.ok) {
-                console.error(j);
-                alert(j?.message || "Erro ao gerar NF.");
+            if (!osId) {
+                setBtnState("error");
+                nfAlertShow("OS inválida.");
                 return;
             }
 
-            closeNfModal();
-            alert("NF gerada. Títulos lançados em contas a receber.");
-            loadApprovedOrders(); // vai sumir porque status virou nf_emitida
+            try {
+                const fd = new FormData(nfForm);
+                const useDownChecked = document.querySelector("#use_down_payment")?.checked;
+                fd.set("use_down_payment", useDownChecked ? "1" : "0");
+
+                const res = await fetch(`/service-orders/${osId}/billing/generate`, {
+                    method: "POST",
+                    headers: {
+                        "Accept": "application/json",
+                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.content || ""
+                    },
+                    body: fd
+                });
+
+                const j = await res.json().catch(() => null);
+
+                if (!res.ok || !j?.ok) {
+                    setBtnState("error");
+                    nfAlertShow(j?.message || "Erro ao gerar NF.");
+                    return;
+                }
+
+                setBtnState("ok");
+
+                setTimeout(() => {
+                    closeNfModal();
+                    loadApprovedOrders();
+                    setBtnState("idle"); // reset pro próximo uso
+                }, 2000);
+
+            } catch (err) {
+                console.error(err);
+                setBtnState("error");
+                nfAlertShow("Falha de rede ao gerar NF.");
+            }
         });
     }
 

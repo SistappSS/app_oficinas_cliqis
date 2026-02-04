@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSupplierRequest;
 use App\Http\Requests\UpdateSupplierRequest;
 use App\Models\Entities\Suppliers\Supplier;
+use App\Support\CustomerContext;
 use App\Traits\CrudResponse;
 use App\Traits\WebIndex;
 use Illuminate\Http\Request;
@@ -41,6 +42,32 @@ class SupplierController extends Controller
         $data = $q->paginate(20);
 
         return response()->json($data);
+    }
+
+    public function partOrderConfig(Request $request)
+    {
+        $tenant = (string) CustomerContext::get();
+        $q = trim((string) $request->query('q', ''));
+
+        $query = Supplier::query()
+            ->select(['id', 'name', 'email', 'cpfCnpj'])
+            ->where('customer_sistapp_id', $tenant)
+            ->where('is_active', true);
+
+        if ($q !== '') {
+            $query->where(function ($w) use ($q) {
+                $w->where('name', 'like', "%{$q}%")
+                    ->orWhere('email', 'like', "%{$q}%")
+                    ->orWhere('cpfCnpj', 'like', "%{$q}%");
+            });
+        }
+
+        $rows = $query->orderBy('name')->limit(10)->get();
+
+        return response()->json([
+            'ok' => true,
+            'data' => $rows,
+        ]);
     }
 
     public function store(StoreSupplierRequest $request)

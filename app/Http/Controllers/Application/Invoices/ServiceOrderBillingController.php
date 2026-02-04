@@ -187,17 +187,44 @@ class ServiceOrderBillingController extends Controller
     public function generate(Request $request, ServiceOrder $serviceOrder)
     {
         $data = $request->validate([
-            'first_due_date' => ['required'],
+            'first_due_date' => ['required', 'date'], // ou date_format:Y-m-d se quiser travar
             'payment_method' => ['required', 'string', 'max:50'],
 
-            'use_down_payment' => ['nullable'],
-            'down_payment_percent' => ['nullable'],
-            'remaining_installments' => ['nullable'],
+            'use_down_payment' => ['nullable', 'in:0,1'],
 
-            'installments' => ['nullable'],
+            // quando usa sinal
+            'down_payment_percent'   => ['required_if:use_down_payment,1', 'nullable', 'numeric', 'min:1', 'max:99'],
+            'remaining_installments' => ['required_if:use_down_payment,1', 'nullable', 'integer', 'min:1', 'max:120'],
+
+            // quando NÃO usa sinal
+            'installments' => ['required_if:use_down_payment,0', 'nullable', 'integer', 'min:1', 'max:120'],
         ]);
 
-        return DB::transaction(function () use ($serviceOrder, $data) {
+        $useDown = ($data['use_down_payment'] ?? '0') === '1';
+
+        $rawDate = trim((string) $data['first_due_date']);
+
+        try {
+            // aceita "2026-02-04"
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $rawDate)) {
+                $firstDue = Carbon::createFromFormat('Y-m-d', $rawDate)->startOfDay();
+
+                // aceita "04/02/2026"
+            } elseif (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $rawDate)) {
+                $firstDue = Carbon::createFromFormat('d/m/Y', $rawDate)->startOfDay();
+
+            } else {
+                // tenta um parse genérico (último recurso)
+                $firstDue = Carbon::parse($rawDate)->startOfDay();
+            }
+        } catch (\Throwable $e) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'Data de vencimento inválida.',
+            ], 422);
+        }
+
+        return DB::transaction(function () use ($serviceOrder, $data, $firstDue) {
 
             if ($serviceOrder->status === 'nf_emitida') {
                 return response()->json(['ok' => false, 'message' => 'NF já emitida para esta OS.'], 409);

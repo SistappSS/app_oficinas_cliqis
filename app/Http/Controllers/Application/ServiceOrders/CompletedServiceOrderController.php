@@ -129,4 +129,5 @@ class CompletedServiceOrderController extends Controller
     {
         return $this->destroyMethod($this->completedServiceOrder->find($id));
     }
+
 }

@@ -42,12 +42,12 @@
             <div class="">
                 <table class="min-w-full text-sm">
                     <thead class="text-center text-slate-600 bg-blue-50">
-                    <tr>
-                        <th class="px-6 py-4 first:rounded-tl-2xl">Fornecedor</th>
+                    <tr class="text-center">
+                        <th class="px-6 py-4 text-left first:rounded-tl-2xl">Fornecedor</th>
                         <th class="px-3 py-4">CNPJ</th>
                         <th class="px-3 py-4">E-mail</th>
-                        <th class="px-3 py-4 text-right">Status</th>
-                        <th class="px-6 py-4 text-right last:rounded-tr-2xl">Ações</th>
+                        <th class="px-3 py-4">Status</th>
+                        <th class="px-6 py-4 last:rounded-tr-2xl">Ações</th>
                     </tr>
                     </thead>
                     <tbody id="tbody" class="divide-y divide-slate-100"></tbody>
