@@ -6,6 +6,9 @@
             #signature-actions::backdrop {
                 background: rgba(2, 6, 23, .55);
             }
+
+            body { overflow: hidden; }
+
         </style>
     @endpush
 
@@ -77,22 +80,21 @@
         </div>
 
         {{-- tabela --}}
-        <div class="mt-5 mb-8 rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div class="">
-                <table class="min-w-full text-sm">
-                    <thead class="text-center text-slate-600 bg-blue-50">
-                    <tr>
-                        <th class="px-6 py-4 first:rounded-tl-2xl text-left">OS</th>
-                        <th class="px-3 py-4 text-left">Cliente</th>
-                        <th class="px-3 py-4 text-center">Total (R$)</th>
-                        <th class="px-3 py-4 text-center">Status</th>
-                        <th class="px-3 py-4 text-center">Data</th>
-                        <th class="px-6 py-4 text-center last:rounded-tr-2xl">Ações</th>
-                    </tr>
-                    </thead>
-                    <tbody id="tbody" class="divide-y divide-slate-100"></tbody>
-                </table>
-            </div>
+        <div id="table-scroll"
+             class="mt-5 mb-8 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-auto">
+            <table class="min-w-full text-sm">
+                <thead class="sticky top-0 z-10 text-center text-slate-600 bg-blue-50">
+                <tr>
+                    <th class="px-6 py-4 first:rounded-tl-2xl text-left">OS</th>
+                    <th class="px-3 py-4 text-left">Cliente</th>
+                    <th class="px-3 py-4 text-center">Total (R$)</th>
+                    <th class="px-3 py-4 text-center">Status</th>
+                    <th class="px-3 py-4 text-center">Data</th>
+                    <th class="px-6 py-4 text-center last:rounded-tr-2xl">Ações</th>
+                </tr>
+                </thead>
+                <tbody id="tbody" class="divide-y divide-slate-100"></tbody>
+            </table>
         </div>
     </div>
 
