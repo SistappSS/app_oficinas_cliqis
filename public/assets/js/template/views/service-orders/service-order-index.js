@@ -1,4 +1,25 @@
 document.addEventListener("DOMContentLoaded", () => {
+    function fitTableScroll() {
+        const wrap = document.querySelector("#table-scroll");
+        if (!wrap) return;
+
+        const rect = wrap.getBoundingClientRect();
+        const bottomGap = 24; // respiro
+        const max = Math.max(260, window.innerHeight - rect.top - bottomGap);
+
+        wrap.style.maxHeight = `${max}px`;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        fitTableScroll();
+        window.addEventListener("resize", () => requestAnimationFrame(fitTableScroll));
+
+        // se você tem botão que expande/contrai header, recalcula depois do toggle
+        document.querySelector("#toggle-header")?.addEventListener("click", () => {
+            setTimeout(fitTableScroll, 60);
+        });
+    });
+    
     const searchInput = document.querySelector("#search");
     const statusButtons = document.querySelectorAll("[data-status-filter]");
 
