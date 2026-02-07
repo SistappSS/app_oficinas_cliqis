@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UpdatePartOrderSettingRequest;
 use App\Models\Entities\Suppliers\Supplier;
 use App\Models\PartOrderSetting;
+use App\Support\Audit\Audit;
 use App\Support\CustomerContext;
 
 class PartOrderSettingController extends Controller
@@ -64,7 +65,8 @@ class PartOrderSettingController extends Controller
         $tenant = $this->tenantId();
         $data = $request->validated();
 
-        // valida fornecedor dentro do tenant
+        $beforeModel = PartOrderSetting::where('customer_sistapp_id', $tenant)->first();
+
         if (!empty($data['default_supplier_id'])) {
             $exists = Supplier::query()
                 ->where('id', $data['default_supplier_id'])
@@ -73,6 +75,17 @@ class PartOrderSettingController extends Controller
                 ->exists();
 
             if (!$exists) {
+                Audit::log(
+                    'part_order_settings.upsert',
+                    'PartOrderSetting',
+                    $beforeModel?->id,
+                    false,
+                    [
+                        'reason' => 'invalid_supplier',
+                        'default_supplier_id' => $data['default_supplier_id'],
+                    ]
+                );
+
                 return response()->json([
                     'ok' => false,
                     'error' => 'Fornecedor inválido para este cliente.',
@@ -80,14 +93,12 @@ class PartOrderSettingController extends Controller
             }
         }
 
-        // ✅ fallback: não salva template vazio
         $subject = trim((string)($data['email_subject_tpl'] ?? ''));
         $body    = trim((string)($data['email_body_tpl'] ?? ''));
 
         $data['email_subject_tpl'] = $subject !== '' ? $subject : $this->defaultSubject();
         $data['email_body_tpl']    = $body    !== '' ? str_replace("\r\n", "\n", $body) : $this->defaultBody();
 
-        // normalizações leves
         if (!empty($data['billing_uf'])) $data['billing_uf'] = strtoupper($data['billing_uf']);
 
         $settings = PartOrderSetting::updateOrCreate(
@@ -97,9 +108,52 @@ class PartOrderSettingController extends Controller
 
         $settings->load('supplier:id,name,email');
 
+        $before = $beforeModel?->only([
+            'default_supplier_id','billing_cnpj','billing_uf','email_subject_tpl','email_body_tpl'
+        ]) ?? [];
+
+        $after = $settings->only([
+            'default_supplier_id','billing_cnpj','billing_uf','email_subject_tpl','email_body_tpl'
+        ]);
+
+        $changes = $this->diffAssoc($before, $after);
+
+        Audit::log(
+            'part_order_settings.upsert',
+            'PartOrderSetting',
+            $settings->id,
+            true,
+            [
+                'changed' => $changes,
+            ]
+        );
+
         return response()->json([
             'ok' => true,
             'data' => $settings,
         ]);
+    }
+
+    private function diffAssoc(array $before, array $after): array
+    {
+        $changes = [];
+
+        foreach ($after as $k => $v) {
+            $b = $before[$k] ?? null;
+
+            // normaliza strings
+            if (is_string($b)) $b = trim($b);
+            if (is_string($v)) $v = trim($v);
+
+            // trata null vs "" como igual
+            $b2 = ($b === '') ? null : $b;
+            $v2 = ($v === '') ? null : $v;
+
+            if ($b2 !== $v2) {
+                $changes[$k] = ['from' => $b2, 'to' => $v2];
+            }
+        }
+
+        return $changes;
     }
 }

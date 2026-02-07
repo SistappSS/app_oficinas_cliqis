@@ -99,13 +99,15 @@
                         class="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800">
                     Criar pedido de peças
                 </button>
-                <button data-action="regPart"
+                <button data-action="regPart" id="btn-add"
                         class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
                     Cadastrar peça
                 </button>
-                <button data-action="importParts"
-                        class="rounded-xl border border-blue-300 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100">
-                    Cadastro em massa (CSV)
+                <button id="toggle-header"
+                        class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow hover:bg-slate-50"
+                        aria-expanded="true" aria-controls="header-collapsible" type="button"
+                        title="Expandir/contrair cabeçalho">
+                    <i id="toggle-icon" class="fa-solid fa-up-right-and-down-left-from-center"></i>
                 </button>
             </div>
         </section>
@@ -144,6 +146,10 @@
                         class="flt rounded-full bg-white px-3.5 py-1.5 text-sm font-medium text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-50">
                     Pendente
                 </button>
+                <button data-status="parcial"
+                        class="flt rounded-full bg-white px-3.5 py-1.5 text-sm font-medium text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-50">
+                    Parcial
+                </button>
                 <button data-status="atraso"
                         class="flt rounded-full bg-white px-3.5 py-1.5 text-sm font-medium text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-50">
                     Em atraso
@@ -168,22 +174,28 @@
         </section>
 
         {{-- Lista --}}
-        <section class="mt-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <table class="min-w-[980px] w-full text-sm">
-                <thead class="bg-slate-50 text-slate-500">
-                <tr>
-                    <th class="px-4 py-3 text-left">Pedido</th>
-                    <th class="px-4 py-3 text-left">CNPJ</th>
-                    <th class="px-4 py-3 text-left">Título</th>
-                    <th class="px-4 py-3 text-left">Data</th>
-                    <th class="px-4 py-3 text-right">Total</th>
-                    <th class="px-4 py-3 text-left">Status</th>
-                    <th class="px-4 py-3 text-right">Ações</th>
-                </tr>
-                </thead>
-                <tbody id="ordersp-body" class="divide-y divide-slate-100"></tbody>
-            </table>
-            <div id="empty-state" class="hidden p-10 text-center text-slate-500">Nenhum pedido encontrado.</div>
+        <section id="ordersp-list"
+                 class="mt-2 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-y-auto">
+            <div class="h-full overflow-x-auto overflow-y-auto no-scrollbar">
+                <table class="min-w-[980px] w-full text-sm">
+                    <thead class="bg-slate-50 text-slate-500">
+                    <tr>
+                        <th class="px-4 py-3 text-left">Pedido</th>
+                        <th class="px-4 py-3 text-left">CNPJ</th>
+                        <th class="px-4 py-3 text-left">Título</th>
+                        <th class="px-4 py-3 text-left">Data</th>
+                        <th class="px-4 py-3 text-right">Total</th>
+                        <th class="px-4 py-3 text-left">Status</th>
+                        <th class="px-4 py-3 text-right">Ações</th>
+                    </tr>
+                    </thead>
+                    <tbody id="ordersp-body" class="divide-y divide-slate-100"></tbody>
+                </table>
+
+                <div id="empty-state" class="hidden p-10 text-center text-slate-500">
+                    Nenhum pedido encontrado.
+                </div>
+            </div>
         </section>
     </main>
 
@@ -202,7 +214,7 @@
             </div>
 
             <div class="grid md:grid-cols-[1fr_320px]">
-                <form id="form-parts" class="p-6 space-y-5 max-h-[78vh] overflow-y-auto">
+                <form id="form-parts" class="p-6 space-y-5 max-h-[78vh] overflow-y-auto" autocomplete="off">
                     <div class="grid gap-4 md:grid-cols-6">
                         <div class="md:col-span-2">
                             <label class="text-sm font-medium">Nome do pedido</label>
@@ -235,7 +247,7 @@
                         </div>
 
                         <div class="md:col-span-1">
-                            <label class="text-sm font-medium">Data</label>
+                            <label class="text-sm font-medium">Data desejada</label>
                             <input id="pp-date" type="date"
                                    class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"/>
                         </div>
@@ -502,105 +514,6 @@
         </div>
     </div>
 
-    {{-- Modal: Cadastrar peça --}}
-    <div id="modal-reg-part" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm">
-        <div
-            class="absolute left-1/2 top-1/2 w-[min(560px,94vw)] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-2xl">
-            <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold">Cadastrar peça</h2>
-                <button data-close-regpart class="rounded-lg p-2 hover:bg-slate-100" aria-label="Fechar">
-                    <svg class="h-5 w-5 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         stroke-width="2">
-                        <path d="M18 6 6 18M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-            <form id="form-reg-part" class="mt-4 grid gap-4">
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <div><label class="text-sm font-medium">Código</label><input id="rp-code"
-                                                                                 class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"
-                                                                                 placeholder="Ex.: 6206088" required>
-                    </div>
-                    <div><label class="text-sm font-medium">NCM</label><input id="rp-ncm"
-                                                                              class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"
-                                                                              placeholder="Ex.: 8443.99.41"></div>
-                </div>
-                <div><label class="text-sm font-medium">Descrição</label><input id="rp-desc"
-                                                                                class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"
-                                                                                placeholder="Ex.: Mecanismo Fujitsu c/proteção">
-                </div>
-                <div class="grid gap-4 sm:grid-cols-3">
-                    <div><label class="text-sm font-medium">Valor item</label><input id="rp-price" inputmode="decimal"
-                                                                                     class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"
-                                                                                     placeholder="Ex.: 670,65"></div>
-                    <div><label class="text-sm font-medium">IPI %</label><input id="rp-ipi" inputmode="decimal"
-                                                                                class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"
-                                                                                placeholder="Ex.: 6,5"></div>
-                    <div class="flex items-end">
-                        <button
-                            class="w-full rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800">
-                            Salvar peça
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    {{-- Modal: Import CSV --}}
-    <div id="modal-import-parts" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm">
-        <div
-            class="absolute left-1/2 top-1/2 w-[min(720px,96vw)] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-2xl">
-            <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold">Cadastro em massa (CSV)</h2>
-                <button data-close-import class="rounded-lg p-2 hover:bg-slate-100" aria-label="Fechar">
-                    <svg class="h-5 w-5 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         stroke-width="2">
-                        <path d="M18 6 6 18M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-
-            <div class="mt-3 text-sm text-slate-600 space-y-2">
-                <p>Importe um <strong>.csv</strong> com colunas: <code>codigo, descricao, ncm, valor, ipi</code>.</p>
-                <div class="flex gap-2">
-                    <button type="button" id="btn-dl-template"
-                            class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50">
-                        Baixar modelo CSV
-                    </button>
-                </div>
-            </div>
-
-            <div class="mt-4">
-                <input id="csv-file" type="file" accept=".csv,text/csv"
-                       class="block w-full text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-700">
-            </div>
-
-            <div id="csv-summary" class="mt-4 hidden rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
-                <div class="grid gap-2 sm:grid-cols-3">
-                    <div><span class="text-slate-500">Linhas válidas:</span> <span id="sum-valid" class="font-semibold">0</span>
-                    </div>
-                    <div><span class="text-slate-500">Novos:</span> <span id="sum-new" class="font-semibold">0</span>
-                    </div>
-                    <div><span class="text-slate-500">Atualizados:</span> <span id="sum-upd"
-                                                                                class="font-semibold">0</span></div>
-                </div>
-                <div class="mt-2 text-rose-600" id="sum-errors"></div>
-            </div>
-
-            <div class="mt-5 flex justify-end gap-2">
-                <button data-close-import
-                        class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-                    Cancelar
-                </button>
-                <button id="btn-import-confirm" disabled
-                        class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">
-                    Concluir importação
-                </button>
-            </div>
-        </div>
-    </div>
-
     {{-- Toast --}}
     <div id="toast" class="pointer-events-none fixed bottom-5 right-5 z-50 hidden">
         <div class="rounded-xl bg-slate-900/90 px-4 py-3 text-sm font-medium text-white shadow-lg">Mensagem</div>
@@ -819,9 +732,138 @@
         </div>
     </div>
 
+    @push('styles')
+        <style>
+            #receive-modal::backdrop {
+                background: rgba(2, 6, 23, .55);
+            }
+        </style>
+    @endpush
+
+    <dialog id="receive-modal" class="rounded-2xl p-0 w-[min(720px,94vw)]">
+        <div class="rounded-2xl bg-white shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="sticky bg-white top-0 z-30 flex items-center gap-3 justify-between border-b border-slate-200 px-6 py-4">
+                <div>
+                    <h3 class="text-lg font-semibold">Entrada no estoque</h3>
+                    <p class="text-sm text-slate-600">Selecione modo de entrada e preço.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" id="btn-receive-close"
+                            class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Cancelar</button>
+                    <button id="btnConfirm"
+                            class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+                        Confirmar entrada
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-6 space-y-4">
+                <!-- ✅ TOGGLES (JS injeta aqui) -->
+                <div id="receive-toggles"></div>
+
+                <!-- ✅ KPIs (JS injeta aqui) -->
+                <div id="receive-kpis"></div>
+
+                <!-- ✅ ITENS (JS injeta aqui) -->
+                <ul id="receive-items" class="divide-y divide-slate-100 rounded-2xl border border-slate-200"></ul>
+
+                <!-- Lista principal: só pendentes -->
+                <ul id="pendingList" class="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white"></ul>
+
+                <!-- Accordion: finalizados -->
+                <details id="doneDetails" class="mt-4 rounded-2xl border border-slate-200 bg-white hidden">
+                    <summary class="flex cursor-pointer items-center justify-between px-4 py-3">
+                        <div class="text-sm font-semibold text-slate-700">
+                            Itens com entrega finalizada (<span id="doneCount">0</span>)
+                        </div>
+
+                        <svg id="doneChevron" class="h-5 w-5 text-slate-500 transition-transform duration-200"
+                             viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                  d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+                                  clip-rule="evenodd"/>
+                        </svg>
+                    </summary>
+
+                    <div class="border-t border-slate-100 px-4 py-3">
+                        <ul id="doneList" class="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white"></ul>
+                    </div>
+                </details>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Modal: Confirmar exclusão -->
+    <div id="modal-delete" class="fixed inset-0 z-[999] hidden">
+        <div class="absolute inset-0 bg-slate-900/55"></div>
+
+        <div class="relative mx-auto mt-24 w-[92%] max-w-md">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
+                <div class="flex items-start justify-between gap-3 px-5 pt-5">
+                    <div>
+                        <div class="text-base font-semibold text-slate-900">Excluir pedido</div>
+                        <div id="del-sub" class="mt-1 text-sm text-slate-600"></div>
+                    </div>
+
+                    <button type="button" data-close-delete
+                            class="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50">
+                        ✕
+                    </button>
+                </div>
+
+                <div class="px-5 pb-5 pt-3">
+                    <p class="text-sm text-slate-700">
+                        Você está prestes a remover este pedido. <span class="font-semibold">Não será possível recuperar depois.</span>
+                    </p>
+
+                    <!-- Aviso especial (só aparece no partial) -->
+                    <div id="del-partial-warning"
+                         class="mt-4 hidden rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                        <div class="font-semibold">Atenção</div>
+                        <div class="mt-1">
+                            Este pedido está com status <b>partial</b>. Ao excluir, <b>os itens que já entraram no
+                                estoque permanecerão no estoque</b>.
+                            A exclusão não desfaz movimentações já registradas.
+                        </div>
+                    </div>
+
+                    <div class="mt-5 flex items-center justify-end gap-2">
+                        <button type="button" data-close-delete
+                                class="h-10 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                            Cancelar
+                        </button>
+
+                        <button id="btn-delete-confirm" type="button"
+                                class="h-10 rounded-xl bg-rose-600 px-4 text-sm font-semibold text-white hover:bg-rose-700">
+                            Excluir definitivamente
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @include('layouts.common.modal.modal_delete')
 @endsection
 
 @push('scripts')
+    <script>
+        (function () {
+            const list = document.getElementById('ordersp-list');
+            if (!list) return;
+
+            function fit() {
+                const rect = list.getBoundingClientRect();
+                const bottomGap = 18; // ajuste fino se quiser
+                const h = Math.max(240, window.innerHeight - rect.top - bottomGap);
+                list.style.maxHeight = h + 'px';
+            }
+
+            window.addEventListener('resize', fit, {passive: true});
+            window.addEventListener('load', fit);
+            fit();
+        })();
+    </script>
+
     <script type="module" src="{{ asset('assets/js/template/views/part-orders/part-order-index.js') }}"></script>
 @endpush

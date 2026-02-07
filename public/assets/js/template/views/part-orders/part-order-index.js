@@ -4,7 +4,6 @@
 (() => {
     const root = document.getElementById('orders-parts-fragment') || document;
 
-    // ===== ENDPOINTS (se mudar prefix, muda só aqui) =====
     const API_BASE = root.dataset.apiBase || '/part-orders/part-order-api';
     const GROUP_PREFIX = API_BASE.replace(/\/part-order-api\/?$/, '');
     const URL = {
@@ -121,13 +120,6 @@
 
     const btnOpenSettings  = document.getElementById('btn-open-part-order-settings');
 
-    const btnCloseX        = document.getElementById('btn-confirm-x');
-    const btnReturnEdit    = document.getElementById('btn-return-edit');
-
-// IDs do teu modal de configurações (AJUSTE se forem outros)
-    const inpSubjectTpl = document.getElementById('settings-email-subject-tpl');
-    const inpBodyTpl    = document.getElementById('settings-email-body-tpl');
-
     const openModalById = (id) => document.getElementById(id)?.classList.remove('hidden');
     const closeModalById = (id) => document.getElementById(id)?.classList.add('hidden');
 
@@ -213,6 +205,13 @@
     const btnRecOrderOnly    = document.getElementById('btn-rec-order-only');
     const btnRecUpdateSystem = document.getElementById('btn-rec-update-system');
     const recScopeHint = document.getElementById('rec-scope-hint');
+
+    const modalDelete = document.getElementById('modal-delete');
+    const delSub = document.getElementById('del-sub');
+    const delPartialWarning = document.getElementById('del-partial-warning');
+    const btnDeleteConfirm = document.getElementById('btn-delete-confirm');
+
+    let pendingDeleteId = null;
 
     const SUPPLIER_API = root.dataset?.supplierApi || '/entities/supplier-api';
     const supplierUpdateUrl = (id) => `${SUPPLIER_API}/${encodeURIComponent(id)}`;
@@ -329,15 +328,67 @@
         }
     });
 
+    function openDeleteModal(order) {
+        pendingDeleteId = order?.id || null;
+
+        const num = order?.order_number || order?.title || '—';
+        if (delSub) delSub.textContent = `Pedido: ${num}`;
+
+        const raw = String(order?.status || '').toLowerCase();
+        delPartialWarning?.classList.toggle('hidden', raw !== 'partial');
+
+        modalDelete?.classList.remove('hidden');
+
+        // reset botão
+        if (btnDeleteConfirm) {
+            btnDeleteConfirm.disabled = false;
+            btnDeleteConfirm.textContent = 'Excluir definitivamente';
+            btnDeleteConfirm.classList.remove('opacity-60', 'cursor-not-allowed');
+        }
+    }
+
+    function closeDeleteModal() {
+        modalDelete?.classList.add('hidden');
+        pendingDeleteId = null;
+    }
+
+    document.addEventListener('click', (ev) => {
+        if (ev.target.closest('[data-close-delete]')) closeDeleteModal();
+    });
+
+    modalDelete?.addEventListener('click', (e) => {
+        if (e.target === modalDelete) closeDeleteModal();
+    });
+
+    btnDeleteConfirm?.addEventListener('click', async () => {
+        if (!pendingDeleteId) return;
+
+        // estado do botão
+        btnDeleteConfirm.disabled = true;
+        btnDeleteConfirm.textContent = 'Excluindo...';
+        btnDeleteConfirm.classList.add('opacity-60', 'cursor-not-allowed');
+
+        try {
+            await apiFetch(URL.destroy(pendingDeleteId), { method: 'DELETE' });
+            toast('Pedido excluído');
+            closeDeleteModal();
+            await loadList();
+        } catch (e) {
+            toast(e.message || 'Falha ao excluir.');
+            btnDeleteConfirm.disabled = false;
+            btnDeleteConfirm.textContent = 'Excluir definitivamente';
+            btnDeleteConfirm.classList.remove('opacity-60', 'cursor-not-allowed');
+        }
+    });
+
     // ===== Catalog (continua localStorage por enquanto) =====
     const getLS = (k, f) => {
         try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(f)); } catch { return f; }
     };
     const setLS = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 
-    const partsCatalogSeed = [
-        { codigo: '6206088', descricao: 'Mecanismo Fujitsu c/proteção', ncm: '8443.99.41', valor: 670.65, ipi: 6.5 },
-    ];
+    const partsCatalogSeed = [];
+
     let catalog = getLS('cliqis_parts_catalog', partsCatalogSeed);
     setLS('cliqis_parts_catalog', catalog);
 
@@ -435,24 +486,45 @@
 
     function derivedStatus(o) {
         const raw = String(o.status || '').toLowerCase();
-        if (raw === 'draft') return 'rascunho';
-        if (raw === 'pending') return 'pendente';
-        if (raw === 'completed') return 'concluido';
 
-        let st = 'aberto';
+        if (raw === 'draft') return 'rascunho';
+
+        // ✅ deriva por quantidade (funciona mesmo se backend não trocar status)
+        const rec = Number(o.received_qty_sum ?? o.qty_received ?? o.received_qty ?? 0);
+        const tot = Number(o.qty_total_sum ?? o.qty_total ?? o.total_qty_sum ?? 0);
+
+        if (tot > 0) {
+            if (rec >= tot) return 'concluido';
+            if (rec > 0) return 'parcial';
+        }
+
+        if (raw === 'completed') return 'concluido';
+        if (raw === 'partial') return 'parcial';
+
+        if (raw === 'pending') {
+            const days = diffDays(o.order_date || o.date, todayISO());
+            return days > 10 ? 'atraso' : 'pendente';
+        }
+
         const days = diffDays(o.order_date || o.date, todayISO());
-        if (days > 10 && st !== 'concluido') st = 'atraso';
-        return st;
+        return days > 10 ? 'atraso' : 'aberto';
     }
 
-    function chip(st) {
+    function chip(st, o = null) {
+        const rec = Number(o?.received_qty_sum ?? o?.qty_received ?? o?.received_qty ?? 0);
+        const tot = Number(o?.qty_total_sum ?? o?.qty_total ?? o?.total_qty_sum ?? 0);
+
+        const partialLabel = (tot > 0) ? `Parcial ${rec}/${tot}` : 'Parcial';
+
         const m = {
-            aberto: ['bg-blue-50 text-blue-700', 'Em aberto'],
-            pendente: ['bg-amber-50 text-amber-700', 'Pendente'],
-            atraso: ['bg-rose-50 text-rose-700', 'Em atraso'],
+            aberto:    ['bg-blue-50 text-blue-700', 'Em aberto'],
+            pendente:  ['bg-amber-50 text-amber-700', 'Pendente'],
+            atraso:    ['bg-rose-50 text-rose-700', 'Em atraso'],
+            parcial:   ['bg-indigo-50 text-indigo-700', partialLabel],
             concluido: ['bg-emerald-50 text-emerald-700', 'Concluído'],
-            rascunho: ['bg-rose-50 text-rose-700', 'Rascunho'],
+            rascunho:  ['bg-rose-50 text-rose-700', 'Rascunho'],
         };
+
         const [cls, lb] = m[st] || ['bg-slate-100 text-slate-700', st];
         return `<span class="inline-flex rounded-full ${cls} px-2.5 py-1 text-xs font-medium">${lb}</span>`;
     }
@@ -497,7 +569,15 @@
         const label =
             statusFilter === 'all'
                 ? 'Todos os status'
-                : ({ aberto: 'Em aberto', pendente: 'Pendente', atraso: 'Em atraso', concluido: 'Concluído' }[statusFilter] || '');
+                : ({
+                    aberto: 'Em aberto',
+                    pendente: 'Pendente',
+                    atraso: 'Em atraso',
+                    parcial: 'Parcial',
+                    concluido: 'Concluído',
+                    rascunho: 'Rascunho',
+                }[statusFilter] || '');
+
         if (cardLabel) cardLabel.textContent = label;
     }
 
@@ -507,9 +587,14 @@
                 ? `<span class="ml-2 inline-flex rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700">Rascunho</span>`
                 : '';
 
-        const isDraft = String(o.status || '').toLowerCase() === 'draft';
-        const canEdit = isDraft;
-        const canResend = !isDraft;
+        const st = o._status;
+
+        const isDraft = st === 'rascunho';
+        const isDone  = st === 'concluido';
+
+        const canEdit   = isDraft;
+        const canResend = !isDraft && !isDone;
+        const canReceive= !isDraft && !isDone;
 
         return `
       <tr class="hover:bg-slate-50/60">
@@ -518,10 +603,17 @@
         <td class="px-4 py-3">${escapeHTML(o.title || '—')}</td>
         <td class="px-4 py-3">${formatBRDate(o.order_date || '')}</td>
         <td class="px-4 py-3 text-right">${fmtBR(o.grand_total || 0)}</td>
-        <td class="px-4 py-3">${chip(o._status)}</td>
+<td class="px-4 py-3">${chip(o._status, o)}</td>
         <td class="px-4 py-3">
           <div class="flex justify-end gap-2">
-            <button data-act="view" data-id="${o.id}" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">Visualizar</button>
+            ${canReceive ? `
+        <button data-finalize="${o.id}"
+          class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100">
+          Finalizar
+        </button>
+      ` : ''}
+                        <button data-act="view" data-id="${o.id}" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">Visualizar</button>
+
             ${canEdit ? `<button data-act="edit" data-id="${o.id}" class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100">Editar</button>` : ''}
             ${canResend ? `<button data-act="resend" data-id="${o.id}"
   class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">
@@ -634,49 +726,76 @@
         return Array.isArray(json) ? json : (json.data || []);
     }
 
-    function setupPartTypeaheadForInput({
-                                            input,
-                                            mode, // "code" | "name"
-                                            getRowInputs, // () => { codeEl, descEl, ncmEl, unitEl, ipiEl }
-                                            applyPart,    // (part) => void
-                                            createPart,   // (term) => Promise<void>
-                                        }) {
+    function setupPartTypeaheadForInput({ input, mode, getRowInputs, applyPart, createPart }) {
         if (!input) return;
 
         const wrapper = wrapForDropdown(input);
         if (!wrapper) return;
 
         const dd = document.createElement('div');
+
+        // ❌ antes: tinha w-full e prendia na coluna
+        // dd.className = 'absolute z-50 mt-1 w-full ... overflow-auto hidden';
+
+        // ✅ agora: sem w-full, com overflow-x escondido
         dd.className =
-            'absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg max-h-64 overflow-auto hidden';
+            'absolute mt-1 rounded-xl border border-slate-200 bg-white shadow-lg max-h-64 overflow-y-auto overflow-x-hidden hidden';
+        dd.style.zIndex = '90';
+        dd.style.left = '0';
+        dd.style.right = 'auto';
+
+        // largura “auto” controlada
+        dd.style.minWidth = '100%';            // fallback (vai ser sobrescrito pelo fit)
+        dd.style.width = 'max-content';
+        dd.style.maxWidth = 'min(520px, 90vw)';
+
         wrapper.appendChild(dd);
 
         let abortController = null;
 
-        const norm = (s) =>
-            (s || '')
-                .toString()
-                .trim()
-                .toLowerCase()
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '');
-
         const close = () => {
             dd.classList.add('hidden');
             dd.innerHTML = '';
+            dd.style.left = '0';
+            dd.style.right = 'auto';
+        };
+
+        const fitDropdown = () => {
+            // min = input, width = max-content, max = 520px/90vw
+            const w = input.getBoundingClientRect().width || input.offsetWidth || 0;
+            dd.style.minWidth = w ? `${Math.ceil(w)}px` : '100%';
+            dd.style.width = 'max-content';
+            dd.style.maxWidth = 'min(520px, 90vw)';
+
+            // garante que não estoura a viewport
+            dd.style.left = '0';
+            dd.style.right = 'auto';
+
+            // precisa estar visível pra medir
+            dd.classList.remove('hidden');
+            const pad = 8;
+            const r = dd.getBoundingClientRect();
+
+            if (r.right > window.innerWidth - pad) {
+                dd.style.left = 'auto';
+                dd.style.right = '0';
+            }
+            if (r.left < pad) {
+                dd.style.left = '0';
+                dd.style.right = 'auto';
+            }
         };
 
         const render = (items, term) => {
             dd.innerHTML = '';
 
-            const termNorm = norm(term);
+            const termNorm = (term || '').trim().toLowerCase();
             const hasExact = items.some((p) => {
-                const code = norm(p.code || p.codigo || '');
-                const name = norm(p.name || p.descricao || p.description || '');
+                const code = String(p.code || p.codigo || '').trim().toLowerCase();
+                const name = String(p.name || p.descricao || p.description || '').trim().toLowerCase();
                 return (code && code === termNorm) || (name && name === termNorm);
             });
 
-            // lista resultados
             items.forEach((p) => {
                 const code = p.code || p.codigo || '';
                 const name = p.name || p.descricao || p.description || '';
@@ -689,6 +808,8 @@
 
                 const btn = document.createElement('button');
                 btn.type = 'button';
+
+                // mantém “cara” do teu typeahead
                 btn.className = 'w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex justify-between gap-2';
                 btn.innerHTML = `
         <span class="truncate">${escapeHTML(label)}</span>
@@ -703,24 +824,9 @@
                 dd.appendChild(btn);
             });
 
-            // CTA criar (igual modal de funcionários)
-            const showCreate = termNorm && !hasExact;
-            if (showCreate) {
-                const cta = document.createElement('button');
-                cta.type = 'button';
-                cta.className =
-                    'w-full px-3 py-2 text-left text-sm hover:bg-blue-50 flex items-center gap-2 text-blue-700 border-t border-slate-100';
-                cta.innerHTML = `+ Criar nova peça "${escapeHTML(term)}"`;
-                cta.addEventListener('click', async () => {
-                    await createPart(term);
-                    close();
-                });
-                dd.appendChild(cta);
-            }
+            if (!items.length) return close();
 
-            // se não tem nada e nem create, fecha
-            if (!items.length && !showCreate) close();
-            else dd.classList.remove('hidden');
+            fitDropdown();
         };
 
         const openList = async () => {
@@ -736,7 +842,7 @@
 
                 render(list, term);
             } catch (err) {
-                if (err?.name === 'AbortError') return; // ✅ ignora
+                if (err?.name === 'AbortError') return;
                 console.warn(err);
             }
         };
@@ -749,10 +855,14 @@
             if (!wrapper.contains(ev.target)) close();
         });
 
-        // se fechar com ESC
         input.addEventListener('keydown', (ev) => {
             if (ev.key === 'Escape') close();
         });
+
+        // opcional: se redimensionar com dropdown aberto, reajusta
+        window.addEventListener('resize', () => {
+            if (!dd.classList.contains('hidden')) fitDropdown();
+        }, { passive: true });
     }
 
     // ===== MODALS =====
@@ -963,21 +1073,6 @@
         });
     }
 
-    function openSettingsModal() {
-        document.getElementById('modal-part-order-settings')?.classList.remove('hidden');
-    }
-
-    btnOpenSettings?.addEventListener('click', openSettingsModal);
-
-    function refreshPreviewFromSettingsInputs() {
-        if (!currentOrderForSend) return;
-        const subj = inpSubjectTpl?.value ?? '';
-        const body = inpBodyTpl?.value ?? '';
-        renderConfirmPreview(currentOrderForSend, subj, body);
-    }
-    inpSubjectTpl?.addEventListener('input', refreshPreviewFromSettingsInputs);
-    inpBodyTpl?.addEventListener('input', refreshPreviewFromSettingsInputs);
-
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
     function isColorClass(c) {
@@ -1057,15 +1152,17 @@
     function openSuccess(id) { lastSentId = id; succModal?.classList.remove('hidden'); }
     function closeSuccess() { succModal?.classList.add('hidden'); }
 
-    function openViewModal() {
+    function openViewModal(order) {
         const btnViewResend = document.getElementById('btn-view-resend');
 
-        btnViewResend?.classList.toggle('hidden', String(o.status || '').toLowerCase() === 'draft');
+        const isDraft = String(order.status || '').toLowerCase() === 'draft';
+
+        btnViewResend?.classList.toggle('hidden', isDraft);
 
         if (btnViewResend) {
             btnViewResend.onclick = () => {
                 closeViewModal();
-                openResendConfirm(o.id);
+                openResendConfirm(order.id);
             };
         }
 
@@ -1076,8 +1173,6 @@
 
     document.addEventListener('click', (ev) => {
         if (ev.target.closest('[data-close-parts]')) closeModal(true);
-        if (ev.target.closest('[data-close-regpart]')) closeReg();
-        if (ev.target.closest('[data-close-import]')) closeImport();
         if (ev.target.closest('[data-close-view]')) closeViewModal();
     });
 
@@ -1112,8 +1207,6 @@
         if (!a) return;
         const act = a.dataset.action;
         if (act === 'newParts') openNew();
-        if (act === 'regPart') openReg();
-        if (act === 'importParts') openImport();
     });
 
     if (!window.__cliqisPartsNewBtnPatch_v3) {
@@ -1328,9 +1421,6 @@
         });
     }
 
-    // function openModal(id) { document.getElementById(id)?.classList.remove('hidden'); }
-    // function closeModal(id) { document.getElementById(id)?.classList.add('hidden'); }
-
     async function initPartsSettingsUI() {
         // binds typeaheads
         bindSupplierTypeahead('ps-supplier-name', 'ps-supplier-id', 'ps-supplier-dd');
@@ -1388,6 +1478,540 @@
         document.addEventListener('DOMContentLoaded', initPartsSettingsUI);
     } else {
         initPartsSettingsUI();
+    }
+
+
+    // ============== RECEIVE ITENS
+
+    const receiveDialog = document.getElementById('receive-modal');
+
+    const pendingListEl = document.getElementById('pendingList');
+    const doneListEl = document.getElementById('doneList');
+    const doneCountEl = document.getElementById('doneCount');
+    const doneDetailsEl = document.getElementById('doneDetails');
+
+    const btnConfirmReceive = document.getElementById('btnConfirm'); // ✅ id certo
+    const btnReceiveClose = document.getElementById('btn-receive-close');
+
+    let receiveMode = 'total'; // total | partial
+    let priceMode = 'sale';    // sale | markup
+
+    function getAllRecItems() {
+        return Array.from(receiveDialog.querySelectorAll('[data-rec-item]'));
+    }
+
+    function calcRemaining(it) {
+        const ordered = Number(it.quantity || 0);
+        const received = Number(it.received_qty || it.receivedQty || 0);
+        const rem = Math.max(ordered - received, 0);
+        // seu sistema é inteiro
+        return Number.isFinite(rem) ? Math.trunc(rem) : 0;
+    }
+
+    function clampInt(v, min, max) {
+        let n = parseInt(v || '0', 10);
+        if (!Number.isFinite(n)) n = 0;
+        return Math.max(min, Math.min(max, n));
+    }
+
+    /* ====== TOGGLES ====== */
+    function renderReceiveToggles() {
+        const host = document.getElementById('receive-toggles');
+        if (!host) return;
+
+        host.innerHTML = `
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div class="inline-flex rounded-full bg-slate-100 p-1">
+        <button type="button" data-mode="total"
+          class="px-4 py-2 text-sm font-semibold rounded-full ${receiveMode==='total'?'bg-white shadow text-slate-900':'text-slate-600'}">
+          Entrada total
+        </button>
+        <button type="button" data-mode="partial"
+          class="px-4 py-2 text-sm font-semibold rounded-full ${receiveMode==='partial'?'bg-white shadow text-slate-900':'text-slate-600'}">
+          Entrada parcial
+        </button>
+      </div>
+
+      <div class="inline-flex rounded-full bg-slate-100 p-1">
+        <button type="button" data-price="sale"
+          class="px-4 py-2 text-sm font-semibold rounded-full ${priceMode==='sale'?'bg-white shadow text-slate-900':'text-slate-600'}">
+          Preço de venda
+        </button>
+        <button type="button" data-price="markup"
+          class="px-4 py-2 text-sm font-semibold rounded-full ${priceMode==='markup'?'bg-white shadow text-slate-900':'text-slate-600'}">
+          Margem %
+        </button>
+      </div>
+    </div>`;
+
+        host.querySelectorAll('[data-mode]').forEach(b => {
+            b.onclick = () => { receiveMode = b.dataset.mode; renderReceiveToggles(); applyReceiveModeUI(); };
+        });
+
+        host.querySelectorAll('[data-price]').forEach(b => {
+            b.onclick = () => { priceMode = b.dataset.price; renderReceiveToggles(); applyPriceModeUI(); };
+        });
+    }
+
+    /* ====== PRICE MASK (BRL) ====== */
+    function onlyDigits(v) { return String(v || '').replace(/[^\d]/g, ''); }
+    function formatBRLFromDigits(digits) {
+        const d = onlyDigits(digits);
+        const n = Number(d || 0) / 100;
+        return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function parseBRLToNumber(v) {
+        const s = String(v || '').trim().replace(/\./g,'').replace(',','.');
+        const n = Number(s);
+        return Number.isFinite(n) ? n : 0;
+    }
+
+    function bindSaleMasks() {
+        receiveDialog.querySelectorAll('[data-sale]').forEach(inp => {
+            if (inp.dataset.maskBound === '1') return;
+            inp.dataset.maskBound = '1';
+
+            // garante tipo
+            inp.type = 'text';
+            inp.inputMode = 'numeric';
+
+            // inicia formatado
+            if (!inp.value || inp.value === '0') inp.value = '0,00';
+            else inp.value = formatBRLFromDigits(inp.value);
+
+            inp.addEventListener('input', (e) => {
+                e.target.value = formatBRLFromDigits(e.target.value);
+                e.target.setSelectionRange(e.target.value.length, e.target.value.length);
+            });
+
+            inp.addEventListener('blur', (e) => {
+                e.target.value = formatBRLFromDigits(e.target.value);
+            });
+        });
+    }
+
+    /* ====== MODOS UI ====== */
+    function applyReceiveModeUI() {
+        const lis = getAllRecItems();
+
+        lis.forEach(li => {
+            const rem = parseInt(li.dataset.remaining || '0', 10) || 0;
+            const qtyInput = li.querySelector('[data-qty]');
+            const pill = li.querySelector('[data-qty-pill]');
+
+            const isDone = rem <= 0;
+
+            if (qtyInput) {
+                qtyInput.max = String(rem);
+                if (isDone) {
+                    qtyInput.value = '0';
+                    qtyInput.readOnly = true;
+                    qtyInput.classList.add('hidden');
+                    if (pill) { pill.textContent = '0'; pill.classList.remove('hidden'); }
+                } else if (receiveMode === 'total') {
+                    qtyInput.value = String(rem);
+                    qtyInput.readOnly = true;
+                    qtyInput.classList.add('hidden');
+                    if (pill) { pill.textContent = String(rem); pill.classList.remove('hidden'); }
+                } else {
+                    qtyInput.readOnly = false;
+                    qtyInput.classList.remove('hidden');
+                    if (pill) pill.classList.add('hidden');
+                    // clamp se já veio maior
+                    qtyInput.value = String(clampInt(qtyInput.value, 0, rem));
+                }
+            }
+
+            // split por local: no modo total joga tudo no primeiro
+            const mustSplit = receiveDialog.dataset.mustSplit === '1';
+            if (mustSplit) {
+                const locQtyInputs = li.querySelectorAll('[data-loc-row] [data-loc-qty]');
+                if (locQtyInputs.length) {
+                    if (receiveMode === 'total') {
+                        locQtyInputs.forEach((inp, idx) => inp.value = (idx === 0 ? String(rem) : '0'));
+                    } else {
+                        // parcial: se só 1 linha, acompanha qty
+                        if (locQtyInputs.length === 1 && qtyInput) {
+                            locQtyInputs[0].value = String(clampInt(qtyInput.value, 0, rem));
+                        }
+                    }
+                }
+            }
+        });
+
+        updateReceiveKpis();
+    }
+
+    function applyPriceModeUI() {
+        const lis = getAllRecItems();
+        lis.forEach(li => {
+            const rem = parseInt(li.dataset.remaining || '0', 10) || 0;
+            const isDone = rem <= 0;
+
+            const saleWrap = li.querySelector('[data-sale-wrap]');
+            const markupWrap = li.querySelector('[data-markup-wrap]');
+            const sale = li.querySelector('[data-sale]');
+            const markup = li.querySelector('[data-markup]');
+
+            // finalizado: trava inputs
+            if (sale) sale.disabled = isDone;
+            if (markup) markup.disabled = isDone;
+
+            if (priceMode === 'sale') {
+                saleWrap?.classList.remove('hidden');
+                markupWrap?.classList.add('hidden');
+                if (markup) markup.value = '0';
+            } else {
+                markupWrap?.classList.remove('hidden');
+                saleWrap?.classList.add('hidden');
+                if (sale) sale.value = '0,00';
+            }
+        });
+
+        bindSaleMasks();
+    }
+
+    /* ====== KPIs ====== */
+    function computeReceiveTotalsFromUI() {
+        const lis = Array.from(receiveItemsEl.querySelectorAll('[data-rec-item]'));
+
+        let itemsPending = 0;
+        let qtyRemaining = 0;
+        let qtyTotalOrder = 0;
+        let qtyWillReceive = 0;
+
+        lis.forEach(li => {
+            const ordered = parseInt(li.dataset.ordered || '0', 10);
+            const remaining = parseInt(li.dataset.remaining || '0', 10);
+
+            qtyTotalOrder += ordered;
+            qtyRemaining += remaining;
+
+            if (remaining > 0) itemsPending++;
+
+            // qty do input (modo parcial) - clamp pra não passar do remaining
+            const typed = parseInt(li.querySelector('[data-qty]')?.value || '0', 10);
+            const will = (receiveMode === 'total')
+                ? remaining
+                : Math.max(0, Math.min(typed, remaining));
+
+            qtyWillReceive += will;
+        });
+
+        return { itemsPending, qtyRemaining, qtyTotalOrder, qtyWillReceive };
+    }
+
+    function updateReceiveKpis() {
+        const box = document.getElementById('receive-kpis');
+        if (!box) return;
+
+        const t = computeReceiveTotalsFromUI();
+
+        box.innerHTML = `
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div class="text-[11px] text-slate-500">Itens pendentes</div>
+      <div class="text-lg font-semibold">${t.itemsPending}</div>
+    </div>
+
+    <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div class="text-[11px] text-slate-500">Restantes / Total</div>
+      <div class="text-lg font-semibold">${t.qtyRemaining} / ${t.qtyTotalOrder}</div>
+      <div class="mt-1 text-[11px] text-slate-500">Entrada agora: ${t.qtyWillReceive}</div>
+    </div>
+
+    <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div class="text-[11px] text-slate-500">Modo</div>
+      <div class="text-lg font-semibold">${receiveMode === 'total' ? 'Total' : 'Parcial'}</div>
+    </div>
+
+    <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div class="text-[11px] text-slate-500">Preço</div>
+      <div class="text-lg font-semibold">${priceMode === 'sale' ? 'Venda' : 'Margem %'}</div>
+    </div>
+  </div>`;
+    }
+
+
+    /* ====== RENDER ITENS (SEPARA PENDENTES x FINALIZADOS) ====== */
+    function renderReceiveItems(data) {
+        const mustSplit = !!data.must_split_by_location;
+        const locations = data.locations || [];
+        const defaultLocId = data.default_location_id || '';
+
+        receiveItemsEl.innerHTML = (data.items || []).map(it => {
+            const ordered = parseInt(it.quantity || 0, 10);
+            const received = parseInt(it.received_qty || 0, 10);
+            const remaining = (it.remaining != null)
+                ? parseInt(it.remaining, 10)
+                : Math.max(0, ordered - received);
+
+            return `
+<li class="p-4"
+    data-rec-item="${it.id}"
+    data-ordered="${ordered}"
+    data-received="${received}"
+    data-remaining="${remaining}">
+  <div class="grid grid-cols-12 gap-8 items-start">
+
+    <!-- ESQUERDA: código / nome / unit -->
+    <div class="col-span-12 md:col-span-5">
+      <div class="text-xs text-slate-500">${escapeHtml(it.code || '-')}</div>
+      <div class="text-sm font-semibold text-slate-900">${escapeHtml(it.description || '-')}</div>
+
+      <div class="mt-2 text-[11px] text-slate-500 mb-1">
+        Custo: <span class="text-slate-700 font-bold">${fmtBR(it.unit_price || 0)}</span> / ${fmtBR(it.line_total || 0)}
+      </div>
+
+        <div class="text-[11px] text-slate-500">
+          Recebido: <span class="text-slate-700 font-bold">${it.received_qty || 0}</span> / Pedido: <span class="text-slate-700 font-bold">${it.quantity || 0}</span>
+        </div>
+    </div>
+
+    <!-- DIREITA: recebido/pedido + inputs -->
+    <div class="col-span-12 md:col-span-7 md:justify-self-end">
+      <div class="flex flex-col items-end gap-2">
+
+        <!-- inputs abaixo, alinhados à direita -->
+        <div class="grid grid-cols-12 gap-8 w-full md:w-auto">
+
+          <!-- QTD -->
+          <div class="col-span-12 sm:col-span-6 md:col-span-6 justify-self-end">
+            <div class="text-xs font-medium text-slate-600 text-left mb-1">Entrada de</div>
+
+            <div data-qty-pill class="hidden h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-900 flex items-center justify-center tabular-nums"></div>
+
+            <input data-qty type="number" min="0" max="${remaining}"
+              class="h-10 text-center rounded-xl border border-slate-300 bg-slate-50 px-3 text-sm font-semibold text-slate-900 shadow-sm outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 flex items-center justify-center tabular-nums"
+              value="${remaining}">
+          </div>
+
+          <!-- VENDA -->
+          <div class="col-span-12 sm:col-span-6 md:col-span-6 justify-self-end" data-sale-wrap>
+            <div class="text-xs font-medium text-slate-600 text-left mb-1">Preço de venda <i class="font-light text-slate-500">unidade</i></div>
+            <input data-sale type="text" inputmode="numeric"
+              class="h-10 rounded-xl border border-slate-300 bg-slate-50 px-3 text-sm font-semibold text-slate-900 shadow-sm outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 flex items-center justify-center tabular-nums"
+              value="0,00">
+          </div>
+
+          <!-- MARGEM -->
+          <div class="col-span-12 md:col-span-6 justify-self-end hidden" data-markup-wrap>
+            <div class="text-xs font-medium text-slate-600 text-left mb-1">Margem lucro (%) <i class="font-light text-slate-500">unidade</i></div>
+            <input data-markup type="number" min="0" step="0.01"
+              class="h-10 rounded-xl border border-slate-300 bg-slate-50 px-3 text-sm font-semibold text-slate-900 shadow-sm outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 flex items-center justify-center tabular-nums"
+              value="0">
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- + Local -->
+    <div class="col-span-12 ${mustSplit ? '' : 'hidden'} flex justify-end">
+      <button type="button" data-add-loc
+        class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+        + Local
+      </button>
+    </div>
+
+  </div>
+
+  <div class="${mustSplit ? 'mt-3' : 'hidden'}" data-locs>
+    ${renderLocRow(locations, defaultLocId, remaining)}
+  </div>
+</li>`;
+
+
+            return { remaining, html: liHtml };
+        });
+
+        // split
+        const pending = items.filter(x => x.remaining > 0).map(x => x.html).join('');
+        const done = items.filter(x => x.remaining <= 0).map(x => x.html).join('');
+
+        pendingListEl.innerHTML = pending || `<li class="p-4 text-sm text-slate-500">Nenhum item pendente.</li>`;
+        doneListEl.innerHTML = done || `<li class="p-4 text-sm text-slate-500">Nenhum item finalizado.</li>`;
+
+        // rebind
+        bindSaleMasks();
+    }
+
+    /* ====== LOCAIS ====== */
+    function renderLocRow(locations, defaultLocId, qty) {
+        const opts = locations.map(l => `<option value="${l.id}" ${l.id === defaultLocId ? 'selected' : ''}>${escapeHtml(l.name)}</option>`).join('');
+        return `
+    <div class="grid grid-cols-12 gap-3 items-end mb-2" data-loc-row>
+      <div class="col-span-8">
+        <div class="text-[11px] text-slate-500">Local</div>
+        <select data-loc-id class="h-9 w-full rounded-xl border border-slate-200 px-3 text-sm">
+          ${opts}
+        </select>
+      </div>
+      <div class="col-span-3">
+        <div class="text-[11px] text-slate-500">Qtd</div>
+        <input data-loc-qty type="number" min="0" class="h-9 w-full rounded-xl border border-slate-200 px-3 text-sm" value="${qty}">
+      </div>
+      <div class="col-span-1 text-right">
+        <button type="button" data-del-loc class="rounded-lg px-2 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-50">✕</button>
+      </div>
+    </div>
+  `;
+    }
+
+    /* ====== EVENTOS ====== */
+    btnReceiveClose?.addEventListener('click', () => receiveDialog.close());
+
+// input geral (KPIs + clamp + sync loc)
+    receiveDialog.addEventListener('input', (e) => {
+        if (!e.target.matches('[data-qty],[data-loc-qty],[data-sale],[data-markup]')) return;
+
+        const li = e.target.closest('[data-rec-item]');
+        if (li && e.target.matches('[data-qty]')) {
+            const rem = parseInt(li.dataset.remaining || '0', 10) || 0;
+            e.target.value = String(clampInt(e.target.value, 0, rem));
+
+            // se mustSplit e só 1 local, acompanha qty
+            const mustSplit = receiveDialog.dataset.mustSplit === '1';
+            if (mustSplit) {
+                const rows = li.querySelectorAll('[data-loc-row]');
+                if (rows.length === 1) {
+                    const locQty = rows[0].querySelector('[data-loc-qty]');
+                    if (locQty) locQty.value = e.target.value;
+                }
+            }
+        }
+
+        updateReceiveKpis();
+    });
+
+    document.addEventListener('click', (e) => {
+        const add = e.target.closest('[data-add-loc]');
+        if (add) {
+            const li = add.closest('[data-rec-item]');
+            const locs = li.querySelector('[data-locs]');
+            const mustSplit = receiveDialog.dataset.mustSplit === '1';
+            if (!mustSplit) return;
+
+            const dataLocations = window.__receiveLocations || [];
+            const defaultLocId = window.__receiveDefaultLocId || '';
+            locs.insertAdjacentHTML('beforeend', renderLocRow(dataLocations, defaultLocId, 0));
+            return;
+        }
+
+        const del = e.target.closest('[data-del-loc]');
+        if (del) del.closest('[data-loc-row]')?.remove();
+    });
+
+    /* ====== OPEN MODAL ====== */
+    const urlReceiveData = (id) => `${id}/receive-data`;
+    const urlReceive = (id) => `${id}/receive`;
+
+    document.addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-finalize]');
+        if (!btn) return;
+        await openReceiveModal(btn.getAttribute('data-finalize'));
+    });
+
+    async function openReceiveModal(orderId) {
+        const res = await fetch(urlReceiveData(orderId), { headers: { Accept: 'application/json' }});
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+            toast(data?.message || 'Falha ao carregar dados do recebimento.');
+            return;
+        }
+
+        window.__receiveLocations = data.locations || [];
+        window.__receiveDefaultLocId = data.default_location_id || '';
+
+        receiveDialog.dataset.orderId = orderId;
+        receiveDialog.dataset.mustSplit = (data.must_split_by_location ? '1' : '0');
+
+        receiveMode = 'total';
+        priceMode = 'sale';
+
+        renderReceiveItems(data);
+        renderReceiveToggles();
+
+        applyReceiveModeUI();
+        applyPriceModeUI();
+        updateReceiveKpis();
+
+        receiveDialog.showModal();
+    }
+
+    /* ====== CONFIRMAR ====== */
+    btnConfirmReceive?.addEventListener('click', async () => {
+        const orderId = receiveDialog.dataset.orderId;
+        const mustSplit = receiveDialog.dataset.mustSplit === '1';
+
+        const lis = getAllRecItems();
+
+        // monta somente itens com qty > 0 (limpa payload)
+        const items = lis.map(li => {
+            const partOrderItemId = li.getAttribute('data-rec-item');
+            const rem = parseInt(li.dataset.remaining || '0', 10) || 0;
+
+            const qty = (receiveMode === 'total')
+                ? rem
+                : clampInt(li.querySelector('[data-qty]')?.value, 0, rem);
+
+            let sale_price = 0;
+            let markup_percent = 0;
+
+            if (priceMode === 'sale') {
+                sale_price = parseBRLToNumber(li.querySelector('[data-sale]')?.value || '0');
+            } else {
+                markup_percent = parseFloat(li.querySelector('[data-markup]')?.value || '0') || 0;
+            }
+
+            let locations = [];
+            if (mustSplit) {
+                locations = Array.from(li.querySelectorAll('[data-loc-row]')).map(r => ({
+                    location_id: r.querySelector('[data-loc-id]')?.value,
+                    qty: clampInt(r.querySelector('[data-loc-qty]')?.value, 0, 999999),
+                })).filter(x => (x.qty || 0) > 0);
+            }
+
+            return { part_order_item_id: partOrderItemId, qty, sale_price, markup_percent, locations, __rem: rem };
+        }).filter(x => (x.qty || 0) > 0); // ✅ só o que vai entrar
+
+        if (receiveMode === 'partial' && items.length === 0) {
+            return toast('Informe ao menos 1 item com qty > 0.');
+        }
+
+        if (mustSplit) {
+            for (const it of items) {
+                const sum = (it.locations || []).reduce((a, b) => a + (b.qty || 0), 0);
+                if (sum !== it.qty) return toast('Distribuição por locais não fecha em um item.');
+            }
+        }
+
+        const res = await fetch(urlReceive(orderId), {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                ...(csrf() ? { 'X-CSRF-TOKEN': csrf() } : {}),
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify({ mode: receiveMode, items }),
+        });
+
+        const out = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+            toast(out?.message || 'Falha ao confirmar entrada.');
+            return;
+        }
+
+        toast('Entrada confirmada.');
+        receiveDialog.close();
+        await loadList();
+    });
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
     }
 
     document.addEventListener('cliqis:supplier-selected', async (ev) => {
@@ -1619,36 +2243,6 @@
                 updateSummary();
             };
 
-            const createPartInDb = async (term) => {
-                const codeTyped = (codeEl?.value || '').trim();
-                const descTyped = (descEl?.value || '').trim();
-                const ncmTyped  = (ncmEl?.value || '').trim();
-                const unitTyped = parseNumber(unitEl?.value || 0);
-
-                // define nome/código dependendo de onde o cara tá digitando
-                const code = codeTyped || (modeLastFocused === 'code' ? term.trim() : null);
-                const name = descTyped || (modeLastFocused === 'name' ? term.trim() : '') || (code || 'Peça');
-
-                if (!name) return;
-
-                const payload = {
-                    code: code || null,
-                    name,
-                    description: descTyped || null,
-                    unit_price: unitTyped || 0,
-                    ncm_code: ncmTyped || null,
-                    supplier_id: null,
-                    is_active: true,
-                };
-
-                const res = await apiFetch(PART_API, { method: 'POST', body: JSON.stringify(payload) });
-                const created = res.data || res;
-
-                toast('Peça criada');
-                applyPartFromApi(created);
-            };
-
-// guarda onde o usuário tá interagindo (pra criar com o “term” certo)
             let modeLastFocused = 'name';
             codeEl?.addEventListener('focus', () => (modeLastFocused = 'code'));
             descEl?.addEventListener('focus', () => (modeLastFocused = 'name'));
@@ -1657,16 +2251,14 @@
                 input: descEl,
                 mode: 'name',
                 getRowInputs: () => ({ codeEl, descEl, ncmEl, unitEl, ipiEl }),
-                applyPart: applyPartFromApi,
-                createPart: createPartInDb,
+                applyPart: applyPartFromApi
             });
 
             setupPartTypeaheadForInput({
                 input: codeEl,
                 mode: 'code',
                 getRowInputs: () => ({ codeEl, descEl, ncmEl, unitEl, ipiEl }),
-                applyPart: applyPartFromApi,
-                createPart: createPartInDb,
+                applyPart: applyPartFromApi
             });
 
             updateRowComputed(i, row);
@@ -1835,7 +2427,8 @@
             if (btnEditDraft) btnEditDraft.onclick = () => { closeViewModal(); openEdit(o.id); };
 
             viewContent.innerHTML = buildProposalHTML(o, st);
-            openViewModal();
+            openViewModal(o);
+
         } catch (e) {
             toast(e.message || 'Falha ao carregar pedido.');
         }
@@ -2014,15 +2607,22 @@ ${supplierEmailLine}
     }
 
     async function delOrder(id) {
-        if (!confirm('Excluir este pedido?')) return;
         try {
-            await apiFetch(URL.destroy(id), { method: 'DELETE' });
-            toast('Pedido excluído');
-            await loadList();
+            let o = orders.find(x => x.id === id);
+
+            if (!o) o = await apiFetch(URL.show(id));
+
+            openDeleteModal(o);
         } catch (e) {
-            toast(e.message || 'Falha ao excluir.');
+            toast(e.message || 'Falha ao preparar exclusão.');
         }
     }
+
+    document.getElementById('btn-receive-close')?.addEventListener('click', () => receiveDialog?.close());
+
+    receiveDialog?.addEventListener('click', (e) => {
+        if (e.target === receiveDialog) receiveDialog.close();
+    });
 
     async function cloneOrder(id) {
         try {
@@ -2113,6 +2713,108 @@ ${supplierEmailLine}
         btnConfirm.dataset.busy = '0';
     });
 
+    function initStockEntryModal(modalEl) {
+        if (!modalEl || modalEl.dataset.inited === "1") return;
+        modalEl.dataset.inited = "1";
+
+        const getItems = () => Array.from(modalEl.querySelectorAll("[data-stock-item]"));
+
+        const remainingOf = (itemEl) => {
+            const ordered  = parseInt(itemEl.dataset.ordered || "0", 10);
+            const received = parseInt(itemEl.dataset.received || "0", 10);
+            return Math.max(ordered - received, 0);
+        };
+
+        const setDisabledLook = (input, disabled) => {
+            input.readOnly = !!disabled;
+            input.classList.toggle("bg-slate-50", !!disabled);
+            input.classList.toggle("text-slate-500", !!disabled);
+            input.classList.toggle("cursor-not-allowed", !!disabled);
+        };
+
+        const togglePriceVisibility = (itemEl, qty) => {
+            const wrap = itemEl.querySelector("[data-price-wrap]");
+            if (!wrap) return;
+            // some o preço quando qty = 0 (ou vazio) pra ficar clean
+            wrap.classList.toggle("hidden", !qty || Number(qty) <= 0);
+        };
+
+        const applyMode = (mode) => {
+            const items = getItems();
+
+            items.forEach((itemEl) => {
+                const remain = remainingOf(itemEl);
+
+                const qtyInput  = itemEl.querySelector("[data-qty-input]");
+                const qtyHelp   = itemEl.querySelector("[data-qty-help]");
+                const priceInput = itemEl.querySelector("[data-price-input]");
+
+                // Se não tem nada pra receber: oculta o item inteiro (ou troque pra "opacity-50" se preferir mostrar)
+                if (remain === 0) {
+                    itemEl.classList.add("hidden");
+                    return;
+                } else {
+                    itemEl.classList.remove("hidden");
+                }
+
+                if (!qtyInput) return;
+
+                qtyInput.max = String(remain);
+                if (qtyHelp) qtyHelp.textContent = `Máx: ${remain}`;
+
+                if (mode === "total") {
+                    qtyInput.value = String(remain);
+                    setDisabledLook(qtyInput, true);
+                    if (priceInput) priceInput.disabled = false;
+                    togglePriceVisibility(itemEl, remain);
+                } else {
+                    // parcial
+                    qtyInput.value = ""; // você define
+                    setDisabledLook(qtyInput, false);
+                    togglePriceVisibility(itemEl, 0);
+                }
+            });
+        };
+
+        // muda modo
+        modalEl.addEventListener("change", (e) => {
+            if (e.target && e.target.name === "entry_mode") {
+                applyMode(e.target.value);
+            }
+        });
+
+        // clamp + mostrar/ocultar preço conforme qty
+        modalEl.addEventListener("input", (e) => {
+            const t = e.target;
+            if (!t || !t.matches("[data-qty-input]")) return;
+
+            const itemEl = t.closest("[data-stock-item]");
+            if (!itemEl) return;
+
+            const remain = remainingOf(itemEl);
+            let v = t.value === "" ? "" : parseInt(t.value, 10);
+
+            if (v !== "") {
+                if (Number.isNaN(v)) v = 0;
+                if (v < 0) v = 0;
+                if (v > remain) v = remain;
+                t.value = String(v);
+            }
+
+            togglePriceVisibility(itemEl, v === "" ? 0 : v);
+        });
+
+        // init
+        const checked = modalEl.querySelector('input[name="entry_mode"]:checked');
+        applyMode(checked ? checked.value : "total");
+    }
+
+// uso:
+    document.addEventListener("DOMContentLoaded", () => {
+        const modal = document.querySelector("[data-stock-entry-modal]");
+        if (modal) initStockEntryModal(modal);
+    });
+
     // Sucesso modal
     document.getElementById('btn-success-close')?.addEventListener('click', closeSuccess);
     document.getElementById('btn-success-x')?.addEventListener('click', closeSuccess);
@@ -2130,188 +2832,6 @@ ${supplierEmailLine}
         formItems.push({ ...blankItem(), position: formItems.length });
         renderItems();
     });
-    q('#btn-open-reg')?.addEventListener('click', openReg);
-
-    // ===== REG PART (local) =====
-    function openReg() { document.getElementById('modal-reg-part')?.classList.remove('hidden'); }
-    function closeReg() { document.getElementById('modal-reg-part')?.classList.add('hidden'); }
-
-    document.getElementById('form-reg-part')?.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const part = {
-            codigo: (q('#rp-code').value || '').trim(),
-            descricao: (q('#rp-desc').value || '').trim(),
-            ncm: (q('#rp-ncm').value || '').trim(),
-            valor: parseNumber(q('#rp-price').value),
-            ipi: parseNumber(q('#rp-ipi').value),
-        };
-        if (!part.codigo) { toast('Informe o código.'); return; }
-
-        const ix = catalog.findIndex((p) => String(p.codigo).toLowerCase() === String(part.codigo).toLowerCase());
-        if (ix > -1) catalog[ix] = part; else catalog.push(part);
-
-        setLS('cliqis_parts_catalog', catalog);
-        refreshPartsDatalist();
-        toast('Peça salva no catálogo (local)');
-        closeReg();
-        e.target.reset();
-    });
-
-    // ===== IMPORT CSV (local) =====
-    function openImport() { document.getElementById('modal-import-parts')?.classList.remove('hidden'); }
-
-    function closeImport() {
-        const m = document.getElementById('modal-import-parts');
-        if (!m) return;
-        m.classList.add('hidden');
-        resetImportState();
-    }
-
-    document.getElementById('btn-dl-template')?.addEventListener('click', () => {
-        const bom = '\uFEFF';
-        const csv = [
-            'codigo;descricao;ncm;valor;ipi',
-            '6206088;Mecanismo Fujitsu c/protecao;8443.99.41;670,65;6,5',
-            'AB123;Correia transportadora;4010.12.90;120,00;10',
-        ].join('\r\n');
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' }));
-        a.download = 'modelo-pecas.csv';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(a.href);
-    }, { passive: true });
-
-    const csvState = { parsed: [], counts: { valid: 0, new: 0, upd: 0, errors: [] } };
-
-    document.getElementById('csv-file')?.addEventListener('change', async (e) => {
-        const f = e.target.files?.[0];
-        if (!f) return;
-
-        const text = await f.text();
-        const rows = parseCSV(text);
-        const r = normalizeParts(rows);
-
-        csvState.parsed = r.items;
-
-        let n = 0, u = 0;
-        r.items.forEach((p) => {
-            const ix = catalog.findIndex((x) => String(x.codigo).toLowerCase() === String(p.codigo).toLowerCase());
-            if (ix > -1) u++; else n++;
-        });
-
-        csvState.counts = { valid: r.items.length, new: n, upd: u, errors: r.errors };
-
-        q('#csv-summary').classList.remove('hidden');
-        q('#sum-valid').textContent = r.items.length;
-        q('#sum-new').textContent = n;
-        q('#sum-upd').textContent = u;
-        q('#sum-errors').textContent = r.errors.length ? ('Erros: ' + r.errors.join(' | ')) : '';
-        q('#btn-import-confirm').disabled = r.items.length === 0;
-    });
-
-    document.getElementById('btn-import-confirm')?.addEventListener('click', () => {
-        if (!csvState.parsed.length) return;
-
-        csvState.parsed.forEach((p) => {
-            const ix = catalog.findIndex((x) => String(x.codigo).toLowerCase() === String(p.codigo).toLowerCase());
-            if (ix > -1) catalog[ix] = p; else catalog.push(p);
-        });
-
-        setLS('cliqis_parts_catalog', catalog);
-        refreshPartsDatalist();
-
-        toast(`Importação local: ${csvState.counts.valid} válidos (${csvState.counts.new} novos, ${csvState.counts.upd} atualizados)`);
-        closeImport();
-    });
-
-    function resetImportState() {
-        const file = document.getElementById('csv-file');
-        const summary = document.getElementById('csv-summary');
-        const btn = document.getElementById('btn-import-confirm');
-        const errs = document.getElementById('sum-errors');
-
-        if (file) file.value = '';
-        if (summary) summary.classList.add('hidden');
-        if (btn) btn.disabled = true;
-        if (errs) errs.textContent = '';
-    }
-
-    function parseCSV(text) {
-        const hasSemicolon = (text.match(/;/g) || []).length;
-        const hasComma = (text.match(/,/g) || []).length;
-        const delim = hasSemicolon > hasComma ? ';' : ',';
-        const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter((l) => l.trim().length);
-        return lines.map((line) => splitCSVLine(line, delim));
-    }
-
-    function splitCSVLine(line, delim) {
-        const out = [];
-        let cur = '';
-        let inQ = false;
-        for (let i = 0; i < line.length; i++) {
-            const ch = line[i];
-            if (ch === '"') {
-                if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
-                else inQ = !inQ;
-            } else if (ch === delim && !inQ) { out.push(cur); cur = ''; }
-            else cur += ch;
-        }
-        out.push(cur);
-        return out.map((v) => v.trim());
-    }
-
-    function normalizeParts(rows) {
-        if (!rows.length) return { items: [], errors: ['CSV vazio'] };
-
-        const header = rows[0].map((h) => h.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').trim());
-
-        const idx = {
-            codigo: findHeaderIndex(header, ['codigo', 'cod', 'código', 'code', 'item_code']),
-            descricao: findHeaderIndex(header, ['descricao', 'descrição', 'desc', 'description', 'nome']),
-            ncm: findHeaderIndex(header, ['ncm']),
-            valor: findHeaderIndex(header, ['valor', 'preco', 'preço', 'valor_item', 'unit_price', 'valorunit']),
-            ipi: findHeaderIndex(header, ['ipi', 'ipi%', 'aliquota_ipi', 'aliquota', 'aliquota-ipi']),
-        };
-
-        const miss = Object.entries(idx).filter(([, v]) => v === -1).map(([k]) => k);
-        if (miss.includes('codigo') || miss.includes('valor')) {
-            return { items: [], errors: [`Colunas obrigatórias ausentes: ${miss.join(', ')}`] };
-        }
-
-        const items = [];
-        const errors = [];
-
-        for (let r = 1; r < rows.length; r++) {
-            const row = rows[r];
-            if (!row || row.every((c) => !String(c || '').trim())) continue;
-
-            const codigo = (row[idx.codigo] ?? '').trim();
-            if (!codigo) { errors.push(`L${r + 1}: código vazio`); continue; }
-
-            const descricao = (idx.descricao > -1 ? row[idx.descricao] : '').trim();
-            const ncm = (idx.ncm > -1 ? row[idx.ncm] : '').trim();
-            const valor = parseNumber(idx.valor > -1 ? row[idx.valor] : '0');
-            const ipi = parseNumber(idx.ipi > -1 ? row[idx.ipi] : '0');
-
-            items.push({ codigo, descricao, ncm, valor, ipi });
-        }
-
-        return { items, errors };
-    }
-
-    function findHeaderIndex(header, keys) {
-        for (const key of keys) {
-            const i = header.findIndex((h) => h === key || h.replace(/\s+/g, '') === key.replace(/\s+/g, ''));
-            if (i > -1) return i;
-        }
-        for (const key of keys) {
-            const i = header.findIndex((h) => h.includes(key));
-            if (i > -1) return i;
-        }
-        return -1;
-    }
 
     // ===== INIT =====
     q('#pp-date') && (q('#pp-date').value = todayISO());

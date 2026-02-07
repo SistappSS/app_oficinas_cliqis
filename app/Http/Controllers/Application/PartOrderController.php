@@ -7,6 +7,9 @@ use App\Mail\PartOrders\PartOrderToSupplierMail;
 use App\Models\PartOrder;
 use App\Models\PartOrderItem;
 use App\Models\PartOrderSetting;
+use App\Models\Stock\StockLocation;
+use App\Services\Stock\ReceivePartOrderService;
+use App\Support\Audit\Audit;
 use App\Support\CustomerContext;
 use App\Traits\RoleCheckTrait;
 use App\Traits\WebIndex;
@@ -14,11 +17,14 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 class PartOrderController extends Controller
 {
     use RoleCheckTrait, WebIndex;
+
+    protected PartOrder $partOrder;
 
     public function __construct(PartOrder $partOrder)
     {
@@ -36,9 +42,12 @@ class PartOrderController extends Controller
         $tenantId = CustomerContext::get();
 
         $q = $this->partOrder->query()
-            ->where('customer_sistapp_id', $tenantId) // ✅ SEMPRE
+            ->where('customer_sistapp_id', $tenantId)
             ->with(['supplier:id,name,email'])
             ->withCount('items')
+            ->withSum('items as qty_total_sum', 'quantity')
+            ->withSum('items as received_qty_sum', 'received_qty')
+
             ->orderByDesc('order_date')
             ->orderByDesc('created_at');
 
@@ -57,7 +66,8 @@ class PartOrderController extends Controller
             }
         }
 
-        $data = $q->paginate(20);
+        $data = $q->paginate(1000);
+
         $data->getCollection()->transform(function ($o) {
             $o->status_label = $o->status_label;
             return $o;
@@ -168,6 +178,19 @@ class PartOrderController extends Controller
         $order->sent_at = now();
         $order->save();
 
+        Audit::log(
+            'part_order.send',
+            'PartOrder',
+            $order->id,
+            true,
+            [
+                'order_number' => $order->order_number,
+                'to' => $supplierEmail,
+                'subject_used' => $subjectFinal,
+                'status' => $order->status,
+            ]
+        );
+
         return response()->json(['ok' => true]);
     }
 
@@ -214,22 +237,48 @@ class PartOrderController extends Controller
         $order->sent_at = now();
         $order->save();
 
+        Audit::log(
+            'part_order.resend',
+            'PartOrder',
+            $order->id,
+            true,
+            [
+                'order_number' => $order->order_number,
+                'to' => $to,
+                'subject_used' => $subject,
+            ]
+        );
+
         return response()->json(['ok' => true]);
     }
 
     protected function applyMailVars(string $subject, string $body, PartOrder $order): array
     {
-        $itemsCount = $order->relationLoaded('items') ? $order->items->count() : (int)($order->items_count ?? 0);
+        // ✅ aceita @{{var}} vindo do front (preview usa isso)
+        $subject = str_replace('@{{', '{{', $subject);
+        $body    = str_replace('@{{', '{{', $body);
 
-        $fmtMoney = function ($v) {
-            return 'R$ ' . number_format((float)($v ?? 0), 2, ',', '.');
-        };
+        $itemsCount = $order->relationLoaded('items')
+            ? $order->items->count()
+            : (int)($order->items_count ?? 0);
+
+        $fmtMoney = fn($v) => 'R$ ' . number_format((float)($v ?? 0), 2, ',', '.');
+
+        // ✅ não explode se order_date vier string
+        $orderDate = '';
+        if (!empty($order->order_date)) {
+            try {
+                $orderDate = \Illuminate\Support\Carbon::parse($order->order_date)->format('d/m/Y');
+            } catch (\Throwable $e) {
+                $orderDate = (string) $order->order_date;
+            }
+        }
 
         $vars = [
             '{partOrderNumber}' => (string) $order->order_number,
             '{supplierName}'    => (string) optional($order->supplier)->name,
             '{supplierEmail}'   => (string) optional($order->supplier)->email,
-            '{orderDate}'       => $order->order_date ? $order->order_date->format('d/m/Y') : '',
+            '{orderDate}'       => $orderDate,
             '{itemsCount}'      => (string) $itemsCount,
             '{total}'           => $fmtMoney($order->grand_total),
 
@@ -241,22 +290,20 @@ class PartOrderController extends Controller
             '{{partOrderNumber}}' => (string) $order->order_number,
             '{{supplierName}}'    => (string) optional($order->supplier)->name,
             '{{supplierEmail}}'   => (string) optional($order->supplier)->email,
-            '{{orderDate}}'       => $order->order_date ? $order->order_date->format('d/m/Y') : '',
+            '{{orderDate}}'       => $orderDate,
             '{{itemsCount}}'      => (string) $itemsCount,
             '{{total}}'           => $fmtMoney($order->grand_total),
 
-            '{{order_number}}'  => (string) $order->order_number,
-            '{{supplier_name}}' => (string) optional($order->supplier)->name,
-            '{{supplier_email}}'=> (string) optional($order->supplier)->email,
-            '{{order_date}}'    => $order->order_date ? $order->order_date->format('d/m/Y') : '',
-            '{{billing_cnpj}}'  => (string) $order->billing_cnpj,
-            '{{billing_uf}}'    => (string) $order->billing_uf,
+            // snake compat
+            '{{order_number}}'   => (string) $order->order_number,
+            '{{supplier_name}}'  => (string) optional($order->supplier)->name,
+            '{{supplier_email}}' => (string) optional($order->supplier)->email,
+            '{{order_date}}'     => $orderDate,
+            '{{billing_cnpj}}'   => (string) $order->billing_cnpj,
+            '{{billing_uf}}'     => (string) $order->billing_uf,
         ];
 
-        $subjectFinal = strtr($subject, $vars);
-        $bodyFinal    = strtr($body, $vars);
-
-        return [$subjectFinal, $bodyFinal];
+        return [strtr($subject, $vars), strtr($body, $vars)];
     }
 
     protected function saveOrder(Request $request, ?string $id = null)
@@ -426,6 +473,135 @@ class PartOrderController extends Controller
 
             return 'PP-' . str_pad((string) $n, 4, '0', STR_PAD_LEFT);
         });
+    }
+
+    public function receive(Request $request, string $id, ReceivePartOrderService $svc)
+    {
+        $order = $this->partOrder
+            ->with(['items','items.part'])
+            ->findOrFail($id);
+
+        $tenant = CustomerContext::get();
+        if ($order->customer_sistapp_id !== $tenant) {
+            return response()->json(['message' => 'Acesso negado.'], 403);
+        }
+
+        $mode = (string) $request->input('mode', 'total');
+
+        $rules = [
+            'mode' => ['required', 'in:total,partial'],
+
+            'items' => ['nullable', 'array'],
+            'items.*.part_order_item_id' => ['required_with:items', 'string'],
+            'items.*.qty' => ['nullable', 'integer', 'min:0'],
+
+            'items.*.sale_price' => ['nullable', 'numeric', 'min:0'],
+            'items.*.markup_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+
+            'items.*.locations' => ['nullable', 'array'],
+            'items.*.locations.*.location_id' => ['required_with:items.*.locations', 'string'],
+            'items.*.locations.*.qty' => ['required_with:items.*.locations', 'integer', 'min:0'],
+        ];
+
+        if ($mode === 'partial') {
+            $rules['items'] = ['required', 'array', 'min:1'];
+        }
+
+        $v = Validator::make($request->all(), $rules);
+
+        $v->after(function ($validator) use ($mode, $request) {
+            if ($mode !== 'partial') return;
+
+            $items = $request->input('items', []);
+            $hasAny = false;
+
+            foreach ($items as $it) {
+                $qty = (int)($it['qty'] ?? 0);
+                $locs = $it['locations'] ?? [];
+
+                // aceita qty direto
+                if ($qty > 0) { $hasAny = true; break; }
+
+                // aceita qty via locais
+                if (is_array($locs)) {
+                    foreach ($locs as $l) {
+                        if ((int)($l['qty'] ?? 0) > 0) { $hasAny = true; break 2; }
+                    }
+                }
+            }
+
+            if (!$hasAny) {
+                $validator->errors()->add('items', 'Informe ao menos 1 item com quantidade > 0 para entrada parcial.');
+            }
+        });
+
+        if ($v->fails()) {
+            return response()->json(['message' => 'Dados inválidos.', 'errors' => $v->errors()], 422);
+        }
+
+        try {
+            $movementId = $svc->receive($order, $v->validated(), auth()->id());
+            return response()->json(['ok' => true, 'movement_id' => $movementId]);
+        } catch (\Throwable $e) {
+            return response()->json(['message' => $e->getMessage() ?: 'Falha no recebimento.'], 422);
+        }
+    }
+
+    public function receiveData(string $id)
+    {
+        $order = $this->partOrder
+            ->with(['items'])
+            ->findOrFail($id);
+
+        $tenant = CustomerContext::get();
+        if ($order->customer_sistapp_id !== $tenant) {
+            return response()->json(['message' => 'Acesso negado.'], 403);
+        }
+
+        $locCount = StockLocation::where('customer_sistapp_id', $tenant)->count();
+        $mustSplit = $locCount > 1;
+
+        $locations = StockLocation::where('customer_sistapp_id', $tenant)
+            ->orderByDesc('is_default')
+            ->orderBy('name')
+            ->get(['id','name','is_default']);
+
+        $defaultLocId = optional($locations->firstWhere('is_default', true))->id;
+
+        $items = $order->items->map(function ($it) use ($mustSplit) {
+            $qtyStr = (string) $it->quantity;
+
+            // se teu banco já virou int, isso sempre vai dar false.
+            $hasDecimal = preg_match('/\.\d*[1-9]/', $qtyStr) === 1;
+            $qtyInt = (int) $qtyStr;
+
+            $remaining = $hasDecimal ? null : max(0, $qtyInt - (int)$it->received_qty);
+
+            return [
+                'id' => (string) $it->id,
+                'code' => (string) ($it->code ?? ''),
+                'description' => (string) ($it->description ?? ''),
+                'ncm' => (string) ($it->ncm ?? ''),
+                'quantity' => (int) $qtyInt,
+                'received_qty' => (int) $it->received_qty,
+                'remaining' => $remaining,
+                'unit_price' => (float) $it->unit_price,
+                'line_total' => (float) $it->line_total,
+                'integer_only' => !$hasDecimal,
+                'must_split_by_location' => $mustSplit,
+            ];
+        });
+
+        return response()->json([
+            'order' => [
+                'id' => (string) $order->id,
+                'status' => (string) $order->status,
+            ],
+            'must_split_by_location' => $mustSplit,
+            'default_location_id' => $defaultLocId,
+            'locations' => $locations,
+            'items' => $items,
+        ]);
     }
 
     // ===== helpers =====

@@ -396,7 +396,7 @@
 
             {{-- TOTAIS --}}
             <section id="so-totals-block"
-                     class="bg-white rounded-[24px] border border-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.04)] p-5 md:p-7">
+                     class="bg-white rounded-[24px] border border-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.04)] p-5 md:p-7" style="margin-bottom: 75px !important;">
                 <h2 class="font-semibold text-slate-900 mb-4 text-lg">Totais</h2>
 
                 <div class="grid gap-3 md:grid-cols-3">
@@ -463,9 +463,9 @@
 
         {{-- BARRA INFERIOR FIXA --}}
         <div
-            class="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-18px_40px_rgba(15,23,42,0.12)]">
+            class="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-18px_40px_rgba(15,23,42,0.3)]">
             <div
-                class="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                class="mx-auto max-w-7xl px-4 sm:px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div class="flex-1 flex flex-wrap gap-6 text-xs text-slate-600">
                     <div class="flex flex-col leading-4">
                         <span>Serviços</span>
