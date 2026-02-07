@@ -6,9 +6,6 @@
             #signature-actions::backdrop {
                 background: rgba(2, 6, 23, .55);
             }
-
-            body { overflow: hidden; }
-
         </style>
     @endpush
 
@@ -81,7 +78,7 @@
 
         {{-- tabela --}}
         <div id="table-scroll"
-             class="mt-5 mb-8 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-auto">
+             class="mt-5 mb-8 rounded-2xl border border-slate-200 bg-white shadow-sm">
             <table class="min-w-full text-sm">
                 <thead class="sticky top-0 z-10 text-center text-slate-600 bg-blue-50">
                 <tr>

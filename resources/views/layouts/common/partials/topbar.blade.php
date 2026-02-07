@@ -35,11 +35,11 @@
                 Dashboard
             </a>
 
-            {{-- Ordens de Serviço --}}
-            <a href="{{ route('service-order.view') }}"
-               class="text-sm text-slate-600 hover:text-slate-900">
-                Ordens serviço
-            </a>
+{{--            --}}{{-- Ordens de Serviço --}}
+{{--            <a href="{{ route('service-order.view') }}"--}}
+{{--               class="text-sm text-slate-600 hover:text-slate-900">--}}
+{{--                Ordens serviço--}}
+{{--            </a>--}}
 
             {{-- Equipamentos --}}
             <a href="{{ route('equipment.view') }}"
@@ -127,10 +127,10 @@
         </nav>
 
         <nav class="hidden md:flex items-center gap-6 flex-none">
-            <a class="text-sm text-slate-600 hover:text-slate-900"
-               href="https://wa.me/5511988313151?text=Ajuda%20no%20Cliqis" target="_blank" rel="noopener">Ajuda</a>
-            <a class="text-sm text-slate-600 hover:text-slate-900"
-               href="https://wa.me/5511988313151?text=Contato%20Cliqis" target="_blank" rel="noopener">Contato</a>
+{{--            <a class="text-sm text-slate-600 hover:text-slate-900"--}}
+{{--               href="https://wa.me/5511988313151?text=Ajuda%20no%20Cliqis" target="_blank" rel="noopener">Ajuda</a>--}}
+{{--            <a class="text-sm text-slate-600 hover:text-slate-900"--}}
+{{--               href="https://wa.me/5511988313151?text=Contato%20Cliqis" target="_blank" rel="noopener">Contato</a>--}}
 
             <div class="relative">
                 <button id="user-btn"
