@@ -250,18 +250,25 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
     });
 
     Route::group(['prefix' => 'part-orders'], function () {
-        // Part Orders (Pedidos de Peças)
+
         Route::get('/part-order', [PartOrderController::class, 'view'])->name('part-order.view');
         Route::get('/part-order/create/{id?}', [PartOrderController::class, 'create'])->name('part-order.create');
         Route::get('/part-order/{partOrder}/edit', [PartOrderController::class, 'edit'])->name('part-order.edit');
-        Route::resource('/part-order-api', PartOrderController::class);
 
-        // Ações (botões)
+        // ✅ API (sem create/edit do resource)
+        Route::apiResource('/part-order-api', PartOrderController::class)
+            ->parameters(['part-order-api' => 'partOrder']);
+
+        // Ações
         Route::get('/{partOrder}/pdf', [PartOrderController::class, 'pdf'])->name('part-order.pdf');
         Route::get('/{partOrder}/pdf/download', [PartOrderController::class, 'pdfDownload'])->name('part-order.pdf.download');
         Route::post('/{partOrder}/send', [PartOrderController::class, 'send'])->name('part-orders.email');
-        Route::post('/{id}/resend', [PartOrderController::class, 'resend'])->name('part-orders.resend-email');
         Route::post('/{partOrder}/duplicate', [PartOrderController::class, 'duplicate'])->name('part-orders.duplicate');
+
+        Route::post('/{partOrder}/resend', [PartOrderController::class, 'resend'])->name('part-orders.resend-email');
+
+        Route::get('/{partOrder}/receive-data', [PartOrderController::class, 'receiveData'])->name('part-orders.receiveData');
+        Route::post('/{partOrder}/receive', [PartOrderController::class, 'receive'])->name('part-orders.receive');
 
         Route::get('/settings', [PartOrderSettingController::class, 'show']);
         Route::put('/settings', [PartOrderSettingController::class, 'upsert']);
