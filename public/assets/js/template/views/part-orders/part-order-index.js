@@ -1673,34 +1673,32 @@
 
     /* ====== KPIs ====== */
     function computeReceiveTotalsFromUI() {
-        const lis = getAllRecItems();
+        const lis = Array.from(receiveItemsEl.querySelectorAll('[data-rec-item]'));
 
-        let pendingItems = 0;
-        let doneItems = 0;
-        let qtyRemaining = 0;    // soma remaining dos pendentes
-        let qtyWillReceive = 0;  // soma qty digitada (ou remaining no total) dos pendentes
+        let itemsPending = 0;
+        let qtyRemaining = 0;
+        let qtyTotalOrder = 0;
+        let qtyWillReceive = 0;
 
         lis.forEach(li => {
-            const rem = parseInt(li.dataset.remaining || '0', 10) || 0;
-            const isDone = rem <= 0;
+            const ordered = parseInt(li.dataset.ordered || '0', 10);
+            const remaining = parseInt(li.dataset.remaining || '0', 10);
 
-            if (isDone) {
-                doneItems++;
-                return;
-            }
+            qtyTotalOrder += ordered;
+            qtyRemaining += remaining;
 
-            pendingItems++;
-            qtyRemaining += rem;
+            if (remaining > 0) itemsPending++;
 
-            if (receiveMode === 'total') {
-                qtyWillReceive += rem;
-            } else {
-                const qty = clampInt(li.querySelector('[data-qty]')?.value, 0, rem);
-                qtyWillReceive += qty;
-            }
+            // qty do input (modo parcial) - clamp pra não passar do remaining
+            const typed = parseInt(li.querySelector('[data-qty]')?.value || '0', 10);
+            const will = (receiveMode === 'total')
+                ? remaining
+                : Math.max(0, Math.min(typed, remaining));
+
+            qtyWillReceive += will;
         });
 
-        return { pendingItems, doneItems, qtyRemaining, qtyWillReceive };
+        return { itemsPending, qtyRemaining, qtyTotalOrder, qtyWillReceive };
     }
 
     function updateReceiveKpis() {
@@ -1709,33 +1707,31 @@
 
         const t = computeReceiveTotalsFromUI();
 
-        // accordion show/hide
-        doneCountEl.textContent = String(t.doneItems);
-        if (t.doneItems > 0) doneDetailsEl.classList.remove('hidden');
-        else doneDetailsEl.classList.add('hidden');
-
-        console.log(t)
-
         box.innerHTML = `
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
-        <div class="text-[11px] text-slate-500">Itens pendentes</div>
-        <div class="text-lg font-semibold">${t.pendingItems}</div>
-      </div>
-      <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
-        <div class="text-[11px] text-slate-500">Qtd restante</div>
-        <div class="text-lg font-semibold">${t.qtyRemaining}</div>
-      </div>
-      <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
-        <div class="text-[11px] text-slate-500">Qtd a dar entrada</div>
-        <div class="text-lg font-semibold">${t.qtyWillReceive}</div>
-      </div>
-      <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
-        <div class="text-[11px] text-slate-500">Modo</div>
-        <div class="text-lg font-semibold">${receiveMode === 'total' ? 'Total' : 'Parcial'}</div>
-      </div>
-    </div>`;
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div class="text-[11px] text-slate-500">Itens pendentes</div>
+      <div class="text-lg font-semibold">${t.itemsPending}</div>
+    </div>
+
+    <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div class="text-[11px] text-slate-500">Restantes / Total</div>
+      <div class="text-lg font-semibold">${t.qtyRemaining} / ${t.qtyTotalOrder}</div>
+      <div class="mt-1 text-[11px] text-slate-500">Entrada agora: ${t.qtyWillReceive}</div>
+    </div>
+
+    <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div class="text-[11px] text-slate-500">Modo</div>
+      <div class="text-lg font-semibold">${receiveMode === 'total' ? 'Total' : 'Parcial'}</div>
+    </div>
+
+    <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div class="text-[11px] text-slate-500">Preço</div>
+      <div class="text-lg font-semibold">${priceMode === 'sale' ? 'Venda' : 'Margem %'}</div>
+    </div>
+  </div>`;
     }
+
 
     /* ====== RENDER ITENS (SEPARA PENDENTES x FINALIZADOS) ====== */
     function renderReceiveItems(data) {
@@ -1743,11 +1739,19 @@
         const locations = data.locations || [];
         const defaultLocId = data.default_location_id || '';
 
-        const items = (data.items || []).map(it => {
-            const remaining = calcRemaining(it);
+        receiveItemsEl.innerHTML = (data.items || []).map(it => {
+            const ordered = parseInt(it.quantity || 0, 10);
+            const received = parseInt(it.received_qty || 0, 10);
+            const remaining = (it.remaining != null)
+                ? parseInt(it.remaining, 10)
+                : Math.max(0, ordered - received);
 
-            const liHtml = `
-<li class="p-4" data-rec-item="${it.id}" data-remaining="${remaining}">
+            return `
+<li class="p-4"
+    data-rec-item="${it.id}"
+    data-ordered="${ordered}"
+    data-received="${received}"
+    data-remaining="${remaining}">
   <div class="grid grid-cols-12 gap-8 items-start">
 
     <!-- ESQUERDA: código / nome / unit -->
@@ -2422,17 +2426,9 @@
 
             if (btnEditDraft) btnEditDraft.onclick = () => { closeViewModal(); openEdit(o.id); };
 
-            document.getElementById('btn-open-receive')?.classList
-                .toggle('hidden', String(o.status || '').toLowerCase() === 'draft');
-
             viewContent.innerHTML = buildProposalHTML(o, st);
             openViewModal(o);
 
-            const btnOpenReceive = document.getElementById('btn-open-receive');
-
-            if (btnOpenReceive) {
-                btnOpenReceive.onclick = () => openReceiveModal(o.id);
-            }
         } catch (e) {
             toast(e.message || 'Falha ao carregar pedido.');
         }

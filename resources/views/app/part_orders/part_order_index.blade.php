@@ -103,6 +103,12 @@
                         class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
                     Cadastrar peça
                 </button>
+                <button id="toggle-header"
+                        class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow hover:bg-slate-50"
+                        aria-expanded="true" aria-controls="header-collapsible" type="button"
+                        title="Expandir/contrair cabeçalho">
+                    <i id="toggle-icon" class="fa-solid fa-up-right-and-down-left-from-center"></i>
+                </button>
             </div>
         </section>
 
@@ -489,10 +495,6 @@
                     <button id="btn-edit-draft"
                             class="hidden rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-700 hover:bg-blue-100">
                         Editar rascunho
-                    </button>
-                    <button id="btn-open-receive"
-                            class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
-                        Entrada no estoque
                     </button>
                     <button id="btn-print"
                             class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
