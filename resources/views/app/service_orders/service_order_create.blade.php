@@ -465,7 +465,7 @@
         <div
             class="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-18px_40px_rgba(15,23,42,0.3)]">
             <div
-                class="mx-auto max-w-7xl px-4 sm:px-6 py-4 pb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                class="mx-auto px-4 sm:px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div class="flex-1 flex flex-wrap gap-6 text-xs text-slate-600">
                     <div class="flex flex-col leading-4">
                         <span>Serviços</span>
