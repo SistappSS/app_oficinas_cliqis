@@ -12,4 +12,7 @@ class StockMovementItem extends Model
 
     public $incrementing = false;
     protected $keyType = 'string';
+
+    public function location() { return $this->belongsTo(StockLocation::class, 'location_id'); }
+    public function movement(){ return $this->belongsTo(StockMovement::class, 'movement_id'); }
 }
