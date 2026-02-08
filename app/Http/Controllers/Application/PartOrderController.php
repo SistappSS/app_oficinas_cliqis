@@ -102,9 +102,28 @@ class PartOrderController extends Controller
     public function duplicate(string $id)
     {
         $original = $this->findOrderTenantOrFail($id);
+        $original->loadMissing('items'); // garantia
 
         return DB::transaction(function () use ($original) {
-            $copy = $original->replicate(['id','order_number','created_at','updated_at','sent_at']);
+            $copy = $original->replicate([
+                'id','order_number','created_at','updated_at','sent_at',
+                'supplier_email_used','email_subject_used','email_body_used',
+                'account_payable_id',
+            ]);
+
+            $meta = $copy->meta;
+            if (is_array($meta)) {
+                unset($meta['payable_id'], $meta['payment']);
+                $copy->meta = $meta;
+            }
+
+            $copy->account_payable_id = null;
+            $copy->supplier_email_used = null;
+            $copy->email_subject_used = null;
+            $copy->email_body_used = null;
+
+
+
             $copy->id = (string) Str::uuid();
             $copy->status = 'draft';
             $copy->sent_at = null;
@@ -113,13 +132,25 @@ class PartOrderController extends Controller
                 return $this->generateNextNumber();
             });
 
+            // se você tiver campos tipo received_qty_sum no header, zera aqui também
+            // $copy->received_qty_sum = 0;
+
             $copy->save();
 
             foreach ($original->items as $it) {
-                $new = $it->replicate(['id','part_order_id','created_at','updated_at']);
+                $new = $it->replicate([
+                    'id','part_order_id','created_at','updated_at',
+                    // se existirem esses campos, melhor não copiar:
+                    // 'received_qty','received_at','last_received_at',
+                ]);
+
                 $new->id = (string) Str::uuid();
                 $new->part_order_id = $copy->id;
                 $new->customer_sistapp_id = $copy->customer_sistapp_id;
+
+                // ✅ zera recebido no clone
+                if (isset($new->received_qty)) $new->received_qty = 0;
+
                 $new->save();
             }
 
@@ -177,6 +208,8 @@ class PartOrderController extends Controller
         $order->status  = 'pending';
         $order->sent_at = now();
         $order->save();
+
+        $this->createPayableFromPartOrder($order, (string) auth()->id());
 
         Audit::log(
             'part_order.send',
@@ -322,8 +355,31 @@ class PartOrderController extends Controller
             'billing_uf'   => ['required', 'string', 'size:2', \Illuminate\Validation\Rule::in($UF)],
             'order_date'   => ['nullable', 'date_format:Y-m-d'],
 
-            // não deixa subir status fora do fluxo
             'status'       => ['nullable', 'string', \Illuminate\Validation\Rule::in(['draft'])],
+
+            'payment_mode' => ['required', 'string', \Illuminate\Validation\Rule::in(['avista', 'sinal_parcelas'])],
+
+// vencimento base (para avista e para sinal)
+            'signal_due_date' => ['required', 'date_format:Y-m-d'],
+
+// sinal (só faz sentido em sinal_parcelas, mas deixa entrar e normaliza depois)
+            'signal_amount' => ['nullable', 'numeric', 'min:0'],
+
+// parcelas
+            'installments_count' => [
+                'nullable',
+                'integer',
+                'min:1',
+                'max:120',
+                \Illuminate\Validation\Rule::requiredIf(fn() => $request->input('payment_mode') === 'sinal_parcelas'),
+            ],
+
+            'installments_first_due_date' => [
+                'nullable',
+                'date_format:Y-m-d',
+                \Illuminate\Validation\Rule::requiredIf(fn() => $request->input('payment_mode') === 'sinal_parcelas'),
+                'after_or_equal:signal_due_date',
+            ],
 
             'icms_rate'    => ['nullable', 'numeric', 'min:0', 'max:100'],
 
@@ -347,6 +403,17 @@ class PartOrderController extends Controller
 
         // ✅ força status draft sempre aqui (evita bypass)
         $validated['status'] = 'draft';
+
+        $validated['payment_mode'] = $validated['payment_mode'] ?? 'avista';
+        $validated['signal_amount'] = round((float)($validated['signal_amount'] ?? 0), 2);
+        $validated['installments_count'] = (int)($validated['installments_count'] ?? 0);
+
+// defaults seguros
+        if ($validated['payment_mode'] === 'avista') {
+            $validated['signal_amount'] = 0;
+            $validated['installments_count'] = 0;
+            $validated['installments_first_due_date'] = null;
+        }
 
         $items = collect($validated['items'] ?? [])
             ->filter(fn($it) => $this->itemIsFilled($it))
@@ -444,6 +511,31 @@ class PartOrderController extends Controller
             $order->icms_total      = $totals['icms_total'];
             $order->grand_total     = $totals['grand_total'];
 
+            // clamp do sinal baseado no total real
+            if ($order->payment_mode === 'sinal_parcelas') {
+                $order->signal_amount = round((float) $order->signal_amount, 2);
+
+                if ($order->signal_amount < 0) $order->signal_amount = 0;
+
+                // não deixa sinal maior que total
+                if ($order->signal_amount > (float)$order->grand_total) {
+                    $order->signal_amount = (float)$order->grand_total;
+                }
+
+                // se sinal == total, vira avista (não faz sentido manter parcelas)
+                if ((float)$order->signal_amount >= (float)$order->grand_total) {
+                    $order->payment_mode = 'avista';
+                    $order->signal_amount = 0;
+                    $order->installments_count = 0;
+                    $order->installments_first_due_date = null;
+                }
+            } else {
+                // avista: zera tudo
+                $order->signal_amount = 0;
+                $order->installments_count = 0;
+                $order->installments_first_due_date = null;
+            }
+
             $order->save();
             $order->load(['items','items.part','supplier']);
 
@@ -490,10 +582,12 @@ class PartOrderController extends Controller
 
         $rules = [
             'mode' => ['required', 'in:total,partial'],
-
             'items' => ['nullable', 'array'],
             'items.*.part_order_item_id' => ['required_with:items', 'string'],
             'items.*.qty' => ['nullable', 'integer', 'min:0'],
+
+            // ✅ adiciona isso
+            'items.*.price_mode' => ['required_with:items', 'in:sale,markup'],
 
             'items.*.sale_price' => ['nullable', 'numeric', 'min:0'],
             'items.*.markup_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
@@ -685,5 +779,126 @@ class PartOrderController extends Controller
             'icms_total' => round($icmsTotal, 2),
             'grand_total' => round($grand, 2),
         ];
+    }
+
+    protected function createPayableFromPartOrder(PartOrder $order, ?string $userId): void
+    {
+        $tenantId = (string) $order->customer_sistapp_id;
+        $total = round((float) ($order->grand_total ?? 0), 2);
+
+        if ($total <= 0) return;
+
+        // ✅ idempotência via coluna
+        if (!empty($order->account_payable_id)) {
+            $exists = DB::table('account_payables')
+                ->where('customer_sistapp_id', $tenantId)
+                ->where('id', $order->account_payable_id)
+                ->exists();
+
+            if ($exists) return;
+
+            // se não existir (apagaram manualmente), limpa pra recriar
+            $order->account_payable_id = null;
+            $order->save();
+        }
+
+        $mode = (string) ($order->payment_mode ?? 'avista');
+
+        // base due: para avista = vencimento; para sinal = vencimento do sinal
+        $baseDue = Carbon::parse($order->signal_due_date ?: now()->toDateString())->startOfDay();
+
+        $rows = []; // [['due' => 'Y-m-d', 'amount' => 0.00], ...]
+
+        if ($mode === 'avista') {
+            $rows[] = ['due' => $baseDue->toDateString(), 'amount' => $total];
+        } else {
+            $sinal = round((float)($order->signal_amount ?? 0), 2);
+            $sinal = max(0, min($total, $sinal));
+
+            $installments = (int)($order->installments_count ?? 1);
+            $installments = max(1, $installments);
+
+            $rest = round($total - $sinal, 2);
+
+            if ($sinal > 0) {
+                $rows[] = ['due' => $baseDue->toDateString(), 'amount' => $sinal];
+            }
+
+            if ($rest > 0) {
+                $firstInstDue = $order->installments_first_due_date
+                    ? Carbon::parse($order->installments_first_due_date)->startOfDay()
+                    : (($sinal > 0) ? $baseDue->copy()->addMonth() : $baseDue->copy());
+
+                // split com ajuste na última parcela
+                $base = floor(($rest / $installments) * 100) / 100; // trunca 2 casas
+                $lastAdj = round($rest - ($base * $installments), 2);
+
+                for ($i = 0; $i < $installments; $i++) {
+                    $amt = $base + (($i === $installments - 1) ? $lastAdj : 0);
+                    $rows[] = [
+                        'due' => $firstInstDue->copy()->addMonths($i)->toDateString(),
+                        'amount' => round($amt, 2),
+                    ];
+                }
+            }
+
+            // se por algum motivo sinal=total e não gerou rows, cai no avista
+            if (!$rows) {
+                $rows[] = ['due' => $baseDue->toDateString(), 'amount' => $total];
+            }
+        }
+
+        // garantia: ordem por vencimento
+        usort($rows, fn($a, $b) => strcmp($a['due'], $b['due']));
+
+        $payableId = (string) Str::uuid();
+        $times = count($rows);
+        $firstPayment = $rows[0]['due'];
+        $endRecurrence = $rows[$times - 1]['due'];
+
+        $supplierName = $order->relationLoaded('supplier')
+            ? (string) optional($order->supplier)->name
+            : (string) optional($order->supplier()->first())->name;
+
+        $desc = "Pedido de peças {$order->order_number} - " . ($order->title ?: ($supplierName ?: '—'));
+
+        DB::transaction(function () use ($tenantId, $userId, $order, $payableId, $rows, $times, $firstPayment, $endRecurrence, $desc) {
+
+            DB::table('account_payables')->insert([
+                'id' => $payableId,
+                'customer_sistapp_id' => $tenantId,
+                'user_id' => $userId,
+                'description' => $desc,
+                'default_amount' => $rows[0]['amount'],
+                'first_payment' => $firstPayment,
+                'end_recurrence' => $endRecurrence,
+                'recurrence' => 'variable',
+                'times' => $times,
+                'status' => 'open',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            foreach ($rows as $idx => $r) {
+                DB::table('account_payable_recurrences')->insert([
+                    'id' => (string) Str::uuid(),
+                    'customer_sistapp_id' => $tenantId,
+                    'user_id' => $userId,
+                    'account_payable_id' => $payableId,
+                    'recurrence_number' => $idx + 1,
+                    'due_date' => $r['due'],
+                    'amount' => $r['amount'],
+                    'status' => 'pending',
+                    'amount_paid' => 0,
+                    'paid_at' => null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            // ✅ vínculo no pedido (coluna)
+            $order->account_payable_id = $payableId;
+            $order->save();
+        });
     }
 }

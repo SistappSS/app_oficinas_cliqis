@@ -306,7 +306,7 @@ class ReceivePartOrderService
 
                 $sp->qty_on_hand_global = $gNewQty;
                 $sp->avg_cost_global = round($gNewAvg, 4);
-                $sp->last_cost = round($unitCost, 2);
+                $sp->last_cost = round($unitCost, 4);
 
                 if ($salePrice > 0) $sp->default_sale_price = round($salePrice, 2);
                 if ($markup > 0) $sp->default_markup_percent = round($markup, 2);

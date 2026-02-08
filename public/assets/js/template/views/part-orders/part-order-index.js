@@ -878,24 +878,25 @@
     function buildPreviewOrderFromForm() {
         const supplierName =
             document.getElementById('pp-supplier-name')?.value?.trim() ||
-            supplierCurrent.name ||
-            '';
+            supplierCurrent.name || '';
 
         const supplierEmail =
             document.getElementById('pp-supplier-email')?.value?.trim() ||
-            supplierCurrent.email ||
-            '';
+            supplierCurrent.email || '';
 
         const uf = q('#pp-uf')?.value || '';
         const rate = rateFromUF(uf);
         const totals = sumTotal(formItems, rate);
 
+        const payment = getPaymentPayload();
+
         return {
-            order_number: form.dataset.orderNumber || '',      // ✅ vem do openEdit
+            order_number: form.dataset.orderNumber || '',
             order_date: q('#pp-date')?.value || todayISO(),
             items_count: totals.count,
             grand_total: totals.totalFinal,
             supplier: { name: supplierName, email: supplierEmail },
+            payment
         };
     }
 
@@ -1493,8 +1494,10 @@
     const btnConfirmReceive = document.getElementById('btnConfirm'); // ✅ id certo
     const btnReceiveClose = document.getElementById('btn-receive-close');
 
-    let receiveMode = 'total'; // total | partial
-    let priceMode = 'sale';    // sale | markup
+    let receiveMode = 'total';
+
+    const itemPriceMode = new Map();
+    const defaultPriceMode = 'sale';
 
     function getAllRecItems() {
         return Array.from(receiveDialog.querySelectorAll('[data-rec-item]'));
@@ -1531,25 +1534,10 @@
           Entrada parcial
         </button>
       </div>
-
-      <div class="inline-flex rounded-full bg-slate-100 p-1">
-        <button type="button" data-price="sale"
-          class="px-4 py-2 text-sm font-semibold rounded-full ${priceMode==='sale'?'bg-white shadow text-slate-900':'text-slate-600'}">
-          Preço de venda
-        </button>
-        <button type="button" data-price="markup"
-          class="px-4 py-2 text-sm font-semibold rounded-full ${priceMode==='markup'?'bg-white shadow text-slate-900':'text-slate-600'}">
-          Margem %
-        </button>
-      </div>
     </div>`;
 
         host.querySelectorAll('[data-mode]').forEach(b => {
             b.onclick = () => { receiveMode = b.dataset.mode; renderReceiveToggles(); applyReceiveModeUI(); };
-        });
-
-        host.querySelectorAll('[data-price]').forEach(b => {
-            b.onclick = () => { priceMode = b.dataset.price; renderReceiveToggles(); applyPriceModeUI(); };
         });
     }
 
@@ -1589,6 +1577,82 @@
             });
         });
     }
+
+    function parseBRL(v){
+        if (!v) return 0;
+        return Number(String(v).replace(/[^\d,.-]/g,'').replace(/\./g,'').replace(',', '.')) || 0;
+    }
+    function fmtBRL(n){
+        return (n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    }
+
+    function setPayType(type){
+        document.getElementById('pp-pay-type').value = type;
+
+        const isSinal = type === 'sinal';
+        document.getElementById('pp-pay-sinal-wrap').classList.toggle('hidden', !isSinal);
+        document.getElementById('pp-pay-parc-wrap').classList.toggle('hidden', !isSinal);
+
+        // estilos dos botões
+        document.querySelectorAll('.payTypeBtn').forEach(btn => {
+            const t = btn.getAttribute('data-pay-type-btn');
+            const active = (t === type);
+            btn.classList.toggle('bg-slate-900', active);
+            btn.classList.toggle('text-white', active);
+            btn.classList.toggle('bg-white', !active);
+            btn.classList.toggle('text-slate-700', !active);
+        });
+
+        refreshPayPreview();
+    }
+
+    function getPaymentPayload(){
+        const type = document.getElementById('pp-pay-type').value; // avista | sinal
+        const due_date = document.getElementById('pp-pay-due').value || null;
+
+        if (type === 'avista') {
+            return { type: 'avista', due_date };
+        }
+
+        return {
+            type: 'sinal_parcelas',
+            due_date,
+            signal_amount: parseBRL(document.getElementById('pp-pay-sinal').value || '0'),
+            installments: parseInt(document.getElementById('pp-pay-parc').value || '1', 10) || 1,
+        };
+    }
+
+    function refreshPayPreview(){
+        const preview = document.getElementById('pp-pay-preview');
+        if (!preview) return;
+
+        const totalTxt = document.getElementById('sum-total')?.textContent || 'R$ 0,00';
+        const total = parseBRL(totalTxt);
+
+        const p = getPaymentPayload();
+        if (!p.due_date) { preview.textContent = 'Defina o vencimento'; return; }
+
+        if (p.type === 'avista') { preview.textContent = `${fmtBRL(total)} • 1x`; return; }
+
+        const sinal = Math.max(0, Math.min(total, p.signal_amount || 0));
+        const parc = Math.max(1, p.installments || 1);
+        const rest = Math.max(0, total - sinal);
+        const per = rest / parc;
+
+        preview.textContent = `Sinal: ${fmtBRL(sinal)} • ${parc}x ~ ${fmtBRL(per)}`;
+    }
+
+    document.querySelectorAll('[data-pay-type-btn]').forEach(btn => {
+        btn.addEventListener('click', () => setPayType(btn.getAttribute('data-pay-type-btn')));
+    });
+
+    ['pp-pay-due','pp-pay-sinal','pp-pay-parc'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', refreshPayPreview);
+        document.getElementById(id)?.addEventListener('change', refreshPayPreview);
+    });
+
+    setPayType('avista');
+
 
     /* ====== MODOS UI ====== */
     function applyReceiveModeUI() {
@@ -1642,43 +1706,16 @@
         updateReceiveKpis();
     }
 
-    function applyPriceModeUI() {
-        const lis = getAllRecItems();
-        lis.forEach(li => {
-            const rem = parseInt(li.dataset.remaining || '0', 10) || 0;
-            const isDone = rem <= 0;
-
-            const saleWrap = li.querySelector('[data-sale-wrap]');
-            const markupWrap = li.querySelector('[data-markup-wrap]');
-            const sale = li.querySelector('[data-sale]');
-            const markup = li.querySelector('[data-markup]');
-
-            // finalizado: trava inputs
-            if (sale) sale.disabled = isDone;
-            if (markup) markup.disabled = isDone;
-
-            if (priceMode === 'sale') {
-                saleWrap?.classList.remove('hidden');
-                markupWrap?.classList.add('hidden');
-                if (markup) markup.value = '0';
-            } else {
-                markupWrap?.classList.remove('hidden');
-                saleWrap?.classList.add('hidden');
-                if (sale) sale.value = '0,00';
-            }
-        });
-
-        bindSaleMasks();
-    }
-
     /* ====== KPIs ====== */
     function computeReceiveTotalsFromUI() {
-        const lis = Array.from(receiveItemsEl.querySelectorAll('[data-rec-item]'));
+        const lis = getAllRecItems();
 
         let itemsPending = 0;
         let qtyRemaining = 0;
         let qtyTotalOrder = 0;
         let qtyWillReceive = 0;
+
+        const priceModes = new Set();
 
         lis.forEach(li => {
             const ordered = parseInt(li.dataset.ordered || '0', 10);
@@ -1689,16 +1726,18 @@
 
             if (remaining > 0) itemsPending++;
 
-            // qty do input (modo parcial) - clamp pra não passar do remaining
             const typed = parseInt(li.querySelector('[data-qty]')?.value || '0', 10);
             const will = (receiveMode === 'total')
                 ? remaining
                 : Math.max(0, Math.min(typed, remaining));
 
             qtyWillReceive += will;
+
+            // só considera modo de preço se o item ainda está pendente
+            if (remaining > 0) priceModes.add(li.dataset.priceMode || defaultPriceMode);
         });
 
-        return { itemsPending, qtyRemaining, qtyTotalOrder, qtyWillReceive };
+        return { itemsPending, qtyRemaining, qtyTotalOrder, qtyWillReceive, priceModes };
     }
 
     function updateReceiveKpis() {
@@ -1706,6 +1745,11 @@
         if (!box) return;
 
         const t = computeReceiveTotalsFromUI();
+        const priceLabel =
+            t.priceModes.size === 0 ? '—'
+                : (t.priceModes.size === 1
+                    ? (Array.from(t.priceModes)[0] === 'sale' ? 'Venda' : 'Margem %')
+                    : 'Misto');
 
         box.innerHTML = `
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -1727,11 +1771,10 @@
 
     <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
       <div class="text-[11px] text-slate-500">Preço</div>
-      <div class="text-lg font-semibold">${priceMode === 'sale' ? 'Venda' : 'Margem %'}</div>
+      <div class="text-lg font-semibold">${priceLabel}</div>
     </div>
   </div>`;
     }
-
 
     /* ====== RENDER ITENS (SEPARA PENDENTES x FINALIZADOS) ====== */
     function renderReceiveItems(data) {
@@ -1739,22 +1782,26 @@
         const locations = data.locations || [];
         const defaultLocId = data.default_location_id || '';
 
-        receiveItemsEl.innerHTML = (data.items || []).map(it => {
+        const items = (data.items || []).map(it => {
             const ordered = parseInt(it.quantity || 0, 10);
             const received = parseInt(it.received_qty || 0, 10);
             const remaining = (it.remaining != null)
                 ? parseInt(it.remaining, 10)
                 : Math.max(0, ordered - received);
 
-            return `
+            const isDone = remaining <= 0;
+
+            const mode = itemPriceMode.get(it.id) || defaultPriceMode;
+
+            const html = `
 <li class="p-4"
     data-rec-item="${it.id}"
     data-ordered="${ordered}"
     data-received="${received}"
-    data-remaining="${remaining}">
+    data-remaining="${remaining}"
+    data-price-mode="${mode}">
   <div class="grid grid-cols-12 gap-8 items-start">
 
-    <!-- ESQUERDA: código / nome / unit -->
     <div class="col-span-12 md:col-span-5">
       <div class="text-xs text-slate-500">${escapeHtml(it.code || '-')}</div>
       <div class="text-sm font-semibold text-slate-900">${escapeHtml(it.description || '-')}</div>
@@ -1763,50 +1810,77 @@
         Custo: <span class="text-slate-700 font-bold">${fmtBR(it.unit_price || 0)}</span> / ${fmtBR(it.line_total || 0)}
       </div>
 
-        <div class="text-[11px] text-slate-500">
-          Recebido: <span class="text-slate-700 font-bold">${it.received_qty || 0}</span> / Pedido: <span class="text-slate-700 font-bold">${it.quantity || 0}</span>
-        </div>
-    </div>
-
-    <!-- DIREITA: recebido/pedido + inputs -->
-    <div class="col-span-12 md:col-span-7 md:justify-self-end">
-      <div class="flex flex-col items-end gap-2">
-
-        <!-- inputs abaixo, alinhados à direita -->
-        <div class="grid grid-cols-12 gap-8 w-full md:w-auto">
-
-          <!-- QTD -->
-          <div class="col-span-12 sm:col-span-6 md:col-span-6 justify-self-end">
-            <div class="text-xs font-medium text-slate-600 text-left mb-1">Entrada de</div>
-
-            <div data-qty-pill class="hidden h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-900 flex items-center justify-center tabular-nums"></div>
-
-            <input data-qty type="number" min="0" max="${remaining}"
-              class="h-10 text-center rounded-xl border border-slate-300 bg-slate-50 px-3 text-sm font-semibold text-slate-900 shadow-sm outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 flex items-center justify-center tabular-nums"
-              value="${remaining}">
-          </div>
-
-          <!-- VENDA -->
-          <div class="col-span-12 sm:col-span-6 md:col-span-6 justify-self-end" data-sale-wrap>
-            <div class="text-xs font-medium text-slate-600 text-left mb-1">Preço de venda <i class="font-light text-slate-500">unidade</i></div>
-            <input data-sale type="text" inputmode="numeric"
-              class="h-10 rounded-xl border border-slate-300 bg-slate-50 px-3 text-sm font-semibold text-slate-900 shadow-sm outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 flex items-center justify-center tabular-nums"
-              value="0,00">
-          </div>
-
-          <!-- MARGEM -->
-          <div class="col-span-12 md:col-span-6 justify-self-end hidden" data-markup-wrap>
-            <div class="text-xs font-medium text-slate-600 text-left mb-1">Margem lucro (%) <i class="font-light text-slate-500">unidade</i></div>
-            <input data-markup type="number" min="0" step="0.01"
-              class="h-10 rounded-xl border border-slate-300 bg-slate-50 px-3 text-sm font-semibold text-slate-900 shadow-sm outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 flex items-center justify-center tabular-nums"
-              value="0">
-          </div>
-
-        </div>
+      <div class="text-[11px] text-slate-500">
+        Recebido: <span class="text-slate-700 font-bold">${it.received_qty || 0}</span> / Pedido: <span class="text-slate-700 font-bold">${it.quantity || 0}</span>
       </div>
     </div>
 
-    <!-- + Local -->
+    <div class="col-span-12 md:col-span-7 md:justify-self-end">
+  <div class="flex flex-col items-end gap-2">
+    <div class="grid grid-cols-12 gap-2 w-full md:w-auto items-end">
+
+      <!-- LINHA 1: toggle (esquerda) + spacer (direita) -->
+      <div class="col-span-12 sm:col-span-6 md:col-span-6">
+        <div class="flex items-center justify-between mb-2">
+          ${priceToggleHTML(mode, isDone)}
+        </div>
+      </div>
+      <div class="hidden sm:block sm:col-span-6 md:col-span-6"></div>
+
+      <!-- LINHA 2: input preço/margem (esquerda) -->
+      <div class="col-span-12 sm:col-span-6 md:col-span-6">
+        <div data-sale-wrap class="${mode === 'sale' ? '' : 'hidden'}">
+          <div class="text-xs font-medium text-slate-600 text-left mb-1 min-h-[16px]">
+            Preço de venda <i class="font-light text-slate-500">unidade</i>
+          </div>
+          <input
+            data-sale
+            type="text"
+            inputmode="numeric"
+            class="h-10 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 text-sm font-semibold text-slate-900 shadow-sm outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 tabular-nums"
+            value="0,00"
+          >
+        </div>
+
+        <div data-markup-wrap class="${mode === 'markup' ? '' : 'hidden'}">
+          <div class="text-xs font-medium text-slate-600 text-left mb-1 min-h-[16px]">
+            Margem lucro (%) <i class="font-light text-slate-500">unidade</i>
+          </div>
+          <input
+            data-markup
+            type="number"
+            min="0"
+            step="0.01"
+            class="h-10 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 text-sm font-semibold text-slate-900 shadow-sm outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 tabular-nums"
+            value="0"
+          >
+        </div>
+      </div>
+
+      <!-- LINHA 2: input qty (direita) -->
+      <div class="col-span-12 sm:col-span-6 md:col-span-6">
+        <div class="text-xs font-medium text-slate-600 text-left mb-1 min-h-[16px]">Entrada de</div>
+
+        <div
+          data-qty-pill
+          class="hidden h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-900 flex items-center justify-center tabular-nums"
+        ></div>
+
+        <input
+          data-qty
+          type="number"
+          min="0"
+          max="${remaining}"
+          class="h-10 w-full text-center rounded-xl border border-slate-300 bg-slate-50 px-3 text-sm font-semibold text-slate-900 shadow-sm outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 tabular-nums"
+          value="${remaining}"
+        >
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
     <div class="col-span-12 ${mustSplit ? '' : 'hidden'} flex justify-end">
       <button type="button" data-add-loc
         class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
@@ -1821,19 +1895,55 @@
   </div>
 </li>`;
 
-
-            return { remaining, html: liHtml };
+            return { remaining, html };
         });
 
-        // split
         const pending = items.filter(x => x.remaining > 0).map(x => x.html).join('');
-        const done = items.filter(x => x.remaining <= 0).map(x => x.html).join('');
+        const done    = items.filter(x => x.remaining <= 0).map(x => x.html).join('');
 
         pendingListEl.innerHTML = pending || `<li class="p-4 text-sm text-slate-500">Nenhum item pendente.</li>`;
-        doneListEl.innerHTML = done || `<li class="p-4 text-sm text-slate-500">Nenhum item finalizado.</li>`;
+        doneListEl.innerHTML    = done    || `<li class="p-4 text-sm text-slate-500">Nenhum item finalizado.</li>`;
 
-        // rebind
+        if (doneCountEl) doneCountEl.textContent = String(items.filter(x => x.remaining <= 0).length);
+
         bindSaleMasks();
+
+        // aplica UI correta por item (toggle/hide/disable)
+        getAllRecItems().forEach(li => applyItemPriceModeUI(li));
+    }
+
+    function priceToggleHTML(mode, disabled) {
+        const base = 'px-3 py-1.5 text-xs font-semibold rounded-full';
+        const on   = 'bg-white shadow text-slate-900';
+        const off  = 'text-slate-600 hover:text-slate-800';
+
+        return `
+    <div class="inline-flex rounded-full bg-slate-100 p-1 ${disabled ? 'opacity-50 pointer-events-none' : ''}" data-item-price-toggle>
+      <button type="button" data-item-price="sale"   class="${base} ${mode==='sale' ? on : off}">Preço</button>
+      <button type="button" data-item-price="markup" class="${base} ${mode==='markup' ? on : off}">Margem %</button>
+    </div>`;
+    }
+
+    function applyItemPriceModeUI(li) {
+        const mode = li.dataset.priceMode || defaultPriceMode;
+        const rem = parseInt(li.dataset.remaining || '0', 10) || 0;
+        const isDone = rem <= 0;
+
+        const saleWrap   = li.querySelector('[data-sale-wrap]');
+        const markupWrap = li.querySelector('[data-markup-wrap]');
+        const saleInp    = li.querySelector('[data-sale]');
+        const markupInp  = li.querySelector('[data-markup]');
+
+        if (saleInp)   saleInp.disabled   = isDone;
+        if (markupInp) markupInp.disabled = isDone;
+
+        saleWrap?.classList.toggle('hidden', mode !== 'sale');
+        markupWrap?.classList.toggle('hidden', mode !== 'markup');
+
+        // toggle desabilitado quando item finalizado
+        const toggle = li.querySelector('[data-item-price-toggle]');
+        toggle?.classList.toggle('pointer-events-none', isDone);
+        toggle?.classList.toggle('opacity-50', isDone);
     }
 
     /* ====== LOCAIS ====== */
@@ -1928,13 +2038,12 @@
         receiveDialog.dataset.mustSplit = (data.must_split_by_location ? '1' : '0');
 
         receiveMode = 'total';
-        priceMode = 'sale';
+        itemPriceMode.clear();
 
         renderReceiveItems(data);
         renderReceiveToggles();
 
         applyReceiveModeUI();
-        applyPriceModeUI();
         updateReceiveKpis();
 
         receiveDialog.showModal();
@@ -1959,7 +2068,9 @@
             let sale_price = 0;
             let markup_percent = 0;
 
-            if (priceMode === 'sale') {
+            const mode = li.dataset.priceMode || defaultPriceMode;
+
+            if (mode === 'sale') {
                 sale_price = parseBRLToNumber(li.querySelector('[data-sale]')?.value || '0');
             } else {
                 markup_percent = parseFloat(li.querySelector('[data-markup]')?.value || '0') || 0;
@@ -2298,10 +2409,22 @@
         const cnpj = (q('#pp-cnpj').value || '').trim();
         const uf = q('#pp-uf').value;
 
+        const payType = document.getElementById('pp-pay-type')?.value || 'avista';
+        const payDue  = document.getElementById('pp-pay-due')?.value || '';
+
         if (!title) { toast('Informe o nome do pedido.'); return false; }
         if (!cnpj) { toast('Informe o CNPJ de faturamento.'); return false; }
         if (!uf) { toast('Selecione a UF de faturamento.'); return false; }
         if (cleanItems(formItems).length === 0) { toast('Adicione ao menos 1 item preenchido.'); return false; }
+
+        // ✅ novo
+        if (!payDue) { toast('Informe o vencimento.'); return false; }
+
+        if (payType === 'sinal') {
+            const parc = parseInt(document.getElementById('pp-pay-parc')?.value || '1', 10) || 1;
+            if (parc < 1) { toast('Parcelas deve ser no mínimo 1.'); return false; }
+        }
+
         return true;
     }
 
@@ -2555,6 +2678,13 @@ ${supplierEmailLine}
         const supplierName  = (document.getElementById('pp-supplier-name')?.value || '').trim() || null;
         const supplierEmail = normalizeEmail(document.getElementById('pp-supplier-email')?.value) || null;
 
+        // ✅ pagamento vindo do form
+        const payType = document.getElementById('pp-pay-type')?.value || 'avista'; // avista | sinal
+        const payDue  = document.getElementById('pp-pay-due')?.value || null;
+
+        const sinal = parseBRL(document.getElementById('pp-pay-sinal')?.value || '0');
+        const parc  = parseInt(document.getElementById('pp-pay-parc')?.value || '1', 10) || 1;
+
         return {
             title: (q('#pp-title').value || '').trim(),
             billing_cnpj: (q('#pp-cnpj').value || '').trim(),
@@ -2566,6 +2696,13 @@ ${supplierEmailLine}
             supplier_id: supplierId,
             supplier_name: supplierName,
             supplier_email: supplierEmail,
+
+            // ✅ CAMPOS QUE O BACKEND VAI USAR PRA CONTAS A PAGAR
+            payment_mode: payType,                 // 'avista' | 'sinal'
+            signal_due_date: payDue,               // vencimento base
+            signal_amount: payType === 'sinal' ? sinal : 0,
+            installments_count: payType === 'sinal' ? parc : 1,
+            installments_first_due_date: null,     // se não tiver no UI, deixa null
 
             items: itemsClean.map((it, idx) => ({
                 id: it.id || null,
@@ -2620,8 +2757,30 @@ ${supplierEmailLine}
 
     document.getElementById('btn-receive-close')?.addEventListener('click', () => receiveDialog?.close());
 
-    receiveDialog?.addEventListener('click', (e) => {
-        if (e.target === receiveDialog) receiveDialog.close();
+    receiveDialog.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-item-price]');
+        if (!btn) return;
+
+        const li = btn.closest('[data-rec-item]');
+        if (!li) return;
+
+        const id = li.getAttribute('data-rec-item');
+        const mode = btn.dataset.itemPrice; // sale | markup
+
+        li.dataset.priceMode = mode;
+        itemPriceMode.set(id, mode);
+
+        // atualiza visual dos botões
+        li.querySelectorAll('[data-item-price]').forEach(b => {
+            const active = b.dataset.itemPrice === mode;
+            b.classList.toggle('bg-white', active);
+            b.classList.toggle('shadow', active);
+            b.classList.toggle('text-slate-900', active);
+            b.classList.toggle('text-slate-600', !active);
+        });
+
+        applyItemPriceModeUI(li);
+        updateReceiveKpis();
     });
 
     async function cloneOrder(id) {
@@ -2642,6 +2801,7 @@ ${supplierEmailLine}
         openSendConfirm();
 
         const email = normalizeEmail(document.getElementById('pp-supplier-email')?.value || supplierCurrent.email);
+
         if (!isValidEmail(email)) {
             toast('Corrija o e-mail do destinatário para enviar.');
         }
@@ -2735,7 +2895,6 @@ ${supplierEmailLine}
         const togglePriceVisibility = (itemEl, qty) => {
             const wrap = itemEl.querySelector("[data-price-wrap]");
             if (!wrap) return;
-            // some o preço quando qty = 0 (ou vazio) pra ficar clean
             wrap.classList.toggle("hidden", !qty || Number(qty) <= 0);
         };
 

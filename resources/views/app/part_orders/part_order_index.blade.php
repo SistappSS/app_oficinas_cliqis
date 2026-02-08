@@ -336,6 +336,46 @@
                         <div class="flex justify-between border-t pt-2 text-base font-semibold"><span>Total</span><span
                                 id="sum-total">R$ 0,00</span></div>
                     </div>
+
+                    <div class="rounded-2xl border border-slate-200 p-4 space-y-3">
+                        <h4 class="text-sm font-semibold">Pagamento</h4>
+
+                        <div class="flex gap-2">
+                            <button type="button" data-pay-type-btn="avista"
+                                    class="payTypeBtn flex-1 rounded-xl border border-slate-200 bg-slate-900 px-3 py-2 text-xs font-semibold text-white">
+                                À vista
+                            </button>
+
+                            <button type="button" data-pay-type-btn="sinal"
+                                    class="payTypeBtn flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                                Sinal + parcelas
+                            </button>
+                        </div>
+
+                        <input type="hidden" id="pp-pay-type" value="avista">
+
+                        <div class="grid gap-3">
+                            <div>
+                                <label class="text-xs font-medium text-slate-600">Vencimento</label>
+                                <input id="pp-pay-due" type="date"
+                                       class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"/>
+                            </div>
+
+                            <div id="pp-pay-sinal-wrap" class="hidden">
+                                <label class="text-xs font-medium text-slate-600">Sinal (R$) — pode ser 0</label>
+                                <input id="pp-pay-sinal" inputmode="decimal" placeholder="0,00"
+                                       class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"/>
+                            </div>
+
+                            <div id="pp-pay-parc-wrap" class="hidden">
+                                <label class="text-xs font-medium text-slate-600">Parcelas</label>
+                                <input id="pp-pay-parc" type="number" min="1" step="1" value="1"
+                                       class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"/>
+                                <div class="mt-1 text-[11px] text-slate-500" id="pp-pay-preview">—</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <button id="btn-send"
                             class="w-full rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800">
                         Enviar pedido

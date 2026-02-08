@@ -28,6 +28,8 @@ class PartOrder extends Model
         'grand_total'     => 'decimal:2',
         'meta'            => 'array',
         'supplier_id'     => 'string',
+        'signal_due_date' => 'date',
+        'installments_first_due_date' => 'date',
     ];
 
     protected $appends = ['status_label'];
