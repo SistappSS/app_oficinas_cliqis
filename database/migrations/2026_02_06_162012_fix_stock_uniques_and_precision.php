@@ -11,9 +11,9 @@ return new class extends Migration {
         // ---- stock_balances: conserta uniques + precisão
         Schema::table('stock_balances', function (Blueprint $table) {
             // dropa os uniques errados (nomes iguais ao seu SQL)
-            $table->dropUnique('stock_balances_customer_sistapp_id_unique');
-            $table->dropUnique('stock_balances_location_id_unique');
-            $table->dropUnique('stock_balances_stock_part_id_unique');
+            //$table->dropUnique('stock_balances_customer_sistapp_id_unique');
+            //$table->dropUnique('stock_balances_location_id_unique');
+            //$table->dropUnique('stock_balances_stock_part_id_unique');
         });
 
         // precisão custo médio
