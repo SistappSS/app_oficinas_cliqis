@@ -34,13 +34,16 @@ use App\Http\Controllers\Application\ServiceOrders\ServiceOrderPartItemControlle
 use App\Http\Controllers\Application\ServiceOrders\ServiceOrderServiceItemController;
 use App\Http\Controllers\Application\Services\ServiceItemController;
 use App\Http\Controllers\Application\Services\ServiceTypeController;
+use App\Http\Controllers\Finances\Payables\PayableCustomFieldController;
 use App\Http\Controllers\General\ImportExport\ImportExportController;
 use App\Http\Controllers\General\Notifications\NotificationController;
 use App\Http\Controllers\PartOrderSettingController;
 use App\Http\Controllers\Public\ServiceOrderPublicSignatureController;
 use App\Http\Controllers\ServiceOrderSignatureLinkController;
 use App\Http\Controllers\Stock\MovementStockController;
+use App\Http\Controllers\Stock\Settings\StockLocationController;
 use App\Http\Controllers\Stock\StockController;
+use App\Http\Controllers\Stock\StockReasonController;
 use App\Http\Middleware\CheckSubscription;
 use App\Http\Middleware\EnsureOnboarding;
 use Illuminate\Support\Facades\Route;
@@ -311,6 +314,11 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::post('/payable-api/{id}/cancel', [AccountPayableController::class, 'cancelParcel'])
             ->middleware('can:finance_payable_delete');
 
+        // Payables -> Setting Custom Field
+        Route::resource('/payables/custom-field-api', PayableCustomFieldController::class);
+        Route::post('/payables/custom-fields/{id}/toggle', [PayableCustomFieldController::class, 'toggle']);
+
+        // Receivables
         Route::get('/receivables/service-orders', [AccountReceivableController::class, 'view'])
             ->name('account-receivable.view');
 
@@ -324,12 +332,31 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
 
     /* --->| Stock |<--- */
     Route::group(['prefix' => 'stock'], function (){
-        Route::get('/stock', [StockController::class, 'view']);
+        Route::get('/stock', [StockController::class, 'view'])->name('stock.view');
         Route::resource('/stock-api', StockController::class);
+        Route::get('/kpis-api', [StockController::class, 'kpis'])->name('stock.kpis');
+
+        Route::get('/stock-api/{id}/detail', [StockController::class, 'detail']);
+        Route::put('/stock-api/{id}/pricing', [StockController::class, 'updatePricing']);
+        Route::put('/stock-api/{id}/balance', [StockController::class, 'updateBalance']);
+        Route::get('/stock-api/{id}/price-logs', [StockController::class, 'priceLogs']);
 
         Route::get('/movements', [MovementStockController::class, 'view']);
         Route::get('/movements-api', [MovementStockController::class, 'movementsData']);
         Route::get('/movements-api/{id}', [MovementStockController::class, 'show']);
+        Route::post('/movements-api/adjust', [MovementStockController::class, 'adjust']);
+
+        Route::post('/movements-api/manual-in',  [MovementStockController::class, 'manualIn']);
+        Route::post('/movements-api/manual-out', [MovementStockController::class, 'manualOut']);
+
+        Route::get('/settings/reasons', [StockReasonController::class, 'view'])->name('stock-reason.view');
+        Route::resource('/settings/reason-api', StockReasonController::class);
+        Route::get('/settings/reasons-picklist', [StockReasonController::class, 'picklist']);
+
+        Route::get('/settings/locations', [StockLocationController::class, 'view'])->name('stock-location.view');
+        Route::resource('/settings/location-api', StockLocationController::class)->only(['index','store','update','destroy']);
+        Route::get('/settings/locations-picklist', [StockLocationController::class, 'picklist']);
+        Route::get('/location-api/{id}/delete-check', [StockLocationController::class, 'deleteCheck']);
     });
 
     Route::post('/service-orders/{serviceOrder}/billing/generate', [ServiceOrderBillingController::class, 'generate'])->name('service-orders.billing.generate');

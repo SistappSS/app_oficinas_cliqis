@@ -22,6 +22,25 @@
                     <option value="transfer">Transferência</option>
                 </select>
 
+                <select id="mov-period"
+                        class="w-full sm:w-48 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:ring-2 focus:ring-blue-200">
+                    <option value="">Todo período</option>
+                    <option value="7">Últimos 7 dias</option>
+                    <option value="30">Últimos 30 dias</option>
+                    <option value="custom">Período...</option>
+                </select>
+
+                <div id="mov-period-wrap" class="hidden w-full sm:w-auto flex gap-2">
+                    <input id="mov-from" type="date"
+                           class="w-full sm:w-40 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:ring-2 focus:ring-blue-200">
+                    <input id="mov-to" type="date"
+                           class="w-full sm:w-40 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:ring-2 focus:ring-blue-200">
+
+                    <div id="mov-period-error" class="hidden text-xs text-red-600 mt-1">
+                        Período inválido: a data inicial não pode ser maior que a final.
+                    </div>
+                </div>
+
                 <a href="{{ url('/stock/stock') }}"
                    class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
                     Voltar
@@ -36,8 +55,11 @@
                     <tr>
                         <th class="px-6 py-4 first:rounded-tl-2xl">Data</th>
                         <th class="px-3 py-4">Tipo</th>
+                        <th class="px-3 py-4">Motivo</th>
                         <th class="px-3 py-4">Origem</th>
                         <th class="px-3 py-4">Usuário</th>
+                        <th class="px-3 py-4 text-right">Total qty</th>
+                        <th class="px-3 py-4 text-right">Total custo</th>
                         <th class="px-6 py-4 text-right last:rounded-tr-2xl">Ações</th>
                     </tr>
                     </thead>

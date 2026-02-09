@@ -20,19 +20,33 @@ class AccountPayableController extends Controller
         return view('app.finances.payables.payable_index');
     }
 
-    /**
-     * Lista parcelas (recorrências) com filtros, KPIs e shape esperado pelo JS.
-     */
     public function index(Request $r)
     {
         $tenantId = $this->customerSistappID();
 
-        $status = $r->get('status', 'all');
-        $term   = $r->get('q');
-        $start  = $r->get('start');
-        $end    = $r->get('end');
+        $status  = $r->get('status', 'all');
+        $term    = $r->get('q');
 
-        // Lista de parcelas
+        $grouped = $r->boolean('grouped'); // ✅ NOVO
+
+        $start = $r->get('start');
+        $end   = $r->get('end');
+
+        // ✅ default 12 meses só no DESAGRUPADO
+        if (!$grouped && (!$start || !$end)) {
+            $start = now()->startOfMonth()->toDateString();
+            $end   = now()->copy()->addMonthsNoOverflow(12)->endOfMonth()->toDateString();
+        }
+
+        // ✅ KPI sempre tem período (se não vier, cai no default 12 meses)
+        $kpiStart = $r->get('kpi_start') ?? $start;
+        $kpiEnd   = $r->get('kpi_end')   ?? $end;
+
+        if (!$kpiStart || !$kpiEnd) {
+            $kpiStart = now()->startOfMonth()->toDateString();
+            $kpiEnd   = now()->copy()->addMonthsNoOverflow(12)->endOfMonth()->toDateString();
+        }
+
         $q = AccountPayableRecurrence::query()
             ->where('customer_sistapp_id', $tenantId)
             ->with(['accountPayable', 'payments'])
@@ -41,7 +55,7 @@ class AccountPayableController extends Controller
                     $qq->where('status', 'pending')
                         ->where('due_date', '<', now()->toDateString());
                 } else {
-                    $qq->where('status', $status); // pending / paid / canceled
+                    $qq->where('status', $status);
                 }
             })
             ->when($term, function ($qq) use ($term) {
@@ -49,34 +63,34 @@ class AccountPayableController extends Controller
                 $aq->where('description', 'like', "%{$term}%")
                 );
             })
-            ->when($start && $end, fn($qq) =>
-            $qq->whereBetween('due_date', [$start, $end])
-            )
-            ->orderBy('due_date');
+            ->when($start && $end, fn($qq) => $qq->whereBetween('due_date', [$start, $end]))
+            ->orderBy('due_date', 'asc')
+            ->orderBy('created_at', 'asc');
 
-        $rows = $q->paginate(100);
+        if ($grouped) {
+            $items = $q->get();
+        } else {
+            $rows  = $q->paginate(100);
+            $items = collect($rows->items());
+        }
 
-        // Base para KPIs (somente pendentes, ignorando cancelados)
         $base = AccountPayableRecurrence::query()
             ->where('customer_sistapp_id', $tenantId)
             ->where('status', 'pending')
-            ->when($start && $end, fn($qq) => $qq->whereBetween('due_date', [$start, $end]))
+            ->when($kpiStart && $kpiEnd, fn($qq) => $qq->whereBetween('due_date', [$kpiStart, $kpiEnd]))
             ->with('payments');
 
-        // Total pendente (restante = valor - pagos daquela parcela)
         $pendente = $base->get()->reduce(function ($s, AccountPayableRecurrence $rec) {
             $paid = $rec->payments->sum('amount');
             return $s + max(0, (float)$rec->amount - $paid);
         }, 0.0);
 
-        // Total pago no período (independente de status da parcela)
         $pagosPeriodo = AccountPayablePayment::query()
             ->where('customer_sistapp_id', $tenantId)
-            ->when($start && $end, fn($qq) => $qq->whereBetween('paid_at', [$start, $end]))
+            ->when($kpiStart && $kpiEnd, fn($qq) => $qq->whereBetween('paid_at', [$kpiStart, $kpiEnd]))
             ->sum('amount');
 
-        // Shape para o JS
-        $data = collect($rows->items())->map(function (AccountPayableRecurrence $rec) {
+        $data = $items->map(function (AccountPayableRecurrence $rec) {
             $ap        = $rec->accountPayable;
             $paidTotal = (float)$rec->payments->sum('amount');
             $lastPay   = $rec->payments->sortByDesc('paid_at')->first();
@@ -89,22 +103,69 @@ class AccountPayableController extends Controller
                 'id'           => $rec->id,
                 'date'         => $rec->due_date->toDateString(),
                 'price'        => (float)$rec->amount,
-                'status'       => $rec->status,           // pending / paid / canceled
+                'status'       => $rec->status,
                 'amount_paid'  => $paidTotal,
-                'paid_total'   => $paidTotal,             // usado no texto "Pago R$ X"
+                'paid_total'   => $paidTotal,
                 'last_paid_at' => $lastPaidAt,
                 'overdue'      => $overdue,
-                'origin'       => [
-                    'description'       => $ap->description,
-                    'type'              => $ap->recurrence,        // yearly / monthly / variable
-                    'recurrence'        => $rec->recurrence_number,
-                    'total_recurrences' => $ap->times,
+                'origin' => [
+                    'payable_id'         => $ap->id,
+                    'description'        => $ap->description,
+                    'type'               => $ap->recurrence,
+                    'recurrence'         => $rec->recurrence_number,
+                    'total_recurrences'  => $ap->times,
                 ],
             ];
         })->values();
 
+        $groupMeta = null;
+
+        if ($grouped) {
+            $paidAgg = DB::table('account_payable_payments')
+                ->select('payable_recurrence_id', DB::raw('SUM(amount) as paid_sum'))
+                ->where('customer_sistapp_id', $tenantId)
+                ->groupBy('payable_recurrence_id');
+
+            $today = now()->toDateString();
+
+            $g = DB::table('account_payable_recurrences as r')
+                ->join('account_payables as ap', 'ap.id', '=', 'r.account_payable_id')
+                ->leftJoinSub($paidAgg, 'pay', function ($j) {
+                    $j->on('pay.payable_recurrence_id', '=', 'r.id');
+                })
+                ->where('r.customer_sistapp_id', $tenantId)
+                ->when($status !== 'all', function ($qq) use ($status, $today) {
+                    if ($status === 'overdue') {
+                        $qq->where('r.status', 'pending')
+                            ->where('r.due_date', '<', $today);
+                    } else {
+                        $qq->where('r.status', $status);
+                    }
+                })
+                ->when($term, function ($qq) use ($term) {
+                    $qq->where('ap.description', 'like', "%{$term}%");
+                })
+                ->groupBy('r.account_payable_id')
+                ->selectRaw('r.account_payable_id as payable_id')
+                ->selectRaw('MIN(r.due_date) as first_due')
+                ->selectRaw("SUM(CASE WHEN r.status='pending' THEN GREATEST(0, r.amount - COALESCE(pay.paid_sum,0)) ELSE 0 END) as pending_total")
+                ->selectRaw("MAX(CASE WHEN r.status='pending' THEN 1 ELSE 0 END) as has_pending")
+                ->selectRaw("MAX(CASE WHEN r.status='pending' AND r.due_date < ? THEN 1 ELSE 0 END) as has_overdue", [$today])
+                ->get();
+
+            $groupMeta = $g->keyBy('payable_id')->map(function ($row) {
+                return [
+                    'pending_total' => (float) $row->pending_total,
+                    'first_due'     => $row->first_due,
+                    'has_pending'   => (int) $row->has_pending,
+                    'has_overdue'   => (int) $row->has_overdue,
+                ];
+            });
+        }
+
         return response()->json([
             'data' => $data,
+            'group_meta' => $groupMeta,
             'kpis' => [
                 'pending_sum' => round($pendente, 2),
                 'paid_sum'    => round($pagosPeriodo, 2),
@@ -330,9 +391,22 @@ class AccountPayableController extends Controller
 
     public function cancelParcel($recurrenceId)
     {
-        $rec = AccountPayableRecurrence::findOrFail($recurrenceId);
-        $rec->update(['status' => 'canceled']);
+        return DB::transaction(function () use ($recurrenceId) {
+            $rec = AccountPayableRecurrence::lockForUpdate()
+                ->with('payments')
+                ->findOrFail($recurrenceId);
 
-        return response()->json(['ok' => true]);
+            $paid = (float) $rec->payments->sum('amount');
+
+            if ($rec->status === 'paid' || $paid > 0) {
+                return response()->json([
+                    'message' => 'Não é possível cancelar: parcela já possui pagamento. Use estorno (se aplicar).'
+                ], 422);
+            }
+
+            $rec->update(['status' => 'canceled']);
+
+            return response()->json(['ok' => true]);
+        });
     }
 }

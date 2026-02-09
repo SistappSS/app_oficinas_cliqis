@@ -20,6 +20,7 @@ class GeminiService
 
         // monta histórico em texto simples
         $historyText = '';
+
         if (!empty($history)) {
             $lines = [];
             foreach ($history as $msg) {

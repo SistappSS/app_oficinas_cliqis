@@ -1,6 +1,3 @@
-/* assets/js/template/views/part-orders/part-order-index.js */
-/* global window, document */
-
 (() => {
     const root = document.getElementById('orders-parts-fragment') || document;
 
@@ -17,10 +14,19 @@
         resend: (id) => `${GROUP_PREFIX}/${encodeURIComponent(id)}/resend`,
     };
 
-    const csrf = () =>
-        document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
-        window?.Laravel?.csrfToken ||
-        '';
+    const csrf = () => {
+        const meta = document.querySelector('meta[name="csrf-token"]')?.content;
+        if (meta) return meta;
+
+        const inp = document.querySelector('input[name="_token"]')?.value;
+        if (inp) return inp;
+
+        const xsrf = document.cookie.split('; ')
+            .find(v => v.startsWith('XSRF-TOKEN='))?.split('=')[1];
+        if (xsrf) return decodeURIComponent(xsrf);
+
+        return '';
+    };
 
     const fmtBR = (n) =>
         'R$ ' + Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
@@ -78,7 +84,6 @@
         return res.json();
     }
 
-    // ===== STATE =====
     let pageData = null;
     let orders = [];
     let statusFilter = 'all';
@@ -102,7 +107,6 @@
     const btnDraftSend = q('#btn-draft-send');
     const btnDraftDismiss = q('#btn-draft-dismiss');
 
-    // Modals (fora do root)
     const modal = document.getElementById('modal-parts');
     const modalConfirm = document.getElementById('modal-confirm');
     const succModal = document.getElementById('modal-success');
@@ -130,7 +134,6 @@
     const cnpjInput = q('#pp-cnpj');
     const sumICMSTag = q('#sum-icms-tag');
 
-    // ===== Supplier change confirm (Item 5) =====
     const modalSupplierChoice = document.getElementById('modal-supplier-choice');
     const supChoiceName = document.getElementById('sup-choice-name');
     const btnSupOrderOnly = document.getElementById('btn-sup-order-only');
@@ -1589,7 +1592,7 @@
     function setPayType(type){
         document.getElementById('pp-pay-type').value = type;
 
-        const isSinal = type === 'sinal';
+        const isSinal = type === 'sinal_parcelas';
         document.getElementById('pp-pay-sinal-wrap').classList.toggle('hidden', !isSinal);
         document.getElementById('pp-pay-parc-wrap').classList.toggle('hidden', !isSinal);
 
@@ -1605,20 +1608,30 @@
 
         refreshPayPreview();
     }
+    setPayType('avista');
+
+    function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
 
     function getPaymentPayload(){
-        const type = document.getElementById('pp-pay-type').value; // avista | sinal
-        const due_date = document.getElementById('pp-pay-due').value || null;
+        const payment_mode   = document.getElementById('pp-pay-type')?.value || 'avista'; // avista | sinal_parcelas
+        const signal_due_date = document.getElementById('pp-pay-due')?.value || null;
 
-        if (type === 'avista') {
-            return { type: 'avista', due_date };
+        let signal_amount = 0;
+        let installments_count = 1;
+
+        if (payment_mode === 'sinal_parcelas') {
+            signal_amount = clamp(
+                parseFloat(document.getElementById('pp-pay-sinal')?.value || '0') || 0,
+                0, 100
+            );
+            installments_count = parseInt(document.getElementById('pp-pay-parc')?.value || '1', 10) || 1;
         }
 
         return {
-            type: 'sinal_parcelas',
-            due_date,
-            signal_amount: parseBRL(document.getElementById('pp-pay-sinal').value || '0'),
-            installments: parseInt(document.getElementById('pp-pay-parc').value || '1', 10) || 1,
+            payment_mode,
+            signal_due_date,
+            signal_amount,
+            installments_count,
         };
     }
 
@@ -1630,16 +1643,18 @@
         const total = parseBRL(totalTxt);
 
         const p = getPaymentPayload();
-        if (!p.due_date) { preview.textContent = 'Defina o vencimento'; return; }
+        if (!p.signal_due_date) { preview.textContent = 'Defina o vencimento'; return; }
 
-        if (p.type === 'avista') { preview.textContent = `${fmtBRL(total)} • 1x`; return; }
+        if (p.payment_mode === 'avista') { preview.textContent = `${fmtBRL(total)} • 1x`; return; }
 
-        const sinal = Math.max(0, Math.min(total, p.signal_amount || 0));
-        const parc = Math.max(1, p.installments || 1);
+        const perc = Math.max(0, Math.min(100, p.signal_amount || 0));
+        const sinal = total * (perc / 100);
+
+        const parc = Math.max(1, p.installments_count || 1);
         const rest = Math.max(0, total - sinal);
         const per = rest / parc;
 
-        preview.textContent = `Sinal: ${fmtBRL(sinal)} • ${parc}x ~ ${fmtBRL(per)}`;
+        preview.textContent = `Sinal: ${fmtBRL(sinal)} (${perc}%) • ${parc}x ~ ${fmtBRL(per)}`;
     }
 
     document.querySelectorAll('[data-pay-type-btn]').forEach(btn => {
@@ -1681,12 +1696,10 @@
                     qtyInput.readOnly = false;
                     qtyInput.classList.remove('hidden');
                     if (pill) pill.classList.add('hidden');
-                    // clamp se já veio maior
                     qtyInput.value = String(clampInt(qtyInput.value, 0, rem));
                 }
             }
 
-            // split por local: no modo total joga tudo no primeiro
             const mustSplit = receiveDialog.dataset.mustSplit === '1';
             if (mustSplit) {
                 const locQtyInputs = li.querySelectorAll('[data-loc-row] [data-loc-qty]');
@@ -1694,7 +1707,6 @@
                     if (receiveMode === 'total') {
                         locQtyInputs.forEach((inp, idx) => inp.value = (idx === 0 ? String(rem) : '0'));
                     } else {
-                        // parcial: se só 1 linha, acompanha qty
                         if (locQtyInputs.length === 1 && qtyInput) {
                             locQtyInputs[0].value = String(clampInt(qtyInput.value, 0, rem));
                         }
@@ -1733,7 +1745,6 @@
 
             qtyWillReceive += will;
 
-            // só considera modo de preço se o item ainda está pendente
             if (remaining > 0) priceModes.add(li.dataset.priceMode || defaultPriceMode);
         });
 
@@ -1776,7 +1787,6 @@
   </div>`;
     }
 
-    /* ====== RENDER ITENS (SEPARA PENDENTES x FINALIZADOS) ====== */
     function renderReceiveItems(data) {
         const mustSplit = !!data.must_split_by_location;
         const locations = data.locations || [];
@@ -1819,7 +1829,6 @@
   <div class="flex flex-col items-end gap-2">
     <div class="grid grid-cols-12 gap-2 w-full md:w-auto items-end">
 
-      <!-- LINHA 1: toggle (esquerda) + spacer (direita) -->
       <div class="col-span-12 sm:col-span-6 md:col-span-6">
         <div class="flex items-center justify-between mb-2">
           ${priceToggleHTML(mode, isDone)}
@@ -1827,7 +1836,6 @@
       </div>
       <div class="hidden sm:block sm:col-span-6 md:col-span-6"></div>
 
-      <!-- LINHA 2: input preço/margem (esquerda) -->
       <div class="col-span-12 sm:col-span-6 md:col-span-6">
         <div data-sale-wrap class="${mode === 'sale' ? '' : 'hidden'}">
           <div class="text-xs font-medium text-slate-600 text-left mb-1 min-h-[16px]">
@@ -1857,7 +1865,6 @@
         </div>
       </div>
 
-      <!-- LINHA 2: input qty (direita) -->
       <div class="col-span-12 sm:col-span-6 md:col-span-6">
         <div class="text-xs font-medium text-slate-600 text-left mb-1 min-h-[16px]">Entrada de</div>
 
@@ -1879,7 +1886,6 @@
     </div>
   </div>
 </div>
-
 
     <div class="col-span-12 ${mustSplit ? '' : 'hidden'} flex justify-end">
       <button type="button" data-add-loc
@@ -1908,7 +1914,6 @@
 
         bindSaleMasks();
 
-        // aplica UI correta por item (toggle/hide/disable)
         getAllRecItems().forEach(li => applyItemPriceModeUI(li));
     }
 
@@ -1940,13 +1945,11 @@
         saleWrap?.classList.toggle('hidden', mode !== 'sale');
         markupWrap?.classList.toggle('hidden', mode !== 'markup');
 
-        // toggle desabilitado quando item finalizado
         const toggle = li.querySelector('[data-item-price-toggle]');
         toggle?.classList.toggle('pointer-events-none', isDone);
         toggle?.classList.toggle('opacity-50', isDone);
     }
 
-    /* ====== LOCAIS ====== */
     function renderLocRow(locations, defaultLocId, qty) {
         const opts = locations.map(l => `<option value="${l.id}" ${l.id === defaultLocId ? 'selected' : ''}>${escapeHtml(l.name)}</option>`).join('');
         return `
@@ -1968,10 +1971,8 @@
   `;
     }
 
-    /* ====== EVENTOS ====== */
     btnReceiveClose?.addEventListener('click', () => receiveDialog.close());
 
-// input geral (KPIs + clamp + sync loc)
     receiveDialog.addEventListener('input', (e) => {
         if (!e.target.matches('[data-qty],[data-loc-qty],[data-sale],[data-markup]')) return;
 
@@ -2012,7 +2013,6 @@
         if (del) del.closest('[data-loc-row]')?.remove();
     });
 
-    /* ====== OPEN MODAL ====== */
     const urlReceiveData = (id) => `${id}/receive-data`;
     const urlReceive = (id) => `${id}/receive`;
 
@@ -2049,14 +2049,12 @@
         receiveDialog.showModal();
     }
 
-    /* ====== CONFIRMAR ====== */
     btnConfirmReceive?.addEventListener('click', async () => {
         const orderId = receiveDialog.dataset.orderId;
         const mustSplit = receiveDialog.dataset.mustSplit === '1';
 
         const lis = getAllRecItems();
 
-        // monta somente itens com qty > 0 (limpa payload)
         const items = lis.map(li => {
             const partOrderItemId = li.getAttribute('data-rec-item');
             const rem = parseInt(li.dataset.remaining || '0', 10) || 0;
@@ -2138,13 +2136,10 @@
         const newId = d.id || '';
         const newName = d.name || '';
 
-        // atualiza current
         supplierCurrent = { id: newId, name: newName, email: d.email || '' };
 
-        // se não mudou, sai
         if ((supplierBaseline.id || '') === (newId || '')) return;
 
-        // evita ficar perguntando pro mesmo ID nessa sessão
         if (supplierPrompted.has(newId)) return;
 
         supplierPending = { ...supplierCurrent };
@@ -2162,7 +2157,6 @@
         if (!supplierPending?.id) return;
 
         try {
-            // garante settings carregado e faz merge (não perde campos)
             const cur = await PartsSettings.get();
             const payload = {
                 default_supplier_id: supplierPending.id,
@@ -2420,7 +2414,7 @@
         // ✅ novo
         if (!payDue) { toast('Informe o vencimento.'); return false; }
 
-        if (payType === 'sinal') {
+        if (payType === 'sinal_parcelas') {
             const parc = parseInt(document.getElementById('pp-pay-parc')?.value || '1', 10) || 1;
             if (parc < 1) { toast('Parcelas deve ser no mínimo 1.'); return false; }
         }
@@ -2678,12 +2672,7 @@ ${supplierEmailLine}
         const supplierName  = (document.getElementById('pp-supplier-name')?.value || '').trim() || null;
         const supplierEmail = normalizeEmail(document.getElementById('pp-supplier-email')?.value) || null;
 
-        // ✅ pagamento vindo do form
-        const payType = document.getElementById('pp-pay-type')?.value || 'avista'; // avista | sinal
-        const payDue  = document.getElementById('pp-pay-due')?.value || null;
-
-        const sinal = parseBRL(document.getElementById('pp-pay-sinal')?.value || '0');
-        const parc  = parseInt(document.getElementById('pp-pay-parc')?.value || '1', 10) || 1;
+        const pay = getPaymentPayload(); // ✅
 
         return {
             title: (q('#pp-title').value || '').trim(),
@@ -2697,12 +2686,7 @@ ${supplierEmailLine}
             supplier_name: supplierName,
             supplier_email: supplierEmail,
 
-            // ✅ CAMPOS QUE O BACKEND VAI USAR PRA CONTAS A PAGAR
-            payment_mode: payType,                 // 'avista' | 'sinal'
-            signal_due_date: payDue,               // vencimento base
-            signal_amount: payType === 'sinal' ? sinal : 0,
-            installments_count: payType === 'sinal' ? parc : 1,
-            installments_first_due_date: null,     // se não tiver no UI, deixa null
+            ...pay,
 
             items: itemsClean.map((it, idx) => ({
                 id: it.id || null,

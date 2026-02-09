@@ -14,6 +14,7 @@ use App\Support\CustomerContext;
 use App\Traits\RoleCheckTrait;
 use App\Traits\WebIndex;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -359,25 +360,20 @@ class PartOrderController extends Controller
 
             'payment_mode' => ['required', 'string', \Illuminate\Validation\Rule::in(['avista', 'sinal_parcelas'])],
 
-// vencimento base (para avista e para sinal)
             'signal_due_date' => ['required', 'date_format:Y-m-d'],
 
-// sinal (só faz sentido em sinal_parcelas, mas deixa entrar e normaliza depois)
-            'signal_amount' => ['nullable', 'numeric', 'min:0'],
+            'signal_amount' => [
+                'nullable','numeric','min:0','max:100',
+                \Illuminate\Validation\Rule::requiredIf(fn() => $request->input('payment_mode') === 'sinal_parcelas'),
+            ],
 
-// parcelas
             'installments_count' => [
-                'nullable',
-                'integer',
-                'min:1',
-                'max:120',
+                'nullable','integer','min:1','max:120',
                 \Illuminate\Validation\Rule::requiredIf(fn() => $request->input('payment_mode') === 'sinal_parcelas'),
             ],
 
             'installments_first_due_date' => [
-                'nullable',
-                'date_format:Y-m-d',
-                \Illuminate\Validation\Rule::requiredIf(fn() => $request->input('payment_mode') === 'sinal_parcelas'),
+                'nullable','date_format:Y-m-d',
                 'after_or_equal:signal_due_date',
             ],
 
@@ -397,22 +393,29 @@ class PartOrderController extends Controller
             'items.*.position'       => ['nullable', 'integer', 'min:0'],
         ]);
 
-        // ✅ normaliza UF/CNPJ no que vai pro banco
         $validated['billing_uf'] = strtoupper($validated['billing_uf']);
         $validated['billing_cnpj'] = preg_replace('/\D+/', '', (string)$validated['billing_cnpj']);
 
-        // ✅ força status draft sempre aqui (evita bypass)
         $validated['status'] = 'draft';
 
         $validated['payment_mode'] = $validated['payment_mode'] ?? 'avista';
-        $validated['signal_amount'] = round((float)($validated['signal_amount'] ?? 0), 2);
+        $validated['signal_amount'] = round((float)($validated['signal_amount'] ?? 0), 2); // % 0-100
         $validated['installments_count'] = (int)($validated['installments_count'] ?? 0);
 
-// defaults seguros
         if ($validated['payment_mode'] === 'avista') {
             $validated['signal_amount'] = 0;
             $validated['installments_count'] = 0;
             $validated['installments_first_due_date'] = null;
+        } else {
+            $validated['signal_amount'] = max(0, min(100, $validated['signal_amount']));
+            $validated['installments_count'] = max(1, $validated['installments_count']);
+
+            if ($validated['signal_amount'] >= 100) {
+                $validated['payment_mode'] = 'avista';
+                $validated['signal_amount'] = 0;
+                $validated['installments_count'] = 0;
+                $validated['installments_first_due_date'] = null;
+            }
         }
 
         $items = collect($validated['items'] ?? [])
@@ -430,7 +433,6 @@ class PartOrderController extends Controller
             $tenant = auth()->user()->employeeCustomerLogin->customer_sistapp_id
                 ?? CustomerContext::get();
 
-            // ✅ update precisa ser scoped por tenant (impede “roubo”)
             if ($id) {
                 $order = $this->partOrder->newQuery()
                     ->where('customer_sistapp_id', $tenant)
@@ -511,26 +513,17 @@ class PartOrderController extends Controller
             $order->icms_total      = $totals['icms_total'];
             $order->grand_total     = $totals['grand_total'];
 
-            // clamp do sinal baseado no total real
             if ($order->payment_mode === 'sinal_parcelas') {
-                $order->signal_amount = round((float) $order->signal_amount, 2);
+                $order->signal_amount = max(0, min(100, round((float)$order->signal_amount, 2)));
+                $order->installments_count = max(1, (int)$order->installments_count);
 
-                if ($order->signal_amount < 0) $order->signal_amount = 0;
-
-                // não deixa sinal maior que total
-                if ($order->signal_amount > (float)$order->grand_total) {
-                    $order->signal_amount = (float)$order->grand_total;
-                }
-
-                // se sinal == total, vira avista (não faz sentido manter parcelas)
-                if ((float)$order->signal_amount >= (float)$order->grand_total) {
+                if ($order->signal_amount >= 100) {
                     $order->payment_mode = 'avista';
                     $order->signal_amount = 0;
                     $order->installments_count = 0;
                     $order->installments_first_due_date = null;
                 }
             } else {
-                // avista: zera tudo
                 $order->signal_amount = 0;
                 $order->installments_count = 0;
                 $order->installments_first_due_date = null;
@@ -788,7 +781,6 @@ class PartOrderController extends Controller
 
         if ($total <= 0) return;
 
-        // ✅ idempotência via coluna
         if (!empty($order->account_payable_id)) {
             $exists = DB::table('account_payables')
                 ->where('customer_sistapp_id', $tenantId)
@@ -797,27 +789,26 @@ class PartOrderController extends Controller
 
             if ($exists) return;
 
-            // se não existir (apagaram manualmente), limpa pra recriar
             $order->account_payable_id = null;
             $order->save();
         }
 
         $mode = (string) ($order->payment_mode ?? 'avista');
 
-        // base due: para avista = vencimento; para sinal = vencimento do sinal
         $baseDue = Carbon::parse($order->signal_due_date ?: now()->toDateString())->startOfDay();
 
-        $rows = []; // [['due' => 'Y-m-d', 'amount' => 0.00], ...]
+        $rows = [];
 
         if ($mode === 'avista') {
             $rows[] = ['due' => $baseDue->toDateString(), 'amount' => $total];
         } else {
-            $sinal = round((float)($order->signal_amount ?? 0), 2);
+            $signalPercent = round((float)($order->signal_amount ?? 0), 2);
+            $signalPercent = max(0, min(100, $signalPercent));
+
+            $sinal = round($total * ($signalPercent / 100), 2);
             $sinal = max(0, min($total, $sinal));
 
-            $installments = (int)($order->installments_count ?? 1);
-            $installments = max(1, $installments);
-
+            $installments = max(1, (int)($order->installments_count ?? 1));
             $rest = round($total - $sinal, 2);
 
             if ($sinal > 0) {
@@ -829,7 +820,6 @@ class PartOrderController extends Controller
                     ? Carbon::parse($order->installments_first_due_date)->startOfDay()
                     : (($sinal > 0) ? $baseDue->copy()->addMonth() : $baseDue->copy());
 
-                // split com ajuste na última parcela
                 $base = floor(($rest / $installments) * 100) / 100; // trunca 2 casas
                 $lastAdj = round($rest - ($base * $installments), 2);
 
@@ -842,13 +832,11 @@ class PartOrderController extends Controller
                 }
             }
 
-            // se por algum motivo sinal=total e não gerou rows, cai no avista
             if (!$rows) {
                 $rows[] = ['due' => $baseDue->toDateString(), 'amount' => $total];
             }
         }
 
-        // garantia: ordem por vencimento
         usort($rows, fn($a, $b) => strcmp($a['due'], $b['due']));
 
         $payableId = (string) Str::uuid();
@@ -896,7 +884,6 @@ class PartOrderController extends Controller
                 ]);
             }
 
-            // ✅ vínculo no pedido (coluna)
             $order->account_payable_id = $payableId;
             $order->save();
         });

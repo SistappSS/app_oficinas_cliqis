@@ -184,6 +184,17 @@
             'permissions' => ["{$tenantId}_visualizar_beneficios_funcionarios"],
         ],
 
+        // ------- ESTOQUE -------
+        [
+            'key'   => 'stock',
+            'label' => 'Inventário',
+            'route' => route('stock.view'),
+            'icon'  => '<i class="fa-solid fa-cart-flatbed"></i>',
+            'group' => 'Estoque',
+            'description' => 'Gestão de estoque',
+            'permissions' => ["{$tenantId}_visualizar_estoque"],
+        ],
+
         // ------- CATÁLOGO -------
         [
             'key'   => 'service-type',
