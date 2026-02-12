@@ -28,6 +28,13 @@ class ServiceOrderPublicSignatureController extends Controller
 
     public function show(string $token)
     {
+        logger()->info('signature_link_open', [
+            'ip' => request()->ip(),
+            'ua' => request()->userAgent(),
+            'url' => request()->fullUrl(),
+            'token_len' => strlen($token),
+        ]);
+
         $req = $this->findValidRequest($token);
 
         $os = $req->serviceOrder()

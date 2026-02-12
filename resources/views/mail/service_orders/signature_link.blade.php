@@ -14,8 +14,8 @@
     </p>
 
     <p style="margin:12px 0 0; font-size:12px; color:#64748b;">
-        Se o botão não abrir, copie e cole no navegador:<br>
-        <a href="{{ $link }}">{{ $link }}</a>
+        Se o botão não funcionar, copie e cole no navegador:<br>
+        <a href="{{ $link }}" style="word-break:break-all;">{{ $link }}</a>
     </p>
 
     <p style="margin:0; font-size:12px; color:#64748b;">
