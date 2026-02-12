@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Support;
+namespace App\Support\TenantUser;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;

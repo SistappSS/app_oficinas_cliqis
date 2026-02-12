@@ -9,46 +9,58 @@
             </div>
 
             <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
-                <input id="mov-q" type="text"
-                       class="w-full sm:w-80 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm outline-none focus:ring-2 focus:ring-blue-200"
-                       placeholder="Buscar por código/descrição..." />
-
-                <select id="mov-type"
-                        class="w-full sm:w-44 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:ring-2 focus:ring-blue-200">
-                    <option value="">Todos tipos</option>
-                    <option value="in">Entrada</option>
-                    <option value="out">Saída</option>
-                    <option value="adjust">Ajuste</option>
-                    <option value="transfer">Transferência</option>
-                </select>
-
-                <select id="mov-period"
-                        class="w-full sm:w-48 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:ring-2 focus:ring-blue-200">
-                    <option value="">Todo período</option>
-                    <option value="7">Últimos 7 dias</option>
-                    <option value="30">Últimos 30 dias</option>
-                    <option value="custom">Período...</option>
-                </select>
-
-                <div id="mov-period-wrap" class="hidden w-full sm:w-auto flex gap-2">
-                    <input id="mov-from" type="date"
-                           class="w-full sm:w-40 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:ring-2 focus:ring-blue-200">
-                    <input id="mov-to" type="date"
-                           class="w-full sm:w-40 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:ring-2 focus:ring-blue-200">
-
-                    <div id="mov-period-error" class="hidden text-xs text-red-600 mt-1">
-                        Período inválido: a data inicial não pode ser maior que a final.
-                    </div>
-                </div>
-
                 <a href="{{ url('/stock/stock') }}"
-                   class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                   class="flex items-center rounded-xl border border-indigo-700 bg-indigo-700 px-4 py-2 text-sm text-white hover:bg-indigo-600">
                     Voltar
                 </a>
+                <button id="toggle-header"
+                        class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow hover:bg-slate-50"
+                        aria-expanded="true" aria-controls="header-collapsible" type="button"
+                        title="Expandir/contrair cabeçalho">
+                    <i id="toggle-icon" class="fa-solid fa-up-right-and-down-left-from-center"></i>
+                </button>
             </div>
         </div>
 
         <div class="mt-5 mb-8 rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="flex justify-between px-5 py-4 border-b border-slate-100">
+                <div class="text-sm text-slate-600">
+                    <input id="mov-q" type="text"
+                           class="w-full sm:w-80 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm outline-none focus:ring-2 focus:ring-blue-200"
+                           placeholder="Buscar por código/descrição..." />
+                </div>
+
+                <div>
+                    <select id="mov-type"
+                            class="w-full sm:w-44 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:ring-2 focus:ring-blue-200">
+                        <option value="">Todos tipos</option>
+                        <option value="in">Entrada</option>
+                        <option value="out">Saída</option>
+                        <option value="adjust">Ajuste</option>
+                        <option value="transfer">Transferência</option>
+                    </select>
+
+                    <select id="mov-period"
+                            class="w-full sm:w-48 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:ring-2 focus:ring-blue-200">
+                        <option value="">Todo período</option>
+                        <option value="7">Últimos 7 dias</option>
+                        <option value="30">Últimos 30 dias</option>
+                        <option value="custom">Período...</option>
+                    </select>
+
+                    <div id="mov-period-wrap" class="hidden w-full sm:w-auto flex gap-2">
+                        <input id="mov-from" type="date"
+                               class="w-full sm:w-40 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:ring-2 focus:ring-blue-200">
+                        <input id="mov-to" type="date"
+                               class="w-full sm:w-40 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:ring-2 focus:ring-blue-200">
+
+                        <div id="mov-period-error" class="hidden text-xs text-red-600 mt-1">
+                            Período inválido: a data inicial não pode ser maior que a final.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="overflow-x-auto" id="stock-movements-fragment">
                 <table class="min-w-full text-sm">
                     <thead class="text-left text-slate-600 bg-blue-50">

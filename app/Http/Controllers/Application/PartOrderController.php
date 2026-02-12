@@ -9,8 +9,8 @@ use App\Models\PartOrderItem;
 use App\Models\PartOrderSetting;
 use App\Models\Stock\StockLocation;
 use App\Services\Stock\ReceivePartOrderService;
-use App\Support\Audit\Audit;
-use App\Support\CustomerContext;
+use App\Support\Audit\PartOrders\PartOrdersAudit;
+use App\Support\TenantUser\CustomerContext;
 use App\Traits\RoleCheckTrait;
 use App\Traits\WebIndex;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -212,7 +212,7 @@ class PartOrderController extends Controller
 
         $this->createPayableFromPartOrder($order, (string) auth()->id());
 
-        Audit::log(
+        PartOrdersAudit::log(
             'part_order.send',
             'PartOrder',
             $order->id,
@@ -271,7 +271,7 @@ class PartOrderController extends Controller
         $order->sent_at = now();
         $order->save();
 
-        Audit::log(
+        PartOrdersAudit::log(
             'part_order.resend',
             'PartOrder',
             $order->id,

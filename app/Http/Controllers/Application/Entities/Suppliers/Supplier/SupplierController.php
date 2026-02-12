@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSupplierRequest;
 use App\Http\Requests\UpdateSupplierRequest;
 use App\Models\Entities\Suppliers\Supplier;
-use App\Support\CustomerContext;
+use App\Support\TenantUser\CustomerContext;
 use App\Traits\CrudResponse;
 use App\Traits\WebIndex;
 use Illuminate\Http\Request;

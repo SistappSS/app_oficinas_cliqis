@@ -3,7 +3,6 @@
 namespace App\Http\Middleware;
 
 use App\Models\Entities\Customers\CustomerEmployeeUser;
-use App\Support\CustomerContext;
 use App\Traits\RoleCheckTrait;
 use Closure;
 use Illuminate\Http\Request;

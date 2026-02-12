@@ -9,7 +9,7 @@ use App\Models\Authenticate\Permissions\Role;
 use App\Models\Entities\Customers\CustomerEmployeeUser;
 use App\Models\Entities\Users\CustomerUserLogin;
 use App\Models\Entities\Users\User;
-use App\Support\CustomerContext;
+use App\Support\TenantUser\CustomerContext;
 use App\Traits\HttpResponse;
 use App\Traits\RoleCheckTrait;
 use App\Traits\WebIndex;

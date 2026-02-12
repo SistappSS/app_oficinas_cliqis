@@ -6,24 +6,27 @@
                 <h1 class="text-xl font-semibold">Contas a Pagar</h1>
                 <p class="text-sm text-slate-600">Controle de saídas e baixas.</p>
             </div>
-            <div>
-                <div class="flex items-center gap-3">
-                    <!-- (Antes do Novo) Toggle agrupar -->
 
-                    <button id="btn-new"
-                            class="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-800">
-                        Nova conta
-                    </button>
+            <div class="flex items-center gap-3">
+                <button id="btn-audit"
+                        class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow hover:bg-slate-50">
+                    Histórico
+                </button>
 
-                    <button id="toggle-header"
-                            class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow hover:bg-slate-50"
-                            aria-expanded="true" aria-controls="header-collapsible" type="button"
-                            title="Expandir/contrair cabeçalho">
-                        <i id="toggle-icon" class="fa-solid fa-up-right-and-down-left-from-center"></i>
-                    </button>
-                </div>
+                <button id="btn-new"
+                        class="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-800">
+                    Nova conta
+                </button>
+
+                <button id="toggle-header"
+                        class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow hover:bg-slate-50"
+                        aria-expanded="true" aria-controls="header-collapsible" type="button"
+                        title="Expandir/contrair cabeçalho">
+                    <i id="toggle-icon" class="fa-solid fa-up-right-and-down-left-from-center"></i>
+                </button>
             </div>
         </div>
+
 
         <!-- KPIs -->
         <section class="mt-5 grid gap-4 md:grid-cols-3">
@@ -521,6 +524,105 @@
         </div>
     </div>
 
+    <!-- Modal Auditoria -->
+    <div id="modal-audit" class="hidden fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm">
+        <div class="absolute left-1/2 top-1/2 w-[min(980px,95vw)] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-2xl">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold">Auditoria</h2>
+                    <p class="text-sm text-slate-600">Rastreie alterações e ações no financeiro.</p>
+                </div>
+                <button data-close-audit class="rounded-lg p-2 hover:bg-slate-100">
+                    <svg class="h-5 w-5 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6 6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- filtros -->
+            <div class="mt-4 grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div class="grid gap-3 md:grid-cols-5">
+                    <div>
+                        <label class="text-xs font-medium text-slate-600">Início</label>
+                        <input id="audit-start" type="date" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200">
+                    </div>
+                    <div>
+                        <label class="text-xs font-medium text-slate-600">Fim</label>
+                        <input id="audit-end" type="date" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200">
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-medium text-slate-600">Ação</label>
+                        <select id="audit-action" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200">
+                            <option value="">Todas</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-medium text-slate-600">Usuário</label>
+                        <select id="audit-user" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-medium text-slate-600">Entidade</label>
+                        <select id="audit-entity" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200">
+                            <option value="">Todas</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between gap-3">
+                    <div class="text-xs text-slate-500" id="audit-summary">—</div>
+                    <div class="flex items-center gap-2">
+                        <button id="audit-clear"
+                                class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                            Limpar
+                        </button>
+                        <button id="audit-apply"
+                                class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+                            Aplicar
+                        </button>
+                    </div>
+                </div>
+
+                <div id="audit-err" class="hidden rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700"></div>
+            </div>
+
+            <!-- tabela -->
+            <div class="mt-4 overflow-x-auto rounded-2xl border border-slate-200">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-white text-left text-slate-600">
+                    <tr class="border-b border-slate-200">
+                        <th class="px-4 py-3">Data/Hora</th>
+                        <th class="px-4 py-3">Usuário</th>
+                        <th class="px-4 py-3">Ação</th>
+                        <th class="px-4 py-3">Entidade</th>
+                        <th class="px-4 py-3 text-right">Detalhes</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tbody-audit" class="divide-y divide-slate-100 bg-white"></tbody>
+                </table>
+            </div>
+
+            <!-- paginação -->
+            <div class="mt-4 flex items-center justify-between">
+                <div class="text-xs text-slate-500" id="audit-pager-info">—</div>
+                <div class="flex items-center gap-2">
+                    <button id="audit-prev"
+                            class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                        Anterior
+                    </button>
+                    <button id="audit-next"
+                            class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                        Próximo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
         <script>
             const fmt = n => 'R$ ' + Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
@@ -565,7 +667,6 @@
                     const s = $('#start-date')?.value;
                     const e = $('#end-date')?.value;
                     if (s && e) return { start: s, end: e };
-                    // se custom mas sem datas, cai pro padrão
                     return rangeDefault12();
                 }
                 return rangeDefault12();
@@ -623,7 +724,7 @@
             }
 
             function badgeKind(origin = {}) {
-                const t = origin.type; // variable/monthly/yearly
+                const t = origin.type;
                 const total = Number(origin.total_recurrences || 1);
 
                 if (t === 'monthly') {
@@ -649,7 +750,7 @@
                 return '';
             }
 
-            // -------- Modal baixa ----------
+            // -------- Modal Pay ----------
             function bindPayModal() {
                 const modal = document.getElementById('modal-pay');
                 const form  = document.getElementById('form-pay');
@@ -922,8 +1023,8 @@
                         notes: form.notes.value || '',
                         amount_original: String(base),
                         amount_final: String(final),
-                        amount: String(final),                 // <- backend atual usa isso
-                        adjustments: serializeAdjustments(),    // <- backend novo vai usar
+                        amount: String(final),
+                        adjustments: serializeAdjustments(),
                     };
 
                     const res = await fetch(`/finances/payable-api/${id}/pay`, {
@@ -973,7 +1074,7 @@
                 };
             }
 
-            // --------- Modal Novo ----------
+            // --------- Modal New ----------
             function bindNewModal() {
                 const modal = $('#modal-new');
                 const btn = $('#btn-new');
@@ -1029,7 +1130,7 @@
                 });
             }
 
-            // -------- Modal cancelar ----------
+            // -------- Modal Cancel ----------
             function bindCancelModal() {
                 const modal = document.getElementById('modal-cancel');
                 const errBox = document.getElementById('cancel-err');
@@ -1098,6 +1199,785 @@
                         modal.classList.remove('hidden');
                     }
                 };
+            }
+
+            // -------- Modal Audit ----------
+            function escHtml(str) {
+                return String(str ?? '').replace(/[&<>"']/g, (m) => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+                }[m]));
+            }
+
+            const cssEsc = (v) => (window.CSS && CSS.escape) ? CSS.escape(String(v)) : String(v).replace(/"/g, '\\"');
+
+            function isObj(v){ return v && typeof v === 'object' && !Array.isArray(v); }
+
+            function flatten(obj, prefix = '') {
+                const out = {};
+                if (!isObj(obj)) return out;
+
+                for (const [k, v] of Object.entries(obj)) {
+                    const key = prefix ? `${prefix}.${k}` : k;
+                    if (isObj(v)) Object.assign(out, flatten(v, key));
+                    else out[key] = v;
+                }
+                return out;
+            }
+
+            function diff(beforeObj, afterObj) {
+                const b = flatten(beforeObj || {});
+                const a = flatten(afterObj || {});
+                const keys = new Set([...Object.keys(b), ...Object.keys(a)]);
+
+                const changes = [];
+                for (const k of keys) {
+                    const bv = b[k];
+                    const av = a[k];
+                    if (JSON.stringify(bv) !== JSON.stringify(av)) changes.push({ key: k, before: bv, after: av });
+                }
+                return changes;
+            }
+
+            const fmtMoney = n => 'R$ ' + Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+            function formatDateBrIso(iso) {
+                if (!iso || typeof iso !== 'string') return iso;
+                const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                if (!m) return iso;
+                return `${m[3]}/${m[2]}/${m[1]}`;
+            }
+
+            function humanizeKey(seg) {
+                return String(seg || '')
+                    .replace(/_/g, ' ')
+                    .replace(/\b\w/g, c => c.toUpperCase());
+            }
+
+            const ACTION_LABEL = {
+                paid: 'Baixa realizada',
+                created: 'Criado',
+                updated: 'Atualizado',
+                deleted: 'Excluído',
+                toggled: 'Ativado/Desativado',
+                canceled: 'Cancelado',
+                amount_changed: 'Valor alterado',
+            };
+
+            const ENTITY_LABEL = {
+                recurrence: 'Parcela',
+                payable: 'Conta a pagar',
+                payment: 'Pagamento',
+                custom_field: 'Campo adicional',
+                adjustment: 'Ajuste',
+            };
+
+            const KEY_LABEL = {
+                'payments_cash_sum': 'Total pago (cash)',
+                'adjustments': 'Ajustes',
+
+                'payment.id': 'Pagamento (ID)',
+                'payment.cash': 'Pago',
+                'payment.meta.cash_amount': 'Pago',
+                'payment.meta.amount_due': 'Valor final',
+                'payment.meta.amount_base': 'Valor base',
+                'payment.meta.amount_settled': 'Quitado',
+                'payment.meta.delta_total': 'Ajustes (total)',
+                'payment.meta.adjustments_count': 'Qtd. ajustes',
+
+                'recurrence.id': 'Parcela (ID)',
+                'recurrence.status': 'Status da parcela',
+                'recurrence.amount': 'Valor da parcela',
+                'recurrence.amount_paid': 'Quitado (base)',
+                'recurrence.paid_at': 'Data da baixa',
+
+                'name': 'Nome',
+                'type': 'Tipo',
+                'active': 'Ativo',
+                'type_snapshot': 'Tipo',
+            };
+
+            const VALUE_LABEL = {
+                add: 'Acrescentar',
+                deduct: 'Descontar',
+
+                pending: 'Pendente',
+                paid: 'Pago',
+                canceled: 'Cancelado',
+                open: 'Em aberto',
+                closed: 'Fechado',
+            };
+
+            function labelKey(k){
+                if (KEY_LABEL[k]) return KEY_LABEL[k];
+                const last = String(k || '').split('.').slice(-1)[0];
+                return KEY_LABEL[last] || humanizeKey(last);
+            }
+
+            function badge(text, tone = 'slate') {
+                const map = {
+                    emerald: 'bg-emerald-50 text-emerald-700',
+                    rose:    'bg-rose-50 text-rose-700',
+                    amber:   'bg-amber-50 text-amber-700',
+                    blue:    'bg-blue-50 text-blue-700',
+                    slate:   'bg-slate-100 text-slate-700',
+                    violet:  'bg-violet-50 text-violet-700',
+                    sky:     'bg-sky-50 text-sky-700',
+                };
+                const cls = map[tone] || map.slate;
+                return `<span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${cls}">${escHtml(text)}</span>`;
+            }
+
+            function boolBadge(v, asActive = false) {
+                const b = !!v;
+                if (asActive) return b ? badge('Ativo', 'emerald') : badge('Inativo', 'slate');
+                return b ? badge('Sim', 'emerald') : badge('Não', 'rose');
+            }
+
+            function statusBadge(v) {
+                const val = String(v || '').toLowerCase();
+                if (val === 'paid') return badge('Pago', 'emerald');
+                if (val === 'pending') return badge('Pendente', 'amber');
+                if (val === 'canceled') return badge('Cancelado', 'rose');
+                if (val === 'open') return badge('Em aberto', 'amber');
+                if (val === 'closed') return badge('Fechado', 'slate');
+                return badge(VALUE_LABEL[val] || val || '-', 'slate');
+            }
+
+            function typeBadge(v) {
+                const val = String(v || '').toLowerCase();
+                if (val === 'add') return badge('Acrescentar', 'blue');
+                if (val === 'deduct') return badge('Descontar', 'amber');
+                return badge(VALUE_LABEL[val] || val || '-', 'slate');
+            }
+
+            function actionPill(action) {
+                const a = String(action || '').toLowerCase();
+                if (a === 'paid') return badge(ACTION_LABEL[a] || 'Baixa realizada', 'emerald');
+                if (a === 'created') return badge(ACTION_LABEL[a] || 'Criado', 'blue');
+                if (a === 'updated') return badge(ACTION_LABEL[a] || 'Atualizado', 'amber');
+                if (a === 'deleted') return badge(ACTION_LABEL[a] || 'Excluído', 'rose');
+                if (a === 'canceled') return badge(ACTION_LABEL[a] || 'Cancelado', 'rose');
+                if (a === 'toggled') return badge(ACTION_LABEL[a] || 'Ativado/Desativado', 'violet');
+                return badge(ACTION_LABEL[a] || action || '-', 'slate');
+            }
+
+            function entityLabel(entity){
+                return ENTITY_LABEL[entity] || entity || '-';
+            }
+
+            function shouldHideKey(k) {
+                const key = String(k || '');
+                if (key === 'id') return true;
+                if (key.endsWith('.id')) return true;
+                if (/_id$/i.test(key)) return true;
+                if (key === 'entity_id') return true;
+                return false;
+            }
+
+            function fmtValHtml(key, v) {
+                const k = String(key || '');
+
+                if (v === null || v === undefined || v === '') return '<span class="text-slate-400">-</span>';
+
+                if (typeof v === 'boolean') {
+                    const isActiveKey = /(^active$|\.active$)/i.test(k);
+                    return boolBadge(v, isActiveKey);
+                }
+
+                if (/(^status$|\.status$)/i.test(k)) return statusBadge(v);
+
+                if (/(^type$|\.type$|type_snapshot$)/i.test(k)) return typeBadge(v);
+
+                if (typeof v === 'number' && /(amount|value|total|cash|delta|paid)/i.test(k)) {
+                    return `<span class="font-semibold text-slate-900">${escHtml(fmtMoney(v))}</span>`;
+                }
+
+                if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v)) {
+                    return escHtml(formatDateBrIso(v));
+                }
+
+                if (typeof v === 'string') {
+                    const vv = v.toLowerCase();
+                    if (vv in VALUE_LABEL) return escHtml(VALUE_LABEL[vv]);
+                }
+
+                if (Array.isArray(v)) {
+                    return badge(`${v.length} item(ns)`, 'slate');
+                }
+
+                if (typeof v === 'object') {
+                    return badge('Detalhes (ver JSON)', 'slate');
+                }
+
+                return escHtml(String(v));
+            }
+
+            function renderChanges(container, beforeObj, afterObj){
+                const changes = diff(beforeObj, afterObj).filter(c => !shouldHideKey(c.key));
+
+                if (!changes.length) {
+                    container.innerHTML = `<div class="text-sm text-slate-500">Sem mudanças relevantes.</div>`;
+                    return;
+                }
+
+                container.innerHTML = `
+    <div class="rounded-xl border border-slate-200 bg-white overflow-hidden">
+      <table class="min-w-full text-sm">
+        <thead class="bg-slate-50 text-left text-slate-600">
+          <tr>
+            <th class="px-4 py-3 w-[34%]">Campo</th>
+            <th class="px-4 py-3 w-[33%]">Antes</th>
+            <th class="px-4 py-3 w-[33%]">Depois</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          ${changes.map(c => `
+            <tr>
+              <td class="px-4 py-3 text-xs font-semibold text-slate-600">${escHtml(labelKey(c.key))}</td>
+              <td class="px-4 py-3">${fmtValHtml(c.key, c.before)}</td>
+              <td class="px-4 py-3">${fmtValHtml(c.key, c.after)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+            }
+
+            function bindAuditModal() {
+                const modal   = document.getElementById('modal-audit');
+                const btnOpen = document.getElementById('btn-audit');
+                const tb      = document.getElementById('tbody-audit');
+
+                if (!modal || !btnOpen || !tb) return;
+
+                const err     = document.getElementById('audit-err');
+                const summary = document.getElementById('audit-summary');
+
+                const start   = document.getElementById('audit-start');
+                const end     = document.getElementById('audit-end');
+                const selAction = document.getElementById('audit-action');
+                const selUser   = document.getElementById('audit-user');
+                const selEntity = document.getElementById('audit-entity');
+
+                const btnApply = document.getElementById('audit-apply');
+                const btnClear = document.getElementById('audit-clear');
+
+                const pagerInfo = document.getElementById('audit-pager-info');
+                const btnPrev   = document.getElementById('audit-prev');
+                const btnNext   = document.getElementById('audit-next');
+
+                let page = 1;
+                let lastPage = 1;
+
+                const setErr = (msg) => {
+                    if (!err) return;
+                    if (!msg) { err.classList.add('hidden'); err.textContent = ''; return; }
+                    err.textContent = msg;
+                    err.classList.remove('hidden');
+                };
+
+                function fillSelect(sel, items, placeholder) {
+                    if (!sel) return;
+                    const cur = sel.value || '';
+
+                    const arr = Array.isArray(items) ? items : [];
+                    sel.innerHTML = `<option value="">${escHtml(placeholder)}</option>` + arr.map(x => {
+                        if (typeof x === 'string') {
+                            return `<option value="${escHtml(x)}">${escHtml(x)}</option>`;
+                        }
+                        const v = x?.id ?? '';
+                        const t = x?.name ?? x?.label ?? v;
+                        return `<option value="${escHtml(v)}">${escHtml(t)}</option>`;
+                    }).join('');
+
+                    sel.value = cur;
+                }
+
+                function rowHtml(a) {
+                    const dt = a.created_at ? new Date(a.created_at) : null;
+                    const when = dt ? dt.toLocaleString('pt-BR') : '-';
+
+                    const actCode = a.action || '';
+                    const entCode = a.entity || '';
+
+                    const entText = a.entity_label || ENTITY_LABEL[String(entCode)] || entCode || '-';
+                    const title = a.entity_title ? escHtml(a.entity_title) : '';
+
+                    let sub = a.entity_subtitle ? String(a.entity_subtitle) : '';
+                    sub = sub.replace(/\d{4}-\d{2}-\d{2}/g, (m) => formatDateBrIso(m));
+                    sub = sub ? escHtml(sub) : '';
+
+                    const id = String(a.id || '');
+
+                    const idShort = (a.entity_id && /^[0-9a-f-]{36}$/i.test(a.entity_id))
+                        ? escHtml(String(a.entity_id).slice(0, 8) + '…')
+                        : '';
+
+                    return `
+<tr class="hover:bg-slate-50">
+  <td class="px-4 py-3">${escHtml(when)}</td>
+  <td class="px-4 py-3">${escHtml(a.user?.name || '—')}</td>
+  <td class="px-4 py-3">${actionPill(actCode)}</td>
+  <td class="px-4 py-3">
+    <div class="font-medium text-slate-900">
+      ${escHtml(entText)}${idShort ? ` <span class="text-[11px] text-slate-400">#${idShort}</span>` : ''}
+    </div>
+    ${title ? `<div class="text-[11px] text-slate-600">${title}</div>` : ''}
+    ${sub ? `<div class="text-[11px] text-slate-500">${sub}</div>` : ''}
+  </td>
+  <td class="px-4 py-3 text-right">
+    <button type="button"
+            class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            data-audit-toggle="${escHtml(id)}"
+            aria-expanded="false">
+      Ver
+    </button>
+  </td>
+</tr>
+
+<tr class="bg-white hidden" id="audit-row-${escHtml(id)}">
+  <td colspan="5" class="px-4 py-3">
+    <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div class="flex items-center justify-between">
+        <div class="text-xs font-semibold text-slate-700">Mudanças</div>
+        <button type="button"
+                class="text-xs font-semibold text-slate-700 hover:underline"
+                data-audit-toggle-json="${escHtml(id)}"
+                aria-expanded="false">
+          Ver JSON
+        </button>
+      </div>
+
+      <div class="mt-2" id="audit-changes-${escHtml(id)}"></div>
+
+      <div class="hidden mt-3 grid gap-3 md:grid-cols-2"
+           id="audit-json-${escHtml(id)}">
+        <div class="rounded-xl border border-slate-200 bg-white p-3">
+          <div class="text-xs font-semibold text-slate-700 mb-2">Antes</div>
+          <pre class="text-xs text-slate-700 whitespace-pre-wrap break-words max-h-72 overflow-auto">${escHtml(JSON.stringify(a.before ?? {}, null, 2))}</pre>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-white p-3">
+          <div class="text-xs font-semibold text-slate-700 mb-2">Depois</div>
+          <pre class="text-xs text-slate-700 whitespace-pre-wrap break-words max-h-72 overflow-auto">${escHtml(JSON.stringify(a.after ?? {}, null, 2))}</pre>
+        </div>
+      </div>
+    </div>
+  </td>
+</tr>`;
+                }
+
+                if (!modal.dataset.auditBound) {
+                    modal.dataset.auditBound = '1';
+
+                    modal.addEventListener('click', (ev) => {
+                        const toggleBtn = ev.target.closest('[data-audit-toggle]');
+                        if (toggleBtn) {
+                            ev.preventDefault();
+
+                            const id = String(toggleBtn.dataset.auditToggle || '');
+                            if (!id) return;
+
+                            const expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+                            toggleBtn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                            toggleBtn.textContent = expanded ? 'Ver' : 'Ocultar';
+
+                            const row = document.getElementById(`audit-row-${id}`);
+                            if (row) row.classList.toggle('hidden', expanded);
+
+                            return;
+                        }
+
+                        const jsonBtn = ev.target.closest('[data-audit-toggle-json]');
+                        if (jsonBtn) {
+                            ev.preventDefault();
+
+                            const id = String(jsonBtn.dataset.auditToggleJson || '');
+                            if (!id) return;
+
+                            const expanded = jsonBtn.getAttribute('aria-expanded') === 'true';
+                            jsonBtn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                            jsonBtn.textContent = expanded ? 'Ver JSON' : 'Ocultar JSON';
+
+                            const box = document.getElementById(`audit-json-${id}`);
+                            if (box) box.classList.toggle('hidden', expanded);
+                        }
+                    });
+                }
+
+                async function loadAudit() {
+                    setErr('');
+                    if (summary) summary.textContent = 'Carregando...';
+                    tb.innerHTML = `<tr><td class="px-4 py-4 text-slate-500" colspan="5">Carregando...</td></tr>`;
+
+                    const url = new URL('/finances/payables/audit-api', location.origin);
+                    url.searchParams.set('page', String(page));
+                    url.searchParams.set('per_page', '30');
+
+                    if (start?.value && end?.value) {
+                        url.searchParams.set('start', start.value);
+                        url.searchParams.set('end', end.value);
+                    }
+                    if (selAction?.value) url.searchParams.set('action', selAction.value);
+                    if (selUser?.value)   url.searchParams.set('user_id', selUser.value);
+                    if (selEntity?.value) url.searchParams.set('entity', selEntity.value);
+
+                    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                    if (!res.ok) {
+                        const txt = await res.text().catch(() => '');
+                        setErr(`Erro ao carregar auditoria (HTTP ${res.status}).`);
+                        tb.innerHTML = `<tr><td class="px-4 py-4 text-rose-700" colspan="5">Erro ao carregar.</td></tr>`;
+                        if (summary) summary.textContent = '—';
+                        console.error('[audit] http error', res.status, txt);
+                        return;
+                    }
+
+                    const j = await res.json();
+                    const rows = j.data || [];
+                    const meta = j.meta || {};
+                    const filters = j.filters || {};
+
+                    lastPage = Number(meta.last_page || 1);
+                    page = Number(meta.page || 1);
+
+                    fillSelect(selAction, filters.actions || [], 'Todas');
+                    fillSelect(selEntity, filters.entities || [], 'Todas');
+                    fillSelect(selUser,   filters.users || [], 'Todos');
+
+                    if (!rows.length) {
+                        tb.innerHTML = `<tr><td class="px-4 py-4 text-slate-500" colspan="5">Nenhum registro.</td></tr>`;
+                    } else {
+                        tb.innerHTML = rows.map(rowHtml).join('');
+
+                        rows.forEach(a => {
+                            const id = String(a.id || '');
+                            const box = document.getElementById(`audit-changes-${id}`);
+                            if (box) renderChanges(box, a.before, a.after);
+                        });
+                    }
+
+                    if (summary) summary.textContent = `${Number(meta.total || 0)} registro(s)`;
+                    if (pagerInfo) pagerInfo.textContent = `Página ${page} de ${lastPage}`;
+
+                    if (btnPrev) {
+                        btnPrev.disabled = page <= 1;
+                        btnPrev.classList.toggle('opacity-60', btnPrev.disabled);
+                    }
+                    if (btnNext) {
+                        btnNext.disabled = page >= lastPage;
+                        btnNext.classList.toggle('opacity-60', btnNext.disabled);
+                    }
+                }
+
+                btnOpen.addEventListener('click', async () => {
+                    const now = new Date();
+                    const endD = now.toISOString().slice(0, 10);
+                    const startD = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30).toISOString().slice(0, 10);
+
+                    if (start && !start.value) start.value = startD;
+                    if (end && !end.value) end.value = endD;
+
+                    page = 1;
+                    modal.classList.remove('hidden');
+                    await loadAudit();
+                });
+
+                modal.querySelectorAll('[data-close-audit]').forEach(b => b.addEventListener('click', () => modal.classList.add('hidden')));
+
+                btnApply?.addEventListener('click', async () => {
+                    page = 1;
+                    await loadAudit();
+                });
+
+                btnClear?.addEventListener('click', async () => {
+                    if (start) start.value = '';
+                    if (end) end.value = '';
+                    if (selAction) selAction.value = '';
+                    if (selUser) selUser.value = '';
+                    if (selEntity) selEntity.value = '';
+                    page = 1;
+                    await loadAudit();
+                });
+
+                btnPrev?.addEventListener('click', async () => {
+                    if (page <= 1) return;
+                    page -= 1;
+                    await loadAudit();
+                });
+
+                btnNext?.addEventListener('click', async () => {
+                    if (page >= lastPage) return;
+                    page += 1;
+                    await loadAudit();
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                bindAuditModal();
+            });
+
+            // -------- Modal Config ----------
+            function bindSettingsModal() {
+                const modal = document.getElementById('modal-settings');
+                const btnOpen = document.getElementById('btn-settings');
+
+                const form = document.getElementById('form-field');
+                const btnReset = document.getElementById('btn-field-reset');
+
+                const tbody = document.getElementById('tbody-fields');
+                const count = document.getElementById('fields-count');
+
+                const errBox = document.getElementById('fields-err');
+                const errForm = document.getElementById('field-form-err');
+
+                const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+                const typeLabel = (t) => (t === 'deduct' ? 'Descontar' : 'Acrescentar');
+
+                const delModal   = document.getElementById('modal-field-delete');
+                const delName    = document.getElementById('del-field-name');
+                const delType    = document.getElementById('del-field-type');
+                const delErr     = document.getElementById('del-field-err');
+                const btnDelOk   = document.getElementById('btn-confirm-del-field');
+
+                let delCurrent = null;
+
+                function openDeleteModal(field) {
+                    delCurrent = field;
+
+                    if (delErr) { delErr.classList.add('hidden'); delErr.textContent = ''; }
+                    if (delName) delName.textContent = field?.name || '-';
+
+                    const label = `${typeLabel(field?.type)}${field?.active ? '' : ' (Inativo)'}`;
+                    if (delType) delType.textContent = label;
+
+                    if (delModal) delModal.classList.remove('hidden');
+                }
+
+                delModal?.querySelectorAll('[data-close-field-del]').forEach(b => {
+                    b.addEventListener('click', () => {
+                        delModal.classList.add('hidden');
+                        delCurrent = null;
+                        if (delErr) { delErr.classList.add('hidden'); delErr.textContent = ''; }
+                    });
+                });
+
+                const escHtml = (str) => String(str ?? '').replace(/[&<>"']/g, (m) => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+                }[m]));
+
+                function setErr(box, msg) {
+                    if (!box) return;
+                    if (!msg) { box.classList.add('hidden'); box.textContent = ''; return; }
+                    box.textContent = msg;
+                    box.classList.remove('hidden');
+                }
+
+                function resetForm() {
+                    form.id.value = '';
+                    form.name.value = '';
+                    form.type.value = 'deduct';
+                    form.active.checked = true;
+                    setErr(errForm, '');
+                }
+
+                function rowHtml(f) {
+                    const chip = f.active
+                        ? `<span class="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">Ativo</span>`
+                        : `<span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">Inativo</span>`;
+
+                    const kind = (f.type === 'deduct')
+                        ? `<span class="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">${typeLabel(f.type)}</span>`
+                        : `<span class="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">${typeLabel(f.type)}</span>`;
+
+                    return `
+<tr>
+  <td class="px-4 py-3">
+    <div class="font-medium text-slate-900">${escHtml(f.name)}</div>
+  </td>
+  <td class="px-4 py-3">${kind}</td>
+  <td class="px-4 py-3">${chip}</td>
+  <td class="px-4 py-3 text-right">
+    <div class="inline-flex items-center gap-2">
+      <button class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              data-edit-field="${f.id}">
+        Editar
+      </button>
+
+      <button class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              data-toggle-field="${f.id}">
+        ${f.active ? 'Desativar' : 'Ativar'}
+      </button>
+
+      <button class="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700"
+              data-del-field="${f.id}">
+        Excluir
+      </button>
+    </div>
+  </td>
+</tr>`;
+                }
+
+                async function loadFields() {
+                    setErr(errBox, '');
+                    tbody.innerHTML = `<tr><td class="px-4 py-4 text-slate-500" colspan="4">Carregando...</td></tr>`;
+
+                    try {
+                        const res = await fetch('/finances/payables/custom-field-api', {
+                            headers: { 'Accept': 'application/json' }
+                        });
+
+                        // ✅ se não for 200, mostra erro real
+                        if (!res.ok) {
+                            const txt = await res.text().catch(() => '');
+                            throw new Error(`HTTP ${res.status} - ${txt.slice(0, 160)}`);
+                        }
+
+                        const j = await res.json();
+                        const list = j.data || [];
+
+                        count.textContent = `${list.length} item(ns)`;
+
+                        if (!list.length) {
+                            tbody.innerHTML = `<tr><td class="px-4 py-4 text-slate-500" colspan="4">Nenhum campo cadastrado.</td></tr>`;
+                            return;
+                        }
+
+                        tbody.innerHTML = list.map(rowHtml).join('');
+
+                        // binds
+                        tbody.querySelectorAll('[data-edit-field]').forEach(b => {
+                            b.addEventListener('click', () => {
+                                const id = b.dataset.editField;
+                                const f = list.find(x => x.id === id);
+                                if (!f) return;
+                                resetForm();
+                                form.id.value = f.id;
+                                form.name.value = f.name;
+                                form.type.value = f.type;
+                                form.active.checked = !!f.active;
+                                form.name.focus();
+                            });
+                        });
+
+                        tbody.querySelectorAll('[data-toggle-field]').forEach(b => {
+                            b.addEventListener('click', async () => {
+                                const id = b.dataset.toggleField;
+                                const res2 = await fetch(`/finances/payables/custom-fields/${id}/toggle`, {
+                                    method: 'POST',
+                                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf }
+                                });
+                                if (!res2.ok) {
+                                    const jj = await res2.json().catch(() => ({}));
+                                    setErr(errBox, jj.message || 'Falha ao ativar/desativar.');
+                                    return;
+                                }
+                                await loadFields();
+                            });
+                        });
+
+                        tbody.querySelectorAll('[data-del-field]').forEach(b => {
+                            b.addEventListener('click', () => {
+                                const id = b.dataset.delField;
+                                const f = list.find(x => x.id === id);
+                                if (!f) return;
+                                openDeleteModal(f);
+                            });
+                        });
+
+                    } catch (e) {
+                        console.error('[fields] load error:', e);
+                        tbody.innerHTML = `<tr><td class="px-4 py-4 text-rose-700" colspan="4">Erro ao carregar.</td></tr>`;
+                        setErr(errBox, 'Erro ao carregar campos.');
+                    }
+                }
+
+                btnOpen?.addEventListener('click', async () => {
+                    resetForm();
+                    modal.classList.remove('hidden');
+                    await loadFields();
+                });
+
+                modal.querySelectorAll('[data-close-settings]').forEach(b => {
+                    b.addEventListener('click', () => modal.classList.add('hidden'));
+                });
+
+                btnReset.addEventListener('click', () => resetForm());
+
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    setErr(errForm, '');
+
+                    const payload = {
+                        name: (form.name.value || '').trim(),
+                        type: form.type.value,
+                        active: !!form.active.checked
+                    };
+
+                    const isEdit = !!form.id.value;
+                    const url = isEdit
+                        ? `/finances/payables/custom-field-api/${form.id.value}`
+                        : `/finances/payables/custom-field-api`;
+                    const method = isEdit ? 'PUT' : 'POST';
+
+                    const res = await fetch(url, {
+                        method,
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrf
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!res.ok) {
+                        const jj = await res.json().catch(() => ({}));
+                        setErr(errForm, jj.message || 'Falha ao salvar.');
+                        return;
+                    }
+
+                    resetForm();
+                    await loadFields();
+                });
+
+                btnDelOk?.addEventListener('click', async () => {
+                    if (!delCurrent?.id) return;
+
+                    // reset erro
+                    if (delErr) { delErr.classList.add('hidden'); delErr.textContent = ''; }
+
+                    btnDelOk.disabled = true;
+                    btnDelOk.classList.add('opacity-60');
+
+                    try {
+                        const res2 = await fetch(`/finances/payables/custom-field-api/${delCurrent.id}`, {
+                            method: 'DELETE',
+                            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf }
+                        });
+
+                        if (!res2.ok) {
+                            const jj = await res2.json().catch(() => ({}));
+                            if (delErr) {
+                                delErr.textContent = jj.message || 'Falha ao excluir.';
+                                delErr.classList.remove('hidden');
+                            }
+                            return;
+                        }
+
+                        // se estava editando o mesmo, limpa
+                        if (form.id.value === delCurrent.id) resetForm();
+
+                        delModal.classList.add('hidden');
+                        delCurrent = null;
+
+                        await loadFields();
+                    } finally {
+                        btnDelOk.disabled = false;
+                        btnDelOk.classList.remove('opacity-60');
+                    }
+                });
+
+                return { open: () => btnOpen?.click() };
             }
 
             // -------- Render helpers ----------
@@ -1420,270 +2300,6 @@
                 bindRowActions(dataset, meta, cancelModal, payModal);
             }
 
-            // Modal Config
-            function bindSettingsModal() {
-                const modal = document.getElementById('modal-settings');
-                const btnOpen = document.getElementById('btn-settings');
-
-                const form = document.getElementById('form-field');
-                const btnReset = document.getElementById('btn-field-reset');
-
-                const tbody = document.getElementById('tbody-fields');
-                const count = document.getElementById('fields-count');
-
-                const errBox = document.getElementById('fields-err');
-                const errForm = document.getElementById('field-form-err');
-
-                const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
-
-                const typeLabel = (t) => (t === 'deduct' ? 'Descontar' : 'Acrescentar');
-
-                const delModal   = document.getElementById('modal-field-delete');
-                const delName    = document.getElementById('del-field-name');
-                const delType    = document.getElementById('del-field-type');
-                const delErr     = document.getElementById('del-field-err');
-                const btnDelOk   = document.getElementById('btn-confirm-del-field');
-
-                let delCurrent = null;
-
-                function openDeleteModal(field) {
-                    delCurrent = field;
-
-                    if (delErr) { delErr.classList.add('hidden'); delErr.textContent = ''; }
-                    if (delName) delName.textContent = field?.name || '-';
-
-                    const label = `${typeLabel(field?.type)}${field?.active ? '' : ' (Inativo)'}`;
-                    if (delType) delType.textContent = label;
-
-                    if (delModal) delModal.classList.remove('hidden');
-                }
-
-                delModal?.querySelectorAll('[data-close-field-del]').forEach(b => {
-                    b.addEventListener('click', () => {
-                        delModal.classList.add('hidden');
-                        delCurrent = null;
-                        if (delErr) { delErr.classList.add('hidden'); delErr.textContent = ''; }
-                    });
-                });
-
-                const escHtml = (str) => String(str ?? '').replace(/[&<>"']/g, (m) => ({
-                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
-                }[m]));
-
-                function setErr(box, msg) {
-                    if (!box) return;
-                    if (!msg) { box.classList.add('hidden'); box.textContent = ''; return; }
-                    box.textContent = msg;
-                    box.classList.remove('hidden');
-                }
-
-                function resetForm() {
-                    form.id.value = '';
-                    form.name.value = '';
-                    form.type.value = 'deduct';
-                    form.active.checked = true;
-                    setErr(errForm, '');
-                }
-
-                function rowHtml(f) {
-                    const chip = f.active
-                        ? `<span class="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">Ativo</span>`
-                        : `<span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">Inativo</span>`;
-
-                    const kind = (f.type === 'deduct')
-                        ? `<span class="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">${typeLabel(f.type)}</span>`
-                        : `<span class="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">${typeLabel(f.type)}</span>`;
-
-                    return `
-<tr>
-  <td class="px-4 py-3">
-    <div class="font-medium text-slate-900">${escHtml(f.name)}</div>
-  </td>
-  <td class="px-4 py-3">${kind}</td>
-  <td class="px-4 py-3">${chip}</td>
-  <td class="px-4 py-3 text-right">
-    <div class="inline-flex items-center gap-2">
-      <button class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-              data-edit-field="${f.id}">
-        Editar
-      </button>
-
-      <button class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-              data-toggle-field="${f.id}">
-        ${f.active ? 'Desativar' : 'Ativar'}
-      </button>
-
-      <button class="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700"
-              data-del-field="${f.id}">
-        Excluir
-      </button>
-    </div>
-  </td>
-</tr>`;
-                }
-
-                async function loadFields() {
-                    setErr(errBox, '');
-                    tbody.innerHTML = `<tr><td class="px-4 py-4 text-slate-500" colspan="4">Carregando...</td></tr>`;
-
-                    try {
-                        const res = await fetch('/finances/payables/custom-field-api', {
-                            headers: { 'Accept': 'application/json' }
-                        });
-
-                        // ✅ se não for 200, mostra erro real
-                        if (!res.ok) {
-                            const txt = await res.text().catch(() => '');
-                            throw new Error(`HTTP ${res.status} - ${txt.slice(0, 160)}`);
-                        }
-
-                        const j = await res.json();
-                        const list = j.data || [];
-
-                        count.textContent = `${list.length} item(ns)`;
-
-                        if (!list.length) {
-                            tbody.innerHTML = `<tr><td class="px-4 py-4 text-slate-500" colspan="4">Nenhum campo cadastrado.</td></tr>`;
-                            return;
-                        }
-
-                        tbody.innerHTML = list.map(rowHtml).join('');
-
-                        // binds
-                        tbody.querySelectorAll('[data-edit-field]').forEach(b => {
-                            b.addEventListener('click', () => {
-                                const id = b.dataset.editField;
-                                const f = list.find(x => x.id === id);
-                                if (!f) return;
-                                resetForm();
-                                form.id.value = f.id;
-                                form.name.value = f.name;
-                                form.type.value = f.type;
-                                form.active.checked = !!f.active;
-                                form.name.focus();
-                            });
-                        });
-
-                        tbody.querySelectorAll('[data-toggle-field]').forEach(b => {
-                            b.addEventListener('click', async () => {
-                                const id = b.dataset.toggleField;
-                                const res2 = await fetch(`/finances/payables/custom-fields/${id}/toggle`, {
-                                    method: 'POST',
-                                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf }
-                                });
-                                if (!res2.ok) {
-                                    const jj = await res2.json().catch(() => ({}));
-                                    setErr(errBox, jj.message || 'Falha ao ativar/desativar.');
-                                    return;
-                                }
-                                await loadFields();
-                            });
-                        });
-
-                        tbody.querySelectorAll('[data-del-field]').forEach(b => {
-                            b.addEventListener('click', () => {
-                                const id = b.dataset.delField;
-                                const f = list.find(x => x.id === id);
-                                if (!f) return;
-                                openDeleteModal(f);
-                            });
-                        });
-
-                    } catch (e) {
-                        console.error('[fields] load error:', e);
-                        tbody.innerHTML = `<tr><td class="px-4 py-4 text-rose-700" colspan="4">Erro ao carregar.</td></tr>`;
-                        setErr(errBox, 'Erro ao carregar campos.');
-                    }
-                }
-
-                btnOpen?.addEventListener('click', async () => {
-                    resetForm();
-                    modal.classList.remove('hidden');
-                    await loadFields();
-                });
-
-                modal.querySelectorAll('[data-close-settings]').forEach(b => {
-                    b.addEventListener('click', () => modal.classList.add('hidden'));
-                });
-
-                btnReset.addEventListener('click', () => resetForm());
-
-                form.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    setErr(errForm, '');
-
-                    const payload = {
-                        name: (form.name.value || '').trim(),
-                        type: form.type.value,
-                        active: !!form.active.checked
-                    };
-
-                    const isEdit = !!form.id.value;
-                    const url = isEdit
-                        ? `/finances/payables/custom-field-api/${form.id.value}`
-                        : `/finances/payables/custom-field-api`;
-                    const method = isEdit ? 'PUT' : 'POST';
-
-                    const res = await fetch(url, {
-                        method,
-                        headers: {
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': csrf
-                        },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!res.ok) {
-                        const jj = await res.json().catch(() => ({}));
-                        setErr(errForm, jj.message || 'Falha ao salvar.');
-                        return;
-                    }
-
-                    resetForm();
-                    await loadFields();
-                });
-
-                btnDelOk?.addEventListener('click', async () => {
-                    if (!delCurrent?.id) return;
-
-                    // reset erro
-                    if (delErr) { delErr.classList.add('hidden'); delErr.textContent = ''; }
-
-                    btnDelOk.disabled = true;
-                    btnDelOk.classList.add('opacity-60');
-
-                    try {
-                        const res2 = await fetch(`/finances/payables/custom-field-api/${delCurrent.id}`, {
-                            method: 'DELETE',
-                            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf }
-                        });
-
-                        if (!res2.ok) {
-                            const jj = await res2.json().catch(() => ({}));
-                            if (delErr) {
-                                delErr.textContent = jj.message || 'Falha ao excluir.';
-                                delErr.classList.remove('hidden');
-                            }
-                            return;
-                        }
-
-                        // se estava editando o mesmo, limpa
-                        if (form.id.value === delCurrent.id) resetForm();
-
-                        delModal.classList.add('hidden');
-                        delCurrent = null;
-
-                        await loadFields();
-                    } finally {
-                        btnDelOk.disabled = false;
-                        btnDelOk.classList.remove('opacity-60');
-                    }
-                });
-
-                return { open: () => btnOpen?.click() };
-            }
-
             $('#period-mode')?.addEventListener('change', () => {
                 const mode = $('#period-mode').value;
                 $('#period-custom').classList.toggle('hidden', mode !== 'custom');
@@ -1700,13 +2316,14 @@
                 });
             });
 
-            // init
+            // init modals
             const payModal = bindPayModal();
-            const cancelModal = bindCancelModal(); // ✅ faltava isso no seu script
+            const cancelModal = bindCancelModal();
+            const auditModal = bindAuditModal();
+            const settingsModal = bindSettingsModal();
 
             ['#q'].forEach(s => $(s)?.addEventListener('input', load));
 
-            const settingsModal = bindSettingsModal();
             bindNewModal();
             load();
         </script>

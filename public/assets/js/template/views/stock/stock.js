@@ -87,6 +87,16 @@
           <td class="px-3 py-4 text-right text-slate-900">${mk > 0 ? mk.toFixed(2) + "%" : "0%"}</td>
          <td class="px-6 py-4 text-right">
   <div class="inline-flex gap-2">
+    <button data-view="${escapeHtml(it.id)}"
+      class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+      Visualizar
+    </button>
+
+    <button data-adjust="${escapeHtml(it.id)}"
+      class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+      Ajustar
+    </button>
+
     <button data-move="${escapeHtml(it.id)}"
       class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
       Movimentar
@@ -150,8 +160,6 @@
 
         renderRows(pag.data || [], !!state.location_id);
         renderPagination(pag);
-
-        loadKpis().catch(console.error);
     };
 
     // Debounce simples
@@ -160,40 +168,6 @@
         window.clearTimeout(t);
         t = window.setTimeout(fn, ms);
     };
-
-    // Events
-    elQ.addEventListener("input", () => {
-        state.q = elQ.value.trim();
-        state.page = 1;
-        debounced(load);
-    });
-
-    elLoc.addEventListener("change", () => {
-        state.location_id = elLoc.value;
-        state.page = 1;
-        load();
-    });
-
-    elActive.addEventListener("change", () => {
-        state.active = elActive.checked ? 1 : 0;
-        state.page = 1;
-        load();
-    });
-
-    elPrev.addEventListener("click", () => {
-        if (state.page > 1) {
-            state.page -= 1;
-            load();
-        }
-    });
-
-    elNext.addEventListener("click", () => {
-        const last = state.last?.last_page || 1;
-        if (state.page < last) {
-            state.page += 1;
-            load();
-        }
-    });
 
     // ===== MODAL LOG POR ITEM =====
     const logModal = document.getElementById("stklog-modal");
@@ -213,10 +187,11 @@
         logModal.classList.remove("hidden");
         document.documentElement.classList.add("overflow-hidden");
     };
-    const closeLogModal = () => {
+    function closeLogModal() {
         logModal.classList.add("hidden");
-        document.documentElement.classList.remove("overflow-hidden");
-    };
+        logState.return_to_view = false;
+        syncBodyLock();
+    }
 
     if (logModal) {
         logModal.querySelectorAll("[data-stklog-close]").forEach(b => b.addEventListener("click", closeLogModal));
@@ -278,6 +253,7 @@
         <td class="px-6 py-4 text-slate-700">${esc2(m.created_at || "-")}</td>
         <td class="px-3 py-4 text-slate-900">${esc2(labelType2(m.type))}</td>
         <td class="px-3 py-4 text-slate-700">${esc2(m.reason_label || "-")}</td>
+        <td class="px-3 py-4 text-slate-700">${esc2(m.changes_summary || "-")}</td>
         <td class="px-3 py-4 text-right text-slate-900">${Number(m.total_qty || 0)}</td>
         <td class="px-3 py-4 text-right text-slate-900">${fmtBRL2(m.total_cost || 0)}</td>
         <td class="px-6 py-4 text-right">
@@ -704,6 +680,530 @@
         });
     });
 
+
+    // ===== MODAL AJUSTAR =====
+    const adjModal = document.getElementById("stock-adjust-modal");
+    const saTitle = document.getElementById("sa-title");
+    const saSubtitle = document.getElementById("sa-subtitle");
+    const saCurQty = document.getElementById("sa-cur-qty");
+    const saCurAvg = document.getElementById("sa-cur-avg");
+    const saCurMin = document.getElementById("sa-cur-min");
+    const saGlobal = document.getElementById("sa-global");
+
+    const saLoc = document.getElementById("sa-location");
+    const saLocHint = document.getElementById("sa-loc-hint");
+    const saQty = document.getElementById("sa-qty");
+    const saAvg = document.getElementById("sa-avg-cost");
+    const saLast = document.getElementById("sa-last-cost");
+    const saSale = document.getElementById("sa-sale-price");
+    const saMk = document.getElementById("sa-markup");
+    const saMkHint = document.getElementById("sa-markup-hint");
+    const saNotes = document.getElementById("sa-notes");
+    const saErr = document.getElementById("sa-error");
+    const saSubmit = document.getElementById("sa-submit");
+
+    let adjState = { stock_part_id: null, snap: null, lockedLoc: false, lastEdited: "mk" };
+
+    const openAdjModal = () => {
+        adjModal.classList.remove("hidden");
+        document.documentElement.classList.add("overflow-hidden");
+    };
+    const closeAdjModal = () => {
+        adjModal.classList.add("hidden");
+        document.documentElement.classList.remove("overflow-hidden");
+    };
+
+    if (adjModal) {
+        adjModal.querySelectorAll("[data-sa-close]").forEach(b => b.addEventListener("click", closeAdjModal));
+    }
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && adjModal && !adjModal.classList.contains("hidden")) closeAdjModal();
+    });
+
+    function setAdjErr(msg) {
+        if (!saErr) return;
+        if (!msg) { saErr.classList.add("hidden"); saErr.textContent = ""; return; }
+        saErr.textContent = msg;
+        saErr.classList.remove("hidden");
+    }
+
+    function findLocFromSnap(locId) {
+        const locs = adjState.snap?.locations || [];
+        return locs.find(l => String(l.id) === String(locId)) || { qty_on_hand: 0, avg_cost: 0, min_qty: 0 };
+    }
+
+    function fillAdjLocations(locs, preferredId) {
+        const opts = (locs || []).map((l) => {
+            const tag = l.is_default ? " (Padrão)" : "";
+            return `<option value="${escapeHtml(l.id)}">${escapeHtml(l.name)}${tag}</option>`;
+        });
+        saLoc.innerHTML = opts.join("");
+
+        if (preferredId && opts.length) {
+            const ok = Array.from(saLoc.options).some(o => o.value === preferredId);
+            if (ok) saLoc.value = preferredId;
+        } else if (opts.length) {
+            saLoc.value = saLoc.options[0].value;
+        }
+    }
+
+    const toNum = (v) => {
+        if (v === "" || v === null || v === undefined) return null;
+        const n = Number(v);
+        return Number.isFinite(n) ? n : null;
+    };
+
+    function baseCostForMarkup() {
+        const last = toNum(saLast?.value) || 0;
+        if (last > 0) return last;
+
+        const loc = findLocFromSnap(saLoc.value);
+        const avg = Number(loc.avg_cost || 0);
+        return avg > 0 ? avg : 0;
+    }
+
+    function syncMkFromSale() {
+        const base = baseCostForMarkup();
+        const sale = toNum(saSale.value) || 0;
+
+        if (base <= 0) {
+            saMkHint.textContent = "Base de custo = 0 (não dá pra calcular markup automático).";
+            return;
+        }
+
+        const mk = ((sale / base) - 1) * 100;
+        saMk.value = Number.isFinite(mk) ? mk.toFixed(2) : "0.00";
+        saMkHint.textContent = `Base custo: ${fmtBR4(base)} (last_cost > 0 senão avg_cost do local).`;
+    }
+
+    function syncSaleFromMk() {
+        const base = baseCostForMarkup();
+        const mk = toNum(saMk.value) || 0;
+
+        if (base <= 0) {
+            saMkHint.textContent = "Base de custo = 0 (não dá pra calcular venda automático).";
+            return;
+        }
+
+        const sale = base * (1 + (mk / 100));
+        saSale.value = Number.isFinite(sale) ? sale.toFixed(2) : "0.00";
+        saMkHint.textContent = `Base custo: ${fmtBR4(base)} (last_cost > 0 senão avg_cost do local).`;
+    }
+
+    function applyAdjHeaderCards() {
+        const p = adjState.snap?.part;
+        if (!p) return;
+
+        saTitle.textContent = `${p.code || "-"} • ${p.description || p.name || "-"}`;
+        saSubtitle.textContent = p.ncm ? `NCM: ${p.ncm}` : "";
+
+        const loc = findLocFromSnap(saLoc.value);
+
+        saCurQty.textContent = String(loc.qty_on_hand || 0);
+        saCurAvg.textContent = brl(loc.avg_cost || 0);
+        saCurMin.textContent = String(loc.min_qty || 0);
+
+        saGlobal.textContent = `${Number(p.qty_on_hand_global || 0)} • ${brl(p.avg_cost_global || 0)}`;
+    }
+
+    function fillAdjForm() {
+        const p = adjState.snap?.part;
+        if (!p) return;
+
+        const loc = findLocFromSnap(saLoc.value);
+
+        saQty.value = String(Number(loc.qty_on_hand || 0));
+        saAvg.value = String(Number(loc.avg_cost || 0).toFixed(4));
+
+        saLast.value = String(Number(p.last_cost || 0).toFixed(4));
+        saSale.value = String(Number(p.default_sale_price || 0).toFixed(2));
+        saMk.value = String(Number(p.default_markup_percent || 0).toFixed(2));
+
+        saNotes.value = "";
+        saMkHint.textContent = "";
+    }
+
+    async function openAdjustFor(stockPartId) {
+        adjState.stock_part_id = stockPartId;
+        setAdjErr("");
+
+        saTitle.textContent = "Carregando…";
+        saSubtitle.textContent = "";
+        saLocHint.textContent = "";
+
+        openAdjModal();
+
+        const snap = await fetchSnapshot(stockPartId);
+        adjState.snap = snap;
+
+        const preferredLoc = state.location_id || (snap.locations?.find(l => l.is_default)?.id ?? "");
+        fillAdjLocations(snap.locations || [], preferredLoc);
+
+        // se tela está filtrada por local, trava para não ajustar errado
+        adjState.lockedLoc = !!state.location_id;
+        saLoc.disabled = adjState.lockedLoc;
+        saLocHint.textContent = adjState.lockedLoc
+            ? "Local travado (seguindo o filtro atual da tela)."
+            : "Você pode escolher o local a ajustar.";
+
+        applyAdjHeaderCards();
+        fillAdjForm();
+
+        // ao abrir, deixa coerente markup/venda (sem mexer no valor do user)
+        syncMkFromSale();
+    }
+
+    function buildAdjustPayload() {
+        const p = adjState.snap?.part;
+        if (!p) return { err: "Item inválido." };
+
+        const locId = saLoc.value;
+        if (!locId) return { err: "Selecione um local." };
+
+        const loc = findLocFromSnap(locId);
+
+        const nextQty = toNum(saQty.value);
+        const nextAvg = toNum(saAvg.value);
+        const nextLast = toNum(saLast.value);
+        const nextSale = toNum(saSale.value);
+        const nextMk = toNum(saMk.value);
+
+        if (nextQty === null || nextQty < 0) return { err: "Quantidade inválida." };
+        if (nextAvg === null || nextAvg < 0) return { err: "Custo médio inválido." };
+        if (nextLast === null || nextLast < 0) return { err: "Último custo inválido." };
+        if (nextSale === null || nextSale < 0) return { err: "Venda inválida." };
+        if (nextMk === null || nextMk < 0) return { err: "Markup inválido." };
+
+        const payload = { location_id: locId };
+
+        // só manda o que mudou
+        if (Number(nextQty) !== Number(loc.qty_on_hand || 0)) payload.qty_on_hand = Number(nextQty);
+        if (Number(nextAvg) !== Number(loc.avg_cost || 0)) payload.avg_cost = Number(nextAvg);
+
+        if (Number(nextLast) !== Number(p.last_cost || 0)) payload.last_cost = Number(nextLast);
+        if (Number(nextSale) !== Number(p.default_sale_price || 0)) payload.default_sale_price = Number(nextSale);
+        if (Number(nextMk) !== Number(p.default_markup_percent || 0)) payload.default_markup_percent = Number(nextMk);
+
+        const notes = (saNotes.value || "").trim();
+        if (notes) payload.notes = notes;
+
+        const changedKeys = Object.keys(payload).filter(k => k !== "location_id" && k !== "notes");
+        if (changedKeys.length === 0 && !payload.notes) {
+            return { err: "Nada para ajustar." };
+        }
+
+        return { payload };
+    }
+
+    async function submitAdjust() {
+        setAdjErr("");
+
+        const built = buildAdjustPayload();
+        if (built.err) return setAdjErr(built.err);
+
+        saSubmit.disabled = true;
+
+        const res = await fetch(`/stock/stock-api/${encodeURIComponent(adjState.stock_part_id)}/adjust`, {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                ...(csrf ? { "X-CSRF-TOKEN": csrf } : {}),
+            },
+            body: JSON.stringify(built.payload),
+        });
+
+        const data = await res.json().catch(() => ({}));
+        saSubmit.disabled = false;
+
+        if (!res.ok) {
+            setAdjErr(data.message || "Falha ao salvar ajuste.");
+            return;
+        }
+
+        closeAdjModal();
+        toast("Ajuste aplicado", `Mov: ${(data.movement_id || "").slice(0, 8)}`);
+        reloadAll();
+    }
+
+    saSubmit?.addEventListener("click", () => submitAdjust().catch(console.error));
+
+    saLoc?.addEventListener("change", () => {
+        applyAdjHeaderCards();
+        fillAdjForm();
+        syncMkFromSale();
+    });
+
+    saSale?.addEventListener("input", () => { adjState.lastEdited = "sale"; syncMkFromSale(); });
+    saMk?.addEventListener("input", () => { adjState.lastEdited = "mk"; syncSaleFromMk(); });
+    saLast?.addEventListener("input", () => {
+        // se mudar a base de custo, mantém coerência
+        if (adjState.lastEdited === "sale") syncMkFromSale();
+        else syncSaleFromMk();
+    });
+
+// clique no botão Ajustar
+    elTbody.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-adjust]");
+        if (!btn) return;
+        const id = btn.getAttribute("data-adjust");
+        openAdjustFor(id).catch((err) => {
+            console.error(err);
+            setAdjErr(err?.message || "Falha ao abrir ajuste.");
+            openAdjModal();
+        });
+    });
+
+// ===== MODAL VISUALIZAR =====
+    const viewModal = document.getElementById("stock-view-modal");
+    const svTitle = document.getElementById("sv-title");
+    const svSubtitle = document.getElementById("sv-subtitle");
+    const svQtyGlobal = document.getElementById("sv-qty-global");
+    const svAvgGlobal = document.getElementById("sv-avg-global");
+    const svTotalCost = document.getElementById("sv-total-cost");
+    const svSaleMk = document.getElementById("sv-sale-mk");
+
+    const svLocsTbody = document.getElementById("sv-locs-tbody");
+    const svLogsTbody = document.getElementById("sv-logs-tbody");
+    const svLogsEmpty = document.getElementById("sv-logs-empty");
+    const svOpenFullLog = document.getElementById("sv-open-full-log");
+
+    const svTotalSale = document.getElementById("sv-total-sale");
+    const svLastCost  = document.getElementById("sv-last-cost");
+    const svLocsFoot  = document.getElementById("sv-locs-footnote");
+
+    const svPricesTbody = document.getElementById("sv-prices-tbody");
+    const svPricesEmpty = document.getElementById("sv-prices-empty");
+    const svTransferTbody = document.getElementById("sv-transfer-tbody");
+    const svTransferEmpty = document.getElementById("sv-transfer-empty");
+    const svOpenFullAdjust = document.getElementById("sv-open-full-adjust");
+    const svOpenFullTransfer = document.getElementById("sv-open-full-transfer");
+
+    let viewState = { stock_part_id: null, snap: null };
+
+    const openViewModal = () => {
+        viewModal.classList.remove("hidden");
+        document.documentElement.classList.add("overflow-hidden");
+    };
+    const closeViewModal = () => {
+        viewModal.classList.add("hidden");
+        document.documentElement.classList.remove("overflow-hidden");
+    };
+
+    function setSvTab(tab) {
+        viewModal.querySelectorAll("[data-sv-pane]").forEach(p => {
+            p.classList.toggle("hidden", p.getAttribute("data-sv-pane") !== tab);
+        });
+
+        viewModal.querySelectorAll("[data-sv-tab]").forEach((btn) => {
+            const on = btn.getAttribute("data-sv-tab") === tab;
+
+            btn.classList.remove(
+                "bg-white","text-blue-700","border-blue-200","hover:bg-blue-50",
+                "bg-blue-900","text-white","border-blue-900"
+            );
+
+            if (on) {
+                btn.classList.add("bg-blue-900","text-white","border-blue-900","hover:bg-blue-800");
+            } else {
+                btn.classList.add("bg-white","text-blue-700","border-blue-200","hover:text-white","hover:bg-blue-700");
+            }
+        });
+
+        if (!viewState.stock_part_id) return;
+
+        if (tab === "logs") {
+            loadViewLogsPreview({ stockPartId: viewState.stock_part_id, type: "", tbody: svLogsTbody, emptyEl: svLogsEmpty })
+                .catch(console.error);
+        }
+
+        if (tab === "prices") {
+            loadViewLogsPreview({ stockPartId: viewState.stock_part_id, type: "adjust", tbody: svPricesTbody, emptyEl: svPricesEmpty })
+                .catch(console.error);
+        }
+
+        if (tab === "transfer") {
+            loadViewLogsPreview({ stockPartId: viewState.stock_part_id, type: "transfer", tbody: svTransferTbody, emptyEl: svTransferEmpty })
+                .catch(console.error);
+        }
+    }
+
+    if (viewModal) {
+        viewModal.querySelectorAll("[data-sv-close]").forEach(b => b.addEventListener("click", closeViewModal));
+        viewModal.querySelectorAll("[data-sv-tab]").forEach(b => b.addEventListener("click", () => {
+            setSvTab(b.getAttribute("data-sv-tab"));
+        }));
+        // default tab (na criação)
+        setSvTab("summary");
+    }
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && viewModal && !viewModal.classList.contains("hidden")) closeViewModal();
+    });
+
+    async function loadViewLogsPreview({ stockPartId, type = "", tbody, emptyEl }) {
+        if (!tbody || !emptyEl) return;
+
+        tbody.innerHTML = `<tr><td class="px-6 py-6 text-slate-500" colspan="5">Carregando…</td></tr>`;
+        emptyEl.classList.add("hidden");
+
+        const p = new URLSearchParams();
+        p.set("stock_part_id", stockPartId);
+        p.set("page", "1");
+        if (type) p.set("type", type);
+
+        const res = await fetch(`/stock/movements-api?${p.toString()}`, {
+            headers: { Accept: "application/json" }
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            tbody.innerHTML = `<tr><td class="px-6 py-6 text-red-600" colspan="5">Falha ao carregar.</td></tr>`;
+            return;
+        }
+
+        const rows = (data.items?.data || []).slice(0, 8);
+        if (!rows.length) {
+            tbody.innerHTML = "";
+            emptyEl.classList.remove("hidden");
+            return;
+        }
+
+        tbody.innerHTML = rows.map(m => `
+  <tr>
+    <td class="px-6 py-4 text-slate-700">${esc2(m.created_at || "-")}</td>
+    <td class="px-3 py-4 text-slate-900">${esc2(labelType2(m.type))}</td>
+    <td class="px-3 py-4 text-slate-700">${esc2(m.reason_label || "-")}</td>
+    <td class="px-3 py-4 text-slate-700">${esc2(m.changes_summary || "-")}</td>
+    <td class="px-3 py-4 text-right text-slate-900">${Number(m.total_qty || 0)}</td>
+    <td class="px-6 py-4 text-right text-slate-900">${fmtBRL2(m.total_cost || 0)}</td>
+  </tr>
+`).join("");
+    }
+
+    function fillViewFromSnap() {
+        const p = viewState.snap?.part;
+        if (!p) return;
+
+        svTitle.textContent = `${p.code || "-"} • ${p.description || p.name || "-"}`;
+        svSubtitle.textContent = p.ncm ? `NCM: ${p.ncm}` : "";
+
+        const qtyG = Number(p.qty_on_hand_global || 0);
+        const avgG = Number(p.avg_cost_global || 0);
+        const totalCost = qtyG * avgG;
+
+        const sale = Number(p.default_sale_price || 0);
+        const totalSale = qtyG * sale;
+
+        svQtyGlobal.textContent = qtyG.toLocaleString("pt-BR");
+        svAvgGlobal.textContent = brl(avgG);
+        svTotalCost.textContent = brl(totalCost);
+
+        svSaleMk.textContent = `${brl(sale)} • ${Number(p.default_markup_percent || 0).toFixed(2)}%`;
+
+        if (svTotalSale) svTotalSale.textContent = brl(totalSale);
+        if (svLastCost)  svLastCost.textContent  = brl(Number(p.last_cost || 0));
+
+        const locs = (viewState.snap?.locations || []);
+        const sumQty = locs.reduce((a, l) => a + Number(l.qty_on_hand || 0), 0);
+        const sumCostVal = locs.reduce((a, l) => a + (Number(l.qty_on_hand || 0) * Number(l.avg_cost || 0)), 0);
+        const avgWeighted = sumQty > 0 ? (sumCostVal / sumQty) : 0;
+
+        // tabela por locais
+        svLocsTbody.innerHTML = locs.map(l => {
+            const q = Number(l.qty_on_hand || 0);
+            const a = Number(l.avg_cost || 0);
+            const costVal = q * a;
+            const saleVal = sale > 0 ? q * sale : 0;
+
+            return `
+      <tr>
+        <td class="px-6 py-4 text-slate-700">
+          ${escapeHtml(l.name)}${l.is_default ? ' <span class="text-xs text-slate-500">(Padrão)</span>' : ''}
+        </td>
+        <td class="px-3 py-4 text-right text-slate-900">${q.toLocaleString("pt-BR")}</td>
+        <td class="px-3 py-4 text-right text-slate-900">${fmtBR4(a)}</td>
+        <td class="px-3 py-4 text-right text-slate-900">${brl(costVal)}</td>
+        <td class="px-3 py-4 text-right text-slate-900">${Number(l.min_qty || 0).toLocaleString("pt-BR")}</td>
+        <td class="px-6 py-4 text-right text-slate-900">${brl(saleVal)}</td>
+      </tr>
+    `;
+        }).join("");
+
+        // footnote: conferência
+        if (svLocsFoot) {
+            const diffQty = sumQty !== qtyG;
+            const diffAvg = Math.abs(avgWeighted - avgG) > 0.0001;
+
+            svLocsFoot.textContent =
+                `Soma locais: qtd ${sumQty.toLocaleString("pt-BR")} • custo total ${brl(sumCostVal)} • custo médio ponderado ${fmtBR4(avgWeighted)}`
+                + (diffQty || diffAvg ? " • ⚠ difere do global" : " • OK");
+        }
+    }
+
+    async function openViewFor(stockPartId) {
+        viewState.stock_part_id = stockPartId;
+
+        svTitle.textContent = "Carregando…";
+        svSubtitle.textContent = "";
+        svLocsTbody.innerHTML = "";
+        svLogsTbody.innerHTML = "";
+        svLogsEmpty.classList.add("hidden");
+
+        if (svPricesTbody) svPricesTbody.innerHTML = "";
+        if (svPricesEmpty) svPricesEmpty.classList.add("hidden");
+        if (svTransferTbody) svTransferTbody.innerHTML = "";
+        if (svTransferEmpty) svTransferEmpty.classList.add("hidden");
+
+        openViewModal();
+        setSvTab("summary"); // sempre abre no resumo
+
+        const snap = await fetchSnapshot(stockPartId);
+        viewState.snap = snap;
+
+        fillViewFromSnap();
+
+        // não carrega logs aqui; carrega quando clicar na aba (lazy)
+        svOpenFullLog.onclick = () => openFullLog(stockPartId, "");
+        if (svOpenFullAdjust) svOpenFullAdjust.onclick = () => openFullLog(stockPartId, "adjust");
+        if (svOpenFullTransfer) svOpenFullTransfer.onclick = () => openFullLog(stockPartId, "transfer");
+    }
+
+    function openFullLog(stockPartId, type) {
+        logState.stock_part_id = stockPartId;
+        logState.page = 1;
+        logState.q = "";
+        logState.type = type || "";
+
+        logQ.value = "";
+        logType.value = type || "";
+        logTitle.textContent = "Movimentações da peça";
+        logSubtitle.textContent = `stock_part_id: ${logState.stock_part_id}`;
+
+        openLogModal();
+        loadLog();
+    }
+
+    elTbody.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-view]");
+        if (!btn) return;
+        const id = btn.getAttribute("data-view");
+        openViewFor(id).catch(console.error);
+    });
+
+    function syncBodyLock() {
+        const anyOpen =
+            !mvModal.classList.contains("hidden") ||
+            !adjModal.classList.contains("hidden") ||
+            !viewModal.classList.contains("hidden") ||
+            !logModal.classList.contains("hidden");
+
+        document.documentElement.classList.toggle("overflow-hidden", anyOpen);
+    }
+
+
+
+
     // === KPIS
     const fmtInt = (n) => Number(n || 0).toLocaleString("pt-BR");
     const fmtBRL = (n) => Number(n || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -757,10 +1257,8 @@
         await Promise.all([load(), loadKpis()]);
     }
 
-// inicial
     reloadAll();
 
-// nos eventos de filtro (onde hoje você chama load())
     elQ.addEventListener("input", () => {
         state.q = elQ.value.trim();
         state.page = 1;
@@ -779,7 +1277,6 @@
         reloadAll();
     });
 
-// paginação: mantém só load()
     elPrev.addEventListener("click", () => {
         if (state.page > 1) { state.page -= 1; load(); }
     });
@@ -788,6 +1285,4 @@
         const last = state.last?.last_page || 1;
         if (state.page < last) { state.page += 1; load(); }
     });
-
-    reloadAll();
 })();

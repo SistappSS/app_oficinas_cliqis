@@ -4,11 +4,10 @@ namespace App\Http\Controllers\Stock;
 
 use App\Http\Controllers\Controller;
 use App\Models\Stock\StockMovementReason;
-use App\Support\CustomerContext;
+use App\Support\TenantUser\CustomerContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 
 class StockReasonController extends Controller
 {

@@ -18,6 +18,7 @@ use App\Http\Controllers\Application\Entities\Customers\Permisions\PermissionUse
 use App\Http\Controllers\Application\Entities\Customers\SecondaryCustomer\SecondaryCustomerController;
 use App\Http\Controllers\Application\Entities\Suppliers\Supplier\SupplierController;
 use App\Http\Controllers\Application\Entities\Users\UserController;
+use App\Http\Controllers\Application\Finances\Payables\AccountPayableAuditController;
 use App\Http\Controllers\Application\Finances\Payables\AccountPayableController;
 use App\Http\Controllers\Application\Finances\Receivables\AccountReceivableController;
 use App\Http\Controllers\Application\HumanResources\BenefitController;
@@ -246,8 +247,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::post('{serviceOrder}/duplicate', [ServiceOrderController::class, 'duplicate'])->name('service-orders.duplicate');
         Route::post('/{serviceOrder}/status', [ServiceOrderController::class, 'setStatus']);
 
-
-
         // API para a tabela de cobranças + NF
         Route::get('/billing', [ServiceOrderBillingController::class, 'index'])->name('service-order-invoice.view');
         Route::get('/billing-api', [ServiceOrderBillingController::class, 'list'])->name('service-orders.billing.api');
@@ -292,42 +291,25 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
     /* --->| Finances |<--- */
     Route::group(['prefix' => 'finances'], function () {
         // Payables
-        Route::get('/payables', [AccountPayableController::class, 'view'])
-            ->name('account-payable.view')
-            ->middleware('can:finance_payable_view');
-
-        Route::get('/payable-api', [AccountPayableController::class, 'index'])
-            ->middleware('can:finance_payable_view');
-
-        Route::post('/payable-api', [AccountPayableController::class, 'store'])
-            ->middleware('can:finance_payable_create');
-
-        Route::post('/payable-api/{id}/pay', [AccountPayableController::class, 'pay'])
-            ->middleware('can:finance_payable_edit');
-
-        Route::get('/payable-api/{id}/payments', [AccountPayableController::class, 'payments'])
-            ->middleware('can:finance_payable_view');
-
-        Route::patch('/payable-api/{id}/amount', [AccountPayableController::class, 'updateParcelAmount'])
-            ->middleware('can:finance_payable_edit');
-
-        Route::post('/payable-api/{id}/cancel', [AccountPayableController::class, 'cancelParcel'])
-            ->middleware('can:finance_payable_delete');
+        Route::get('/payables', [AccountPayableController::class, 'view'])->name('account-payable.view')->middleware('can:finance_payable_view');
+        Route::get('/payable-api', [AccountPayableController::class, 'index'])->middleware('can:finance_payable_view');
+        Route::post('/payable-api', [AccountPayableController::class, 'store'])->middleware('can:finance_payable_create');
+        Route::post('/payable-api/{id}/pay', [AccountPayableController::class, 'pay'])->middleware('can:finance_payable_edit');
+        Route::get('/payable-api/{id}/payments', [AccountPayableController::class, 'payments'])->middleware('can:finance_payable_view');
+        Route::patch('/payable-api/{id}/amount', [AccountPayableController::class, 'updateParcelAmount'])->middleware('can:finance_payable_edit');
+        Route::post('/payable-api/{id}/cancel', [AccountPayableController::class, 'cancelParcel'])->middleware('can:finance_payable_delete');
 
         // Payables -> Setting Custom Field
         Route::resource('/payables/custom-field-api', PayableCustomFieldController::class);
         Route::post('/payables/custom-fields/{id}/toggle', [PayableCustomFieldController::class, 'toggle']);
 
+        // Audit
+        Route::get('/payables/audit-api', [AccountPayableAuditController::class, 'index']);
+
         // Receivables
-        Route::get('/receivables/service-orders', [AccountReceivableController::class, 'view'])
-            ->name('account-receivable.view');
-
-        Route::get('/receivables/service-orders/api', [AccountReceivableController::class, 'index'])
-            ->name('receivables.service-orders.index');
-
-        Route::post('/receivables/invoices/{invoice}/pay', [AccountReceivableController::class, 'setPaid'])
-            ->name('receivables.service-orders.pay');
-
+        Route::get('/receivables/service-orders', [AccountReceivableController::class, 'view'])->name('account-receivable.view');
+        Route::get('/receivables/service-orders/api', [AccountReceivableController::class, 'index'])->name('receivables.service-orders.index');
+        Route::post('/receivables/invoices/{invoice}/pay', [AccountReceivableController::class, 'setPaid'])->name('receivables.service-orders.pay');
     });
 
     /* --->| Stock |<--- */
@@ -340,8 +322,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::put('/stock-api/{id}/pricing', [StockController::class, 'updatePricing']);
         Route::put('/stock-api/{id}/balance', [StockController::class, 'updateBalance']);
         Route::get('/stock-api/{id}/price-logs', [StockController::class, 'priceLogs']);
+        Route::post('/stock-api/{id}/adjust', [StockController::class, 'adjust'])->name('stock.adjust');
 
-        Route::get('/movements', [MovementStockController::class, 'view']);
+        Route::get('/movements', [MovementStockController::class, 'view'])->name('movements.view');
         Route::get('/movements-api', [MovementStockController::class, 'movementsData']);
         Route::get('/movements-api/{id}', [MovementStockController::class, 'show']);
         Route::post('/movements-api/adjust', [MovementStockController::class, 'adjust']);
@@ -349,7 +332,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::post('/movements-api/manual-in',  [MovementStockController::class, 'manualIn']);
         Route::post('/movements-api/manual-out', [MovementStockController::class, 'manualOut']);
 
-        Route::get('/settings/reasons', [StockReasonController::class, 'view'])->name('stock-reason.view');
+        Route::get('/settings/reasons', [StockReasonController::class, 'view'])->name('stock-reasons.view');
         Route::resource('/settings/reason-api', StockReasonController::class);
         Route::get('/settings/reasons-picklist', [StockReasonController::class, 'picklist']);
 

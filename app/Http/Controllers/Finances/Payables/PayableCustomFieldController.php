@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Finances\Payables;
 
 use App\Http\Controllers\Controller;
 use App\Models\Finances\Payables\PayableCustomField;
+use App\Support\Audit\Payables\PayablesAudit;
 use App\Traits\RoleCheckTrait;
 use Illuminate\Http\Request;
 
@@ -48,6 +49,21 @@ class PayableCustomFieldController extends Controller
             'active' => $data['active'] ?? true,
         ]);
 
+        PayablesAudit::log(
+            $tenantId,
+            (string) auth()->id(),
+            'custom_field',
+            'created',
+            (string) $field->id,
+            null,
+            [
+                'id' => (string) $field->id,
+                'name' => $field->name,
+                'type' => $field->type,
+                'active' => (bool) $field->active,
+            ]
+        );
+
         return response()->json(['ok' => true, 'id' => $field->id]);
     }
 
@@ -63,11 +79,35 @@ class PayableCustomFieldController extends Controller
 
         $field = PayableCustomField::where('customer_sistapp_id', $tenantId)->findOrFail($id);
 
+        $before = [
+            'id' => (string) $field->id,
+            'name' => $field->name,
+            'type' => $field->type,
+            'active' => (bool) $field->active,
+        ];
+
         $field->update([
             'name' => trim($data['name']),
             'type' => $data['type'],
             'active' => $data['active'] ?? $field->active,
         ]);
+
+        $after = [
+            'id' => (string) $field->id,
+            'name' => $field->name,
+            'type' => $field->type,
+            'active' => (bool) $field->active,
+        ];
+
+        PayablesAudit::log(
+            $tenantId,
+            (string) auth()->id(),
+            'custom_field',
+            'updated',
+            (string) $field->id,
+            $before,
+            $after
+        );
 
         return response()->json(['ok' => true]);
     }
@@ -77,7 +117,25 @@ class PayableCustomFieldController extends Controller
         $tenantId = $this->customerSistappID();
 
         $field = PayableCustomField::where('customer_sistapp_id', $tenantId)->findOrFail($id);
+
+        $before = [
+            'id' => (string) $field->id,
+            'name' => $field->name,
+            'type' => $field->type,
+            'active' => (bool) $field->active,
+        ];
+
         $field->delete();
+
+        PayablesAudit::log(
+            $tenantId,
+            (string) auth()->id(),
+            'custom_field',
+            'deleted',
+            (string) $id,
+            $before,
+            ['deleted' => true]
+        );
 
         return response()->json(['ok' => true]);
     }
@@ -87,7 +145,28 @@ class PayableCustomFieldController extends Controller
         $tenantId = $this->customerSistappID();
 
         $field = PayableCustomField::where('customer_sistapp_id', $tenantId)->findOrFail($id);
+
+        $before = [
+            'id' => (string) $field->id,
+            'active' => (bool) $field->active,
+        ];
+
         $field->update(['active' => ! $field->active]);
+
+        $after = [
+            'id' => (string) $field->id,
+            'active' => (bool) $field->active,
+        ];
+
+        PayablesAudit::log(
+            $tenantId,
+            (string) auth()->id(),
+            'custom_field',
+            'toggled',
+            (string) $field->id,
+            $before,
+            $after
+        );
 
         return response()->json(['ok' => true, 'active' => (bool)$field->active]);
     }

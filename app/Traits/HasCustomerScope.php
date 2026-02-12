@@ -2,7 +2,7 @@
 
 namespace App\Traits;
 
-use App\Support\CustomerContext;
+use App\Support\TenantUser\CustomerContext;
 
 trait HasCustomerScope
 {

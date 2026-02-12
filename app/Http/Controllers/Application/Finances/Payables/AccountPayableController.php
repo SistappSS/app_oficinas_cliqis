@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Finances\AccountPayable;
 use App\Models\Finances\AccountPayablePayment;
 use App\Models\Finances\AccountPayableRecurrence;
+use App\Support\Audit\Payables\PayablesAudit;
 use App\Traits\RoleCheckTrait;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -174,9 +175,6 @@ class AccountPayableController extends Controller
         ]);
     }
 
-    /**
-     * Cria uma conta a pagar (única / variável / mensal / anual) + gera recorrências.
-     */
     public function store(Request $r)
     {
         $data = $r->validate([
@@ -263,63 +261,198 @@ class AccountPayableController extends Controller
                 }
             }
 
+            $recs = AccountPayableRecurrence::query()
+                ->where('customer_sistapp_id', $tenantId)
+                ->where('account_payable_id', $ap->id)
+                ->orderBy('due_date', 'asc')
+                ->get(['id','due_date','amount','status','recurrence_number']);
+
+            $after = [
+                'payable' => [
+                    'id' => (string) $ap->id,
+                    'description' => $ap->description,
+                    'recurrence' => $ap->recurrence,
+                    'default_amount' => (float) $ap->default_amount,
+                    'first_payment' => (string) $ap->first_payment,
+                    'end_recurrence' => $ap->end_recurrence,
+                    'times' => $ap->times,
+                    'status' => $ap->status,
+                ],
+                'recurrences' => [
+                    'count' => $recs->count(),
+                    'first_due' => optional($recs->first())->due_date,
+                    'last_due'  => optional($recs->last())->due_date,
+                    'sample' => $recs->take(6)->map(fn($x) => [
+                        'id' => (string) $x->id,
+                        'n' => (int) $x->recurrence_number,
+                        'due_date' => (string) $x->due_date,
+                        'amount' => (float) $x->amount,
+                        'status' => (string) $x->status,
+                    ])->values(),
+                ],
+            ];
+
+            PayablesAudit::log(
+                $tenantId,
+                (string) $userId,
+                'payable',
+                (string) $ap->id,
+                'created',
+                null,
+                $after
+            );
+
             return response()->json(['ok' => true, 'id' => $ap->id]);
         });
     }
 
-    /**
-     * Baixa de uma parcela (recorrência) + geração da próxima mensal/anual infinita.
-     */
     public function pay(Request $r, $recurrenceId)
     {
         $data = $r->validate([
             'paid_at' => ['required', 'date'],
             'amount'  => ['required', 'numeric', 'min:0.01'],
             'notes'   => ['nullable', 'string'],
+
+            'adjustments' => ['nullable', 'array'],
+            'adjustments.*.custom_field_id' => ['required', 'string'],
+            'adjustments.*.value' => ['required', 'numeric', 'min:0.01'],
+
+            'amount_base'     => ['nullable', 'numeric'],
+            'amount_original' => ['nullable', 'numeric'],
+            'amount_final'    => ['nullable', 'numeric'],
         ]);
 
         return DB::transaction(function () use ($recurrenceId, $data) {
-            /** @var AccountPayableRecurrence $rec */
             $rec = AccountPayableRecurrence::lockForUpdate()
                 ->with(['accountPayable', 'payments'])
                 ->findOrFail($recurrenceId);
 
-            // 👉 NÃO TEM PAGAMENTO PARCIAL:
-            // apaga qualquer pagamento antigo dessa parcela
+            $base = (float) $rec->amount;
+
+            $adjInput = collect($data['adjustments'] ?? [])
+                ->filter(fn($a) => !empty($a['custom_field_id']) && (float)$a['value'] > 0)
+                ->values();
+
+            $delta = 0.0;
+            $fieldsById = collect();
+
+            if ($adjInput->isNotEmpty()) {
+                $ids = $adjInput->pluck('custom_field_id')->unique()->values();
+
+                $fieldsById = DB::table('payable_custom_fields')
+                    ->where('customer_sistapp_id', $rec->customer_sistapp_id)
+                    ->whereIn('id', $ids)
+                    ->where('active', 1)
+                    ->get()
+                    ->keyBy('id');
+
+                foreach ($ids as $id) {
+                    if (!isset($fieldsById[$id])) {
+                        return response()->json([
+                            'message' => 'Campo adicional inválido/inativo: '.$id
+                        ], 422);
+                    }
+                }
+
+                foreach ($adjInput as $a) {
+                    $field = $fieldsById[$a['custom_field_id']];
+                    $type = (string) $field->type; // deduct|add
+                    $val  = round(abs((float)$a['value']), 2);
+
+                    $delta += ($type === 'deduct') ? -$val : +$val;
+                }
+            }
+
+            $dueAfter = round($base + $delta, 2);
+
+            if ($dueAfter < 0.01) {
+                return response()->json([
+                    'message' => 'Ajustes inválidos: o valor final não pode ser menor que 0,01.'
+                ], 422);
+            }
+
+            $before = [
+                'recurrence' => [
+                    'id' => $rec->id,
+                    'status' => $rec->status,
+                    'amount' => (float) $rec->amount,
+                    'amount_paid' => (float) $rec->amount_paid,
+                    'paid_at' => optional($rec->paid_at)->toDateString(),
+                ],
+                'payments_cash_sum' => (float) $rec->payments->sum('amount'),
+            ];
+
+            $cash = round((float)$data['amount'], 2);
+
+            if (abs($cash - $dueAfter) > 0.02) {
+                return response()->json([
+                    'message' => 'Valor pago não confere com os ajustes calculados.'
+                ], 422);
+            }
+
+            $settled = round($cash - $delta, 2);
+
+            if (abs($settled - $base) > 0.02) {
+                return response()->json([
+                    'message' => 'Falha de consistência: base/ajustes não conferem.'
+                ], 422);
+            }
+
             $rec->payments()->delete();
 
-            // cria UM pagamento novo para ESTA recorrência
-            AccountPayablePayment::create([
+            $payment = AccountPayablePayment::create([
                 'customer_sistapp_id'   => $rec->customer_sistapp_id,
                 'user_id'               => auth()->id(),
                 'payable_recurrence_id' => $rec->id,
                 'paid_at'               => $data['paid_at'],
-                'amount'                => (float)$data['amount'],
+                'amount'                => $cash, // ✅ cash
                 'notes'                 => $data['notes'] ?? null,
+                'meta'                  => [
+                    'amount_base'       => $base,
+                    'amount_settled'    => $settled,   // ✅ quitado
+                    'cash_amount'       => $cash,      // ✅ cash
+                    'delta_total'       => $delta,
+                    'amount_due'        => $dueAfter,  // = cash
+                    'adjustments_count' => $adjInput->count(),
+                ],
             ]);
 
-            // atualiza a própria recorrência
-            $rec->amount_paid = (float)$data['amount'];
+            foreach ($adjInput as $a) {
+                $field = $fieldsById[$a['custom_field_id']];
+                $type = (string) $field->type; // deduct|add
+                $val  = round(abs((float)$a['value']), 2);
 
-            if ($rec->amount_paid + 0.0001 >= (float)$rec->amount) {
+                DB::table('account_payable_payment_adjustments')->insert([
+                    'id'                  => (string) \Illuminate\Support\Str::uuid(),
+                    'customer_sistapp_id'  => $rec->customer_sistapp_id,
+                    'user_id'              => auth()->id(),
+                    'payable_recurrence_id'=> $rec->id,
+                    'payment_id'           => $payment->id,
+                    'custom_field_id'      => $a['custom_field_id'],
+                    'type_snapshot'        => $type,
+                    'value'                => $val,
+                    'created_at'           => now(),
+                    'updated_at'           => now(),
+                ]);
+            }
+
+            $rec->amount_paid = $settled;
+
+            if ($settled + 0.0001 >= (float)$rec->amount) {
                 $rec->status  = 'paid';
                 $rec->paid_at = $data['paid_at'];
             } else {
-                // se algum dia você pagar menos que o valor da parcela, mantém como pendente
                 $rec->status  = 'pending';
                 $rec->paid_at = null;
             }
 
             $rec->save();
 
-            // Conta-mãe
             $ap = $rec->accountPayable()->lockForUpdate()->first();
 
-            // recorrência infinita (mensal/anual sem data de término)
             $isInfiniteRecurring = in_array($ap->recurrence, ['monthly', 'yearly'], true)
                 && is_null($ap->end_recurrence);
 
-            // 1) Se for mensal/anual INFINITO e essa parcela ficou paga, gera a próxima
             if ($isInfiniteRecurring && $rec->status === 'paid') {
                 $hasFuture = $ap->recurrences()
                     ->where('due_date', '>', $rec->due_date)
@@ -330,9 +463,7 @@ class AccountPayableController extends Controller
                     $nextNumber = $lastNumber + 1;
 
                     $nextDate = Carbon::parse($rec->due_date);
-                    $ap->recurrence === 'monthly'
-                        ? $nextDate->addMonth()
-                        : $nextDate->addYear();
+                    $ap->recurrence === 'monthly' ? $nextDate->addMonth() : $nextDate->addYear();
 
                     AccountPayableRecurrence::create([
                         'customer_sistapp_id' => $ap->customer_sistapp_id,
@@ -347,14 +478,39 @@ class AccountPayableController extends Controller
                 }
             }
 
-            // 2) Se NÃO for infinita (única/parcelada ou com fim definido),
-            // fecha a conta-mãe quando não houver mais parcelas pendentes
             if (! $isInfiniteRecurring) {
                 $hasOpen = $ap->recurrences()->where('status', 'pending')->exists();
-                if (! $hasOpen) {
-                    $ap->update(['status' => 'closed']);
-                }
+                if (! $hasOpen) $ap->update(['status' => 'closed']);
             }
+
+            $after = [
+                'recurrence' => [
+                    'id' => $rec->id,
+                    'status' => $rec->status,
+                    'amount' => (float) $rec->amount,
+                    'amount_paid' => (float) $rec->amount_paid, // settled
+                    'paid_at' => optional($rec->paid_at)->toDateString(),
+                ],
+                'payment' => [
+                    'id' => $payment->id,
+                    'cash' => (float) $payment->amount,
+                    'meta' => $payment->meta,
+                ],
+                'adjustments' => $adjInput->map(fn($a) => [
+                    'custom_field_id' => $a['custom_field_id'],
+                    'value' => round((float)$a['value'], 2),
+                ])->values(),
+            ];
+
+            PayablesAudit::log(
+                $rec->customer_sistapp_id,
+                (string) auth()->id(),
+                'recurrence',
+                (string) $rec->id,
+                'paid',
+                $before,
+                $after
+            );
 
             return response()->json(['ok' => true]);
         });
@@ -382,17 +538,58 @@ class AccountPayableController extends Controller
     public function updateParcelAmount(Request $r, $recurrenceId)
     {
         $data = $r->validate(['amount' => ['required', 'numeric', 'min:0.01']]);
+        $tenantId = $this->customerSistappID();
 
-        $rec = AccountPayableRecurrence::findOrFail($recurrenceId);
-        $rec->update(['amount' => $data['amount']]);
+        return DB::transaction(function () use ($tenantId, $recurrenceId, $data) {
+            $rec = AccountPayableRecurrence::lockForUpdate()
+                ->where('customer_sistapp_id', $tenantId)
+                ->with('payments')
+                ->findOrFail($recurrenceId);
 
-        return response()->json(['ok' => true]);
+            $before = [
+                'recurrence' => [
+                    'id' => (string) $rec->id,
+                    'status' => (string) $rec->status,
+                    'amount' => (float) $rec->amount,
+                    'amount_paid' => (float) $rec->amount_paid,
+                    'due_date' => $rec->due_date->toDateString(),
+                ],
+                'payments_cash_sum' => (float) $rec->payments->sum('amount'),
+            ];
+
+            $rec->update(['amount' => round((float)$data['amount'], 2)]);
+
+            $after = [
+                'recurrence' => [
+                    'id' => (string) $rec->id,
+                    'status' => (string) $rec->status,
+                    'amount' => (float) $rec->amount,
+                    'amount_paid' => (float) $rec->amount_paid,
+                    'due_date' => $rec->due_date->toDateString(),
+                ],
+            ];
+
+            PayablesAudit::log(
+                $tenantId,
+                (string) auth()->id(),
+                'recurrence',
+                (string) $rec->id,
+                'amount_changed',
+                $before,
+                $after
+            );
+
+            return response()->json(['ok' => true]);
+        });
     }
 
     public function cancelParcel($recurrenceId)
     {
-        return DB::transaction(function () use ($recurrenceId) {
+        $tenantId = $this->customerSistappID();
+
+        return DB::transaction(function () use ($tenantId, $recurrenceId) {
             $rec = AccountPayableRecurrence::lockForUpdate()
+                ->where('customer_sistapp_id', $tenantId)
                 ->with('payments')
                 ->findOrFail($recurrenceId);
 
@@ -404,7 +601,38 @@ class AccountPayableController extends Controller
                 ], 422);
             }
 
+            $before = [
+                'recurrence' => [
+                    'id' => (string) $rec->id,
+                    'status' => (string) $rec->status,
+                    'amount' => (float) $rec->amount,
+                    'amount_paid' => (float) $rec->amount_paid,
+                    'due_date' => $rec->due_date->toDateString(),
+                ],
+                'payments_cash_sum' => $paid,
+            ];
+
             $rec->update(['status' => 'canceled']);
+
+            $after = [
+                'recurrence' => [
+                    'id' => (string) $rec->id,
+                    'status' => (string) $rec->status,
+                    'amount' => (float) $rec->amount,
+                    'amount_paid' => (float) $rec->amount_paid,
+                    'due_date' => $rec->due_date->toDateString(),
+                ],
+            ];
+
+            PayablesAudit::log(
+                $tenantId,
+                (string) auth()->id(),
+                'recurrence',
+                (string) $rec->id,
+                'canceled',
+                $before,
+                $after
+            );
 
             return response()->json(['ok' => true]);
         });

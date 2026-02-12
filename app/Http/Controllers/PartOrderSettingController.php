@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UpdatePartOrderSettingRequest;
 use App\Models\Entities\Suppliers\Supplier;
 use App\Models\PartOrderSetting;
-use App\Support\Audit\Audit;
-use App\Support\CustomerContext;
+use App\Support\Audit\PartOrders\PartOrdersAudit;
+use App\Support\TenantUser\CustomerContext;
 
 class PartOrderSettingController extends Controller
 {
@@ -75,7 +75,7 @@ class PartOrderSettingController extends Controller
                 ->exists();
 
             if (!$exists) {
-                Audit::log(
+                PartOrdersAudit::log(
                     'part_order_settings.upsert',
                     'PartOrderSetting',
                     $beforeModel?->id,
@@ -118,7 +118,7 @@ class PartOrderSettingController extends Controller
 
         $changes = $this->diffAssoc($before, $after);
 
-        Audit::log(
+        PartOrdersAudit::log(
             'part_order_settings.upsert',
             'PartOrderSetting',
             $settings->id,

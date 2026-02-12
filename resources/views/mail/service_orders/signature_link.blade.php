@@ -13,6 +13,11 @@
         </a>
     </p>
 
+    <p style="margin:12px 0 0; font-size:12px; color:#64748b;">
+        Se o botão não abrir, copie e cole no navegador:<br>
+        <a href="{{ $link }}">{{ $link }}</a>
+    </p>
+
     <p style="margin:0; font-size:12px; color:#64748b;">
         Este link expira em {{ $expires_at }}.
     </p>

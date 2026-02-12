@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Stock;
 use App\Http\Controllers\Controller;
 use App\Models\Stock\StockMovement;
 use App\Services\Stock\ManualStockMovementService;
-use App\Support\CustomerContext;
+use App\Support\TenantUser\CustomerContext;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -84,12 +84,16 @@ class MovementStockController extends Controller
         }
 
         if ($stockPartId !== '') {
-            $mov->whereExists(function ($sub) use ($tenantId, $stockPartId) {
-                $sub->select(DB::raw(1))
-                    ->from('stock_movement_items as i')
-                    ->whereColumn('i.movement_id', 'm.id')
-                    ->where('i.customer_sistapp_id', $tenantId)
-                    ->where('i.stock_part_id', $stockPartId);
+            $mov->where(function ($w) use ($tenantId, $stockPartId) {
+                $w->whereExists(function ($sub) use ($tenantId, $stockPartId) {
+                    $sub->select(DB::raw(1))
+                        ->from('stock_movement_items as i')
+                        ->whereColumn('i.movement_id', 'm.id')
+                        ->where('i.customer_sistapp_id', $tenantId)
+                        ->where('i.stock_part_id', $stockPartId);
+                })
+                    // ✅ fallback: movimentos antigos/sem item-âncora
+                    ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(m.meta, '$.stock_part_id')) = ?", [$stockPartId]);
             });
         }
 
@@ -111,12 +115,26 @@ class MovementStockController extends Controller
                 'm.source_type',
                 'm.source_id',
                 'm.user_id',
+                'm.meta',
                 DB::raw('COALESCE(u.name, "") as user_name'),
                 DB::raw('COALESCE(r.label, "") as reason_label'),
                 DB::raw('COALESCE(a.total_qty, 0) as total_qty'),
                 DB::raw('COALESCE(a.total_cost, 0) as total_cost'),
             ])
             ->paginate(5);
+
+        $rows->getCollection()->transform(function ($r) {
+            $meta = [];
+            if (!empty($r->meta)) {
+                $decoded = json_decode($r->meta, true);
+                if (is_array($decoded)) $meta = $decoded;
+            }
+
+            $r->changes = $meta['changes'] ?? null;
+            $r->changes_summary = $meta['changes_summary'] ?? '';
+
+            return $r;
+        });
 
         return response()->json(['items' => $rows]);
     }
