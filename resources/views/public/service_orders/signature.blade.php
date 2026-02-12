@@ -4,7 +4,7 @@
     <main class="mx-auto max-w-4xl px-4 sm:px-6 pb-10 lg:pb-14">
         <div class="pt-8">
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
-                <div class="flex items-start justify-between gap-4">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                     <div>
                         <h1 class="text-lg font-semibold text-slate-900">Assinatura da Ordem de Serviço</h1>
                         <p class="text-sm text-slate-500 mt-1">
@@ -163,7 +163,7 @@
                                 </div>
 
                                 <div class="border border-slate-300 rounded-2xl overflow-hidden bg-slate-50">
-                                    <canvas id="signature-pad" class="w-full h-56 touch-none"></canvas>
+                                    <canvas id="signature-pad" class="w-full h-48 sm:h-56 touch-none"></canvas>
                                 </div>
 
                                 <input type="hidden" name="image_base64" id="image_base64">
@@ -207,9 +207,14 @@
                 const resizeCanvas = () => {
                     const rect = canvas.getBoundingClientRect();
                     if (!rect.width || !rect.height) return;
-                    canvas.width = rect.width;
-                    canvas.height = rect.height;
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    const dpr = window.devicePixelRatio || 1;
+
+                    canvas.width  = Math.round(rect.width * dpr);
+                    canvas.height = Math.round(rect.height * dpr);
+
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // escala “pra tela”
+                    ctx.clearRect(0, 0, rect.width, rect.height);
                 };
 
                 setTimeout(resizeCanvas, 30);
@@ -235,8 +240,12 @@
                     lastX = p.x; lastY = p.y;
                 };
 
+                let hasInk = false;
+
                 const draw = (evt) => {
                     if (!isDrawing) return;
+                    hasInk = true;
+
                     evt.preventDefault?.();
                     const p = pos(evt);
                     ctx.lineWidth = 2;
@@ -264,22 +273,26 @@
                 clearBtn?.addEventListener('click', () => ctx.clearRect(0, 0, canvas.width, canvas.height));
 
                 form.addEventListener('submit', async (e) => {
-                    // coloca base64 no hidden e segue submit normal (com CSRF)
+                    if (!hasInk) {
+                        e.preventDefault();
+                        alert('Assine no quadro antes de enviar.');
+                        return;
+                    }
+
                     hidden.value = canvas.toDataURL('image/png');
 
-                    // UX
                     const original = saveBtn.innerHTML;
                     saveBtn.disabled = true;
                     saveBtn.innerHTML = `
-            <span class="inline-flex items-center gap-2">
-                <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                </svg>
-                Assinando...
-            </span>
-        `;
-                    // deixa o submit continuar
+                            <span class="inline-flex items-center gap-2">
+                                <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                </svg>
+                                Assinando...
+                            </span>
+                        `;
+
                     setTimeout(() => { saveBtn.innerHTML = original; }, 4000);
                 });
             });
