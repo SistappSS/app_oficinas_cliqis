@@ -40,9 +40,11 @@
         </p>
     </div>
 
-    <a href="{{ route('billing.index', auth()->id()) }}"
-       class="mt-8 inline-flex items-center justify-center rounded-full bg-emerald-500 px-8 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
-        Desbloquear
+    @auth
+        <a href="{{ route('billing.index', auth()->id()) }}" class="mt-8 inline-flex items-center justify-center rounded-full bg-emerald-500 px-8 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
+            @else
+                <a href="{{ route('login') }}" class="mt-8 inline-flex items-center justify-center rounded-full bg-emerald-500 px-8 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
+                    @endauth    Desbloquear
     </a>
 
     <a href="{{ url()->previous() }}"
