@@ -22,12 +22,15 @@
     const elPageInfo = $("mov-pageinfo");
 
     const paramsUrl = new URLSearchParams(window.location.search);
-    const preStockPartId = paramsUrl.get("stock_part_id"); // opcional
+    const preStockPartId = paramsUrl.get("stock_part_id") || "";
 
     let state = {
         page: 1,
         q: "",
         type: "",
+        period: "",
+        date_from: "",
+        date_to: "",
         last: null,
     };
 
@@ -40,7 +43,8 @@
             "'": "&#39;",
         }[m]));
 
-    const fmtBRL = (n) => Number(n || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const fmtBRL = (n) =>
+        Number(n || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
     const labelType = (t) => {
         if (t === "in") return "Entrada";
@@ -50,8 +54,17 @@
         return t || "-";
     };
 
+    const labelSource = (s) => {
+        const map = {
+            part_order: "Pedido",
+            sale: "Venda",
+            manual: "Manual",
+        };
+        return map[s] || s || "-";
+    };
+
     const setLoading = () => {
-        elTbody.innerHTML = `<tr><td class="px-6 py-6 text-slate-500" colspan="5">Carregando...</td></tr>`;
+        elTbody.innerHTML = `<tr><td class="px-6 py-6 text-slate-500" colspan="8">Carregando...</td></tr>`;
         elEmpty.classList.add("hidden");
     };
 
@@ -61,6 +74,13 @@
         if (state.q) p.set("q", state.q);
         if (state.type) p.set("type", state.type);
         if (preStockPartId) p.set("stock_part_id", preStockPartId);
+
+        if (state.period) p.set("period", state.period);
+        if (state.period === "custom") {
+            if (state.date_from) p.set("date_from", state.date_from);
+            if (state.date_to) p.set("date_to", state.date_to);
+        }
+
         return p.toString();
     };
 
@@ -76,30 +96,40 @@
             elTbody.innerHTML = rows.map((m) => {
                 const dt = esc(m.created_at || "-");
                 const tp = esc(labelType(m.type));
-                const src = esc(m.source_type ? `${m.source_type}${m.source_id ? " • " + m.source_id : ""}` : "-");
-                const user = esc(m.user_id || "-");
+                const reason = esc(m.reason_label || "-");
+
+                const srcType = labelSource(m.source_type);
+                const src = esc(srcType ? `${srcType}${m.source_id ? " • " + m.source_id : ""}` : "-");
+
+                const user = esc((m.user_name && m.user_name.trim()) ? m.user_name : (m.user_id || "-"));
+
+                const totalQty = Number(m.total_qty || 0);
+                const totalCost = fmtBRL(m.total_cost || 0);
 
                 return `
-          <tr>
-            <td class="px-6 py-4 text-slate-700">${dt}</td>
-            <td class="px-3 py-4 text-slate-900">${tp}</td>
-            <td class="px-3 py-4 text-slate-700">${src}</td>
-            <td class="px-3 py-4 text-slate-700">${user}</td>
-            <td class="px-6 py-4 text-right">
-              <button
-                type="button"
-                class="inline-flex items-center justify-center w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                data-view-movement
-                data-mv-id="${esc(m.id)}"
-                title="Ver movimentação"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>
-                </svg>
-              </button>
-            </td>
-          </tr>
-        `;
+        <tr>
+          <td class="px-6 py-4 text-slate-700">${dt}</td>
+          <td class="px-3 py-4 text-slate-900">${tp}</td>
+          <td class="px-3 py-4 text-slate-700">${reason}</td>
+          <td class="px-3 py-4 text-slate-700">${src}</td>
+          <td class="px-3 py-4 text-slate-700">${user}</td>
+          <td class="px-3 py-4 text-right text-slate-900">${totalQty}</td>
+          <td class="px-3 py-4 text-right text-slate-900">${totalCost}</td>
+          <td class="px-6 py-4 text-right">
+            <button
+              type="button"
+              class="inline-flex items-center justify-center w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+              data-view-movement
+              data-mv-id="${esc(m.id)}"
+              title="Ver movimentação"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </td>
+        </tr>
+      `;
             }).join("");
         }
 
@@ -120,7 +150,7 @@
         const res = await fetch(URL.list(buildParams()), { headers: { Accept: "application/json" } });
 
         if (!res.ok) {
-            elTbody.innerHTML = `<tr><td class="px-6 py-6 text-red-600" colspan="5">Falha ao carregar.</td></tr>`;
+            elTbody.innerHTML = `<tr><td class="px-6 py-6 text-red-600" colspan="8">Falha ao carregar.</td></tr>`;
             return;
         }
 
@@ -130,6 +160,12 @@
 
     // ====== FILTERS / PAGINATION ======
     let t = null;
+
+    const elPeriod = $("mov-period");
+    const elPeriodWrap = $("mov-period-wrap");
+    const elFrom = $("mov-from");
+    const elTo = $("mov-to");
+
     const debounced = (fn, ms = 350) => {
         window.clearTimeout(t);
         t = window.setTimeout(fn, ms);
@@ -138,19 +174,19 @@
     elQ.addEventListener("input", () => {
         state.q = elQ.value.trim();
         state.page = 1;
-        debounced(load);
+        debounced(safeLoad);
     });
 
     elTypeFilter.addEventListener("change", () => {
         state.type = elTypeFilter.value;
         state.page = 1;
-        load();
+        safeLoad();
     });
 
     elPrev.addEventListener("click", () => {
         if (state.page > 1) {
             state.page -= 1;
-            load();
+            safeLoad();
         }
     });
 
@@ -158,11 +194,76 @@
         const last = state.last?.last_page || 1;
         if (state.page < last) {
             state.page += 1;
-            load();
+            safeLoad();
         }
     });
 
-    // ====== MODAL ======
+    elPeriod.addEventListener("change", () => {
+        state.period = elPeriod.value || "";
+        state.page = 1;
+
+        if (state.period === "custom") {
+            elPeriodWrap.classList.remove("hidden");
+            state.date_from = elFrom.value || "";
+            state.date_to = elTo.value || "";
+        } else {
+            elPeriodWrap.classList.add("hidden");
+            state.date_from = "";
+            state.date_to = "";
+            elFrom.value = "";
+            elTo.value = "";
+            setPeriodError(false);
+        }
+
+        safeLoad();
+    });
+
+    const onCustomDate = () => {
+        if (state.period !== "custom") return;
+        state.date_from = elFrom.value || "";
+        state.date_to = elTo.value || "";
+        state.page = 1;
+        safeLoad();
+    };
+
+    elFrom.addEventListener("change", onCustomDate);
+    elTo.addEventListener("change", onCustomDate);
+
+    const elPeriodError = $("mov-period-error");
+
+    function setPeriodError(on) {
+        if (!elPeriodError) return;
+        elPeriodError.classList.toggle("hidden", !on);
+    }
+
+// retorna true se pode carregar
+    function canLoad() {
+        if (state.period !== "custom") {
+            setPeriodError(false);
+            return true;
+        }
+
+        const from = state.date_from || "";
+        const to = state.date_to || "";
+
+        // se um dos dois estiver vazio, deixa carregar (vai filtrar só >= from ou <= to)
+        if (!from || !to) {
+            setPeriodError(false);
+            return true;
+        }
+
+        // comparação lexicográfica funciona pra YYYY-MM-DD
+        const ok = from <= to;
+        setPeriodError(!ok);
+        return ok;
+    }
+
+    function safeLoad() {
+        if (!canLoad()) return;
+        load();
+    }
+
+    // ====== MODAL VIEW MOVIMENTAÇÃO ======
     const modal = $("mv-modal");
     const mvTbody = $("mv-tbody");
 
@@ -237,11 +338,10 @@
     `).join("");
     }
 
-    // clique no olho
-    document.addEventListener("click", (e) => {
+    // clique no olho (delegado no tbody pra evitar listener global demais)
+    elTbody.addEventListener("click", (e) => {
         const btn = e.target.closest("[data-view-movement]");
         if (!btn) return;
-
         const id = btn.dataset.mvId;
         if (!id) return;
 
@@ -253,6 +353,5 @@
         });
     });
 
-    // init
-    load();
+    safeLoad();
 })();

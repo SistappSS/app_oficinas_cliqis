@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Support\Audit;
+namespace App\Support\Audit\PartOrders;
 
 use App\Models\Audit\AuditPartOrderSetting;
-use App\Support\CustomerContext;
+use App\Support\TenantUser\CustomerContext;
 use Illuminate\Support\Str;
 use Throwable;
 
-class Audit
+class PartOrdersAudit
 {
     public static function log(
         string $action,

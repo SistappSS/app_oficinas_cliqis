@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Application\HumanResources;
 use App\Http\Controllers\Controller;
 use App\Models\Authenticate\Permissions\Role;
 use App\Models\HumanResources\Departments\Department;
-use App\Support\CustomerContext;
+use App\Support\TenantUser\CustomerContext;
 use App\Traits\CrudResponse;
 use App\Traits\RoleCheckTrait;
 use App\Traits\WebIndex;

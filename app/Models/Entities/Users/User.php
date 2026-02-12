@@ -12,7 +12,7 @@ use App\Models\Inventories\Products\Product;
 use App\Models\Modules\UserFeature;
 use App\Models\Modules\UserModulePermission;
 use App\Models\Supports\SupportChat\SupportChat;
-use App\Support\CustomerContext;
+use App\Support\TenantUser\CustomerContext;
 use App\Traits\HasSubscriptionCheck;
 use App\Traits\RoleCheckTrait;
 use Carbon\Carbon;

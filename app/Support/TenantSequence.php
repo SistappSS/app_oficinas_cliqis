@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Support\TenantUser\CustomerContext;
 use Illuminate\Support\Facades\DB;
 
 final class TenantSequence
@@ -17,7 +18,6 @@ final class TenantSequence
             ON DUPLICATE KEY UPDATE `value` = LAST_INSERT_ID(`value` + 1), updated_at = NOW()
         ", [$tenantId, $key]);
 
-        // <- pega exatamente o valor setado por LAST_INSERT_ID()
         return (int) DB::scalar('SELECT LAST_INSERT_ID()');
     }
 }

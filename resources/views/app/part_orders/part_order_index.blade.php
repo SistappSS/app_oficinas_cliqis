@@ -346,30 +346,30 @@
                                 À vista
                             </button>
 
-                            <button type="button" data-pay-type-btn="sinal"
+                            <button type="button" data-pay-type-btn="sinal_parcelas"
                                     class="payTypeBtn flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
                                 Sinal + parcelas
                             </button>
                         </div>
 
-                        <input type="hidden" id="pp-pay-type" value="avista">
+                        <input type="hidden" id="pp-pay-type" name="payment_mode" value="avista">
 
                         <div class="grid gap-3">
                             <div>
-                                <label class="text-xs font-medium text-slate-600">Vencimento</label>
-                                <input id="pp-pay-due" type="date"
+                                <label class="text-xs font-medium text-slate-600">Primeiro pagamento</label>
+                                <input id="pp-pay-due" name="signal_due_date" type="date"
                                        class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"/>
                             </div>
 
                             <div id="pp-pay-sinal-wrap" class="hidden">
-                                <label class="text-xs font-medium text-slate-600">Sinal (R$) — pode ser 0</label>
-                                <input id="pp-pay-sinal" inputmode="decimal" placeholder="0,00"
+                                <label class="text-xs font-medium text-slate-600">Sinal (%) — pode ser 0</label>
+                                <input id="pp-pay-sinal" name="signal_amount" type="number" min="0" max="100" step="0.01"
                                        class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"/>
                             </div>
 
                             <div id="pp-pay-parc-wrap" class="hidden">
                                 <label class="text-xs font-medium text-slate-600">Parcelas</label>
-                                <input id="pp-pay-parc" type="number" min="1" step="1" value="1"
+                                <input id="pp-pay-parc" name="installments_count" type="number" min="1" step="1" value="1"
                                        class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"/>
                                 <div class="mt-1 text-[11px] text-slate-500" id="pp-pay-preview">—</div>
                             </div>

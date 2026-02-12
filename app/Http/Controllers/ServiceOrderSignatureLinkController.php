@@ -13,7 +13,6 @@ class ServiceOrderSignatureLinkController extends Controller
 {
     public function send(Request $request, ServiceOrder $serviceOrder)
     {
-        // tenta pegar do body, senão do cliente da OS
         $email = $request->input('email')
             ?: optional($serviceOrder->secondaryCustomer)->email
                 ?: $serviceOrder->requester_email;
@@ -37,8 +36,7 @@ class ServiceOrderSignatureLinkController extends Controller
             'created_by_employee_id' => optional(auth()->user())->employee_id ?? null,
         ]);
 
-        // se você ainda não tem a tela pública, deixa isso assim por enquanto
-        $link = url("/service-orders/sign/{$token}");
+        $link = route('service-orders.signature.public.show', ['token' => $token]);
 
         Mail::to($email)->send(new ServiceOrderSignatureLinkMail(
             order_number: (string)($serviceOrder->order_number ?? $serviceOrder->id),

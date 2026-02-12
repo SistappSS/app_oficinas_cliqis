@@ -2,6 +2,7 @@
 
 namespace App\Models\Finances;
 
+use App\Models\AccountPayablePaymentAdjustment;
 use App\Models\Entities\Users\User;
 use App\Traits\HasCustomerScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -18,6 +19,7 @@ class AccountPayablePayment extends Model
 
 
     protected $casts = [
+        'meta' => 'array',
         'paid_at' => 'date',
         'amount'  => 'decimal:2',
     ];
@@ -43,5 +45,10 @@ class AccountPayablePayment extends Model
             'payable_recurrence_id', // fk neste model -> recurrence
             'account_payable_id'     // fk em recurrence -> payable
         );
+    }
+
+    public function adjustments()
+    {
+        return $this->hasMany(AccountPayablePaymentAdjustment::class, 'payment_id');
     }
 }

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Application\Entities\Customers\Permisions;
 use App\Http\Controllers\Controller;
 use App\Models\Authenticate\Permissions\Permission;
 use App\Models\Authenticate\Permissions\Role;
-use App\Support\CustomerContext;
+use App\Support\TenantUser\CustomerContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
