@@ -394,7 +394,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::post('/modules/feature', [ModuleController::class, 'storeFeature'])->name('feature.store');
 });
 
-// Link público para assinatura
 Route::middleware(['throttle:30,1'])
     ->withoutMiddleware([
         CheckSubscription::class,
