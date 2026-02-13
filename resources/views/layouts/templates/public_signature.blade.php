@@ -1,6 +1,9 @@
-<!doctype html>
-<html lang="pt-BR" class="h-full">
+@php($viewportMeta = 'width=device-width, initial-scale=1')
+
+    <!doctype html>
+<html lang="pt-BR">
 @include('layouts.common.guest.head')
+
 <body class="min-h-screen bg-slate-50 text-slate-900 overflow-x-hidden">
 <div aria-hidden="true" class="pointer-events-none fixed inset-0 -z-10">
     <div class="absolute right-[-120px] top-[-120px] h-80 w-80 rounded-full bg-blue-200 blur-3xl opacity-60"></div>
@@ -16,7 +19,11 @@
     </svg>
 </div>
 
-<div class="mx-auto w-full max-w-4xl px-3 sm:px-6 pt-4">
+{{-- topbar com safe area --}}
+<div class="mx-auto w-full max-w-4xl
+                pl-[calc(12px+env(safe-area-inset-left))]
+                pr-[calc(12px+env(safe-area-inset-right))]
+                pt-[calc(12px+env(safe-area-inset-top))]">
     @include('layouts.common.guest.topbar')
 </div>
 
