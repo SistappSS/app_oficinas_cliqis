@@ -1,6 +1,10 @@
 @extends('layouts.templates.public_signature')
 @section('content')
-    <main class="mx-auto max-w-4xl px-3 sm:px-6 pb-[calc(7rem+env(safe-area-inset-bottom))] lg:pb-14">
+    <main class="mx-auto max-w-4xl
+             pl-[calc(12px+env(safe-area-inset-left))]
+             pr-[calc(12px+env(safe-area-inset-right))]
+             pb-[calc(24px+env(safe-area-inset-bottom))]
+             sm:px-6">
         <div class="pt-6 sm:pt-8">
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-6">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
