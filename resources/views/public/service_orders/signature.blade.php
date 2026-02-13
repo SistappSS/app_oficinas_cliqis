@@ -1,4 +1,4 @@
-@extends('layouts.templates.public-signature')
+@extends('layouts.templates.public_signature')
 @section('content')
     <main class="mx-auto max-w-4xl px-3 sm:px-6 pb-[calc(7rem+env(safe-area-inset-bottom))] lg:pb-14">
         <div class="pt-6 sm:pt-8">
