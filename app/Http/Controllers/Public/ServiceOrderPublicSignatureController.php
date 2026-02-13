@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
-use App\Models\ServiceOrderSignatureLink;
 use App\Models\ServiceOrders\ServiceOrder;
+use App\Models\ServiceOrderSignatureLink;
 use App\Services\ServiceOrders\ClientSignatureService;
 use App\Support\TenantUser\CustomerContext;
 use Illuminate\Http\Request;
@@ -30,9 +30,9 @@ class ServiceOrderPublicSignatureController extends Controller
 
     private function resolveTenantId(ServiceOrderSignatureLink $req): string
     {
-        // sem Eloquent pra não sofrer com scope/boot
-        $tenantId = DB::table('service_orders')
-            ->where('id', $req->service_order_id)
+        // usa a MESMA lógica que já funcionava pra você (Eloquent sem scope)
+        $tenantId = ServiceOrder::withoutGlobalScope('customer')
+            ->whereKey($req->service_order_id)
             ->value('customer_sistapp_id');
 
         if (!$tenantId) abort(404);
@@ -47,8 +47,7 @@ class ServiceOrderPublicSignatureController extends Controller
 
         return CustomerContext::for($tenantId, function () use ($req, $token) {
 
-            $os = ServiceOrder::query()
-                ->whereKey($req->service_order_id) // agora o scope funciona pq tenant tá setado
+            $os = $req->serviceOrder()
                 ->with([
                     'secondaryCustomer',
                     'technician',
@@ -69,21 +68,21 @@ class ServiceOrderPublicSignatureController extends Controller
 
     public function store(string $token, Request $request, ClientSignatureService $sig)
     {
-        // validação mais forte (evita lixo e assinatura vazia)
+        $req = $this->findValidRequest($token);
+        $tenantId = $this->resolveTenantId($req);
+
+        // validação melhor (email + base64 png + limite)
         $data = $request->validate([
             'image_base64' => ['required', 'string', 'starts_with:data:image/png;base64,', 'max:3000000'],
             'client_name'  => ['nullable', 'string', 'max:191'],
             'client_email' => ['nullable', 'email', 'max:191'],
         ]);
 
-        $req = $this->findValidRequest($token);
-        $tenantId = $this->resolveTenantId($req);
-
         return CustomerContext::for($tenantId, function () use ($req, $token, $data, $sig) {
 
             return DB::transaction(function () use ($req, $token, $data, $sig) {
 
-                // trava o link pra impedir 2 assinaturas simultâneas (corrida)
+                // trava pra evitar duas assinaturas simultâneas
                 $reqLocked = ServiceOrderSignatureLink::query()
                     ->whereKey($req->id)
                     ->lockForUpdate()
@@ -93,9 +92,7 @@ class ServiceOrderPublicSignatureController extends Controller
                     abort(404);
                 }
 
-                $os = ServiceOrder::query()
-                    ->whereKey($reqLocked->service_order_id)
-                    ->firstOrFail();
+                $os = $reqLocked->serviceOrder()->firstOrFail();
 
                 $sig->save($os, $data['image_base64'], [
                     'client_name'   => $data['client_name'] ?? null,
