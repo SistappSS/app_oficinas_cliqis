@@ -1,9 +1,9 @@
 @extends('layouts.templates.guest')
 
 @section('guest-content')
-    <main class="mx-auto max-w-4xl px-4 sm:px-6 pb-10 lg:pb-14">
-        <div class="pt-8">
-            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
+    <main class="mx-auto max-w-4xl px-3 sm:px-6 pb-[calc(7rem+env(safe-area-inset-bottom))] lg:pb-14">
+        <div class="pt-6 sm:pt-8">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-6">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                     <div>
                         <h1 class="text-lg font-semibold text-slate-900">Assinatura da Ordem de Serviço</h1>
@@ -18,8 +18,8 @@
 
                     @if($signed)
                         <span class="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                        Assinado com sucesso
-                    </span>
+                            Assinado com sucesso
+                        </span>
                     @endif
                 </div>
 
@@ -31,8 +31,8 @@
             </div>
 
             {{-- Resumo OS --}}
-            <div class="mt-5 grid gap-4 lg:grid-cols-3">
-                <div class="lg:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
+            <div class="mt-4 sm:mt-5 grid gap-4 lg:grid-cols-3">
+                <div class="lg:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-6">
                     <h2 class="text-sm font-semibold text-slate-900">Resumo</h2>
 
                     <div class="mt-3 grid gap-3 sm:grid-cols-2 text-sm">
@@ -72,9 +72,9 @@
                                 <thead class="bg-slate-50 text-left text-slate-600">
                                 <tr>
                                     <th class="px-4 py-3">Descrição</th>
-                                    <th class="px-4 py-3 text-right">Qtd</th>
-                                    <th class="px-4 py-3 text-right">Unit</th>
-                                    <th class="px-4 py-3 text-right">Total</th>
+                                    <th class="px-4 py-3 text-right whitespace-nowrap">Qtd</th>
+                                    <th class="px-4 py-3 text-right whitespace-nowrap">Unit</th>
+                                    <th class="px-4 py-3 text-right whitespace-nowrap">Total</th>
                                 </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
@@ -82,8 +82,8 @@
                                     <tr>
                                         <td class="px-4 py-3">{{ $s->description ?? '-' }}</td>
                                         <td class="px-4 py-3 text-right">{{ $s->quantity ?? 0 }}</td>
-                                        <td class="px-4 py-3 text-right">R$ {{ number_format((float)($s->unit_price ?? 0), 2, ',', '.') }}</td>
-                                        <td class="px-4 py-3 text-right">R$ {{ number_format((float)($s->total ?? (($s->quantity ?? 0)*($s->unit_price ?? 0))), 2, ',', '.') }}</td>
+                                        <td class="px-4 py-3 text-right whitespace-nowrap">R$ {{ number_format((float)($s->unit_price ?? 0), 2, ',', '.') }}</td>
+                                        <td class="px-4 py-3 text-right whitespace-nowrap">R$ {{ number_format((float)($s->total ?? (($s->quantity ?? 0)*($s->unit_price ?? 0))), 2, ',', '.') }}</td>
                                     </tr>
                                 @empty
                                     <tr><td class="px-4 py-4 text-slate-500" colspan="4">Nenhum serviço.</td></tr>
@@ -101,21 +101,21 @@
                             <table class="min-w-full text-sm">
                                 <thead class="bg-slate-50 text-left text-slate-600">
                                 <tr>
-                                    <th class="px-4 py-3">Código</th>
+                                    <th class="px-4 py-3 whitespace-nowrap">Código</th>
                                     <th class="px-4 py-3">Descrição</th>
-                                    <th class="px-4 py-3 text-right">Qtd</th>
-                                    <th class="px-4 py-3 text-right">Unit</th>
-                                    <th class="px-4 py-3 text-right">Total</th>
+                                    <th class="px-4 py-3 text-right whitespace-nowrap">Qtd</th>
+                                    <th class="px-4 py-3 text-right whitespace-nowrap">Unit</th>
+                                    <th class="px-4 py-3 text-right whitespace-nowrap">Total</th>
                                 </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
                                 @forelse(($os->partItems ?? []) as $p)
                                     <tr>
-                                        <td class="px-4 py-3">{{ $p->part->code ?? $p->code ?? '-' }}</td>
+                                        <td class="px-4 py-3 whitespace-nowrap">{{ $p->part->code ?? $p->code ?? '-' }}</td>
                                         <td class="px-4 py-3">{{ $p->description ?? ($p->part->name ?? '-') }}</td>
                                         <td class="px-4 py-3 text-right">{{ $p->quantity ?? 0 }}</td>
-                                        <td class="px-4 py-3 text-right">R$ {{ number_format((float)($p->unit_price ?? 0), 2, ',', '.') }}</td>
-                                        <td class="px-4 py-3 text-right">R$ {{ number_format((float)($p->total ?? (($p->quantity ?? 0)*($p->unit_price ?? 0))), 2, ',', '.') }}</td>
+                                        <td class="px-4 py-3 text-right whitespace-nowrap">R$ {{ number_format((float)($p->unit_price ?? 0), 2, ',', '.') }}</td>
+                                        <td class="px-4 py-3 text-right whitespace-nowrap">R$ {{ number_format((float)($p->total ?? (($p->quantity ?? 0)*($p->unit_price ?? 0))), 2, ',', '.') }}</td>
                                     </tr>
                                 @empty
                                     <tr><td class="px-4 py-4 text-slate-500" colspan="5">Nenhuma peça.</td></tr>
@@ -127,7 +127,7 @@
                 </div>
 
                 {{-- Totais + Assinatura --}}
-                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-6">
                     <h2 class="text-sm font-semibold text-slate-900">Totais</h2>
 
                     <div class="mt-3 space-y-2 text-sm">
@@ -146,7 +146,7 @@
 
                         @if($signed)
                             <div class="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                                Assinatura registrada. Você pode fechar esta página.
+                                Assinatura registrada.
                             </div>
                         @else
                             <form id="sign-form" method="POST" action="{{ route('service-orders.signature.public.store', ['token' => $token]) }}" class="mt-3 space-y-3">
@@ -154,12 +154,17 @@
 
                                 <div>
                                     <label class="text-xs text-slate-600">Nome (opcional)</label>
-                                    <input name="client_name" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm" value="{{ $os->secondaryCustomer->name ?? '' }}">
+                                    {{-- 16px no mobile evita zoom do iPhone ao focar --}}
+                                    <input name="client_name"
+                                           class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-[16px] sm:text-sm"
+                                           value="{{ $os->secondaryCustomer->name ?? '' }}">
                                 </div>
 
                                 <div>
                                     <label class="text-xs text-slate-600">E-mail (opcional)</label>
-                                    <input name="client_email" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm" value="{{ $req->to_email ?? ($os->secondaryCustomer->email ?? '') }}">
+                                    <input name="client_email"
+                                           class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-[16px] sm:text-sm"
+                                           value="{{ $req->to_email ?? ($os->secondaryCustomer->email ?? '') }}">
                                 </div>
 
                                 <div class="border border-slate-300 rounded-2xl overflow-hidden bg-slate-50">
@@ -168,14 +173,10 @@
 
                                 <input type="hidden" name="image_base64" id="image_base64">
 
-                                <div class="flex justify-between gap-2">
+                                <div class="flex justify-start">
                                     <button type="button" id="signature-clear"
                                             class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
                                         Limpar
-                                    </button>
-                                    <button type="submit" id="signature-save"
-                                            class="inline-flex items-center rounded-xl bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">
-                                        Assinar OS
                                     </button>
                                 </div>
 
@@ -190,6 +191,16 @@
         </div>
     </main>
 
+    {{-- Botão fixo no rodapé direito --}}
+    @if(!$signed)
+        <div class="fixed z-50 right-[calc(1rem+env(safe-area-inset-right))] bottom-[calc(1rem+env(safe-area-inset-bottom))]">
+            <button type="submit" form="sign-form" id="signature-save"
+                    class="inline-flex items-center gap-2 rounded-2xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-700/20 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                Assinar OS
+            </button>
+        </div>
+    @endif
+
     @if(!$signed)
         <script>
             document.addEventListener("DOMContentLoaded", () => {
@@ -199,10 +210,11 @@
                 const saveBtn = document.getElementById('signature-save');
                 const hidden = document.getElementById('image_base64');
 
-                if (!canvas || !form) return;
+                if (!canvas || !form || !saveBtn) return;
 
                 const ctx = canvas.getContext('2d');
                 let isDrawing = false, lastX = 0, lastY = 0;
+                let hasInk = false;
 
                 const resizeCanvas = () => {
                     const rect = canvas.getBoundingClientRect();
@@ -213,8 +225,9 @@
                     canvas.width  = Math.round(rect.width * dpr);
                     canvas.height = Math.round(rect.height * dpr);
 
-                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // escala “pra tela”
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
                     ctx.clearRect(0, 0, rect.width, rect.height);
+                    hasInk = false;
                 };
 
                 setTimeout(resizeCanvas, 30);
@@ -240,14 +253,13 @@
                     lastX = p.x; lastY = p.y;
                 };
 
-                let hasInk = false;
-
                 const draw = (evt) => {
                     if (!isDrawing) return;
                     hasInk = true;
 
                     evt.preventDefault?.();
                     const p = pos(evt);
+
                     ctx.lineWidth = 2;
                     ctx.lineCap = 'round';
                     ctx.strokeStyle = '#111827';
@@ -255,6 +267,7 @@
                     ctx.moveTo(lastX, lastY);
                     ctx.lineTo(p.x, p.y);
                     ctx.stroke();
+
                     lastX = p.x; lastY = p.y;
                 };
 
@@ -270,9 +283,13 @@
                 canvas.addEventListener('touchend', stop, {passive:false});
                 canvas.addEventListener('touchcancel', stop, {passive:false});
 
-                clearBtn?.addEventListener('click', () => ctx.clearRect(0, 0, canvas.width, canvas.height));
+                clearBtn?.addEventListener('click', () => {
+                    const rect = canvas.getBoundingClientRect();
+                    ctx.clearRect(0, 0, rect.width, rect.height);
+                    hasInk = false;
+                });
 
-                form.addEventListener('submit', async (e) => {
+                form.addEventListener('submit', (e) => {
                     if (!hasInk) {
                         e.preventDefault();
                         alert('Assine no quadro antes de enviar.');
@@ -284,14 +301,14 @@
                     const original = saveBtn.innerHTML;
                     saveBtn.disabled = true;
                     saveBtn.innerHTML = `
-                            <span class="inline-flex items-center gap-2">
-                                <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                                </svg>
-                                Assinando...
-                            </span>
-                        `;
+                        <span class="inline-flex items-center gap-2">
+                            <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                            </svg>
+                            Assinando...
+                        </span>
+                    `;
 
                     setTimeout(() => { saveBtn.innerHTML = original; }, 4000);
                 });
