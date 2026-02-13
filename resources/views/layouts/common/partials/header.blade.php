@@ -192,7 +192,39 @@
             'group' => 'Estoque',
             'description' => 'Gestão de estoque',
             'permissions' => ["{$tenantId}_visualizar_estoque"],
+            'active' => isActive('stock.view'),
         ],
+        [
+            'key'   => 'stock-movements',
+            'label' => 'Movimentações',
+            'route' => route('movements.view'),
+            'icon'  => '<i class="fa-solid fa-arrows-rotate"></i>',
+            'group' => 'Estoque',
+            'description' => 'Entradas, saídas e ajustes',
+            'permissions' => ["{$tenantId}_visualizar_estoque"],
+            'active' => isActive('movements.view'),
+        ],
+        [
+            'key'   => 'stock-reasons',
+            'label' => 'Motivos',
+            'route' => route('stock-reasons.view'),
+            'icon'  => '<i class="fa-solid fa-tags"></i>',
+            'group' => 'Estoque',
+            'description' => 'Motivos de movimentação',
+            'permissions' => ["{$tenantId}_visualizar_estoque"],
+            'active' => isActive('stock-reasons.view'),
+        ],
+        [
+            'key'   => 'stock-locations',
+            'label' => 'Localizações',
+            'route' => route('stock-location.view'),
+            'icon'  => '<i class="fa-solid fa-location-dot"></i>',
+            'group' => 'Estoque',
+            'description' => 'Depósitos e locais',
+            'permissions' => ["{$tenantId}_visualizar_estoque"],
+            'active' => isActive('stock-location.view'),
+        ],
+
 
         // ------- CATÁLOGO -------
         [
@@ -231,15 +263,7 @@
             'description' => 'Catálogo de peças',
             'permissions' => ["{$tenantId}_visualizar_pecas"],
         ],
-        [
-            'key'   => 'equipment-part',
-            'label' => 'Peças x Equipamentos',
-            'route' => route('equipment-part.view'),
-            'icon'  => '<i class="fa-solid fa-sitemap"></i>',
-            'group' => 'Catálogo',
-            'description' => 'Vincular peças',
-            'permissions' => ["{$tenantId}_visualizar_pecas_equipamentos"],
-        ],
+
     ]);
 
     $visibleItems = $menuItems->filter(function ($item) use ($user) {
@@ -274,13 +298,11 @@
     $defaultTopItems = $visibleItems->take($MAX_PINS);
     $defaultTopKeys  = $defaultTopItems->pluck('key')->values();
 
-    // grupos de todos itens (com fallback)
     $groupsAll = $visibleItems
         ->map(fn ($i) => $i['group'] ?? 'Outros')
         ->unique()
         ->values();
 
-    // itens do "Mais" padrão = tudo que não está no top padrão
     $restItems = $visibleItems->slice($MAX_PINS)
         ->map(function ($item) {
             $item['group'] = $item['group'] ?? 'Outros';
@@ -289,14 +311,12 @@
 
     $restByGroup = $restItems->groupBy('group');
 
-    // default group (primeiro grupo que tem itens; se não tiver, primeiro grupo da lista)
     $defaultGroupName = $groupsAll->first(function ($g) use ($restByGroup) {
         return ($restByGroup->get($g, collect())->count() > 0);
     }) ?? ($groupsAll->first() ?? 'Outros');
 
     $defaultGroupId = Str::slug($defaultGroupName);
 
-    // dataset pro JS (todos itens visíveis)
     $itemsForJs = $visibleItems->map(function ($item) {
         $group = $item['group'] ?? 'Outros';
         return [
