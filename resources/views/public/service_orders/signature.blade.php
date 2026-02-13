@@ -173,10 +173,14 @@
 
                                 <input type="hidden" name="image_base64" id="image_base64">
 
-                                <div class="flex justify-start">
+                                <div class="flex justify-between gap-2">
                                     <button type="button" id="signature-clear"
                                             class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
                                         Limpar
+                                    </button>
+                                    <button type="submit" id="signature-save"
+                                            class="inline-flex items-center rounded-xl bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">
+                                        Assinar OS
                                     </button>
                                 </div>
 
@@ -191,15 +195,6 @@
         </div>
     </main>
 
-    {{-- Botão fixo no rodapé direito --}}
-    @if(!$signed)
-        <div class="fixed z-50 right-[calc(1rem+env(safe-area-inset-right))] bottom-[calc(1rem+env(safe-area-inset-bottom))]">
-            <button type="submit" form="sign-form" id="signature-save"
-                    class="inline-flex items-center gap-2 rounded-2xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-700/20 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                Assinar OS
-            </button>
-        </div>
-    @endif
 
     @if(!$signed)
         <script>
