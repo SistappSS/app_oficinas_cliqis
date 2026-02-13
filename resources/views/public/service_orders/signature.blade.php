@@ -1,6 +1,5 @@
-@extends('layouts.templates.guest')
-
-@section('guest-content')
+@extends('layouts.templates.public-signature')
+@section('content')
     <main class="mx-auto max-w-4xl px-3 sm:px-6 pb-[calc(7rem+env(safe-area-inset-bottom))] lg:pb-14">
         <div class="pt-6 sm:pt-8">
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 sm:p-6">
@@ -194,7 +193,6 @@
             </div>
         </div>
     </main>
-
 
     @if(!$signed)
         <script>
