@@ -291,13 +291,13 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
     /* --->| Finances |<--- */
     Route::group(['prefix' => 'finances'], function () {
         // Payables
-        Route::get('/payables', [AccountPayableController::class, 'view'])->name('account-payable.view')->middleware('can:finance_payable_view');
-        Route::get('/payable-api', [AccountPayableController::class, 'index'])->middleware('can:finance_payable_view');
-        Route::post('/payable-api', [AccountPayableController::class, 'store'])->middleware('can:finance_payable_create');
-        Route::post('/payable-api/{id}/pay', [AccountPayableController::class, 'pay'])->middleware('can:finance_payable_edit');
-        Route::get('/payable-api/{id}/payments', [AccountPayableController::class, 'payments'])->middleware('can:finance_payable_view');
-        Route::patch('/payable-api/{id}/amount', [AccountPayableController::class, 'updateParcelAmount'])->middleware('can:finance_payable_edit');
-        Route::post('/payable-api/{id}/cancel', [AccountPayableController::class, 'cancelParcel'])->middleware('can:finance_payable_delete');
+        Route::get('/payables', [AccountPayableController::class, 'view'])->name('account-payable.view');
+        Route::get('/payable-api', [AccountPayableController::class, 'index']);
+        Route::post('/payable-api', [AccountPayableController::class, 'store']);
+        Route::post('/payable-api/{id}/pay', [AccountPayableController::class, 'pay']);
+        Route::get('/payable-api/{id}/payments', [AccountPayableController::class, 'payments']);
+        Route::patch('/payable-api/{id}/amount', [AccountPayableController::class, 'updateParcelAmount']);
+        Route::post('/payable-api/{id}/cancel', [AccountPayableController::class, 'cancelParcel']);
 
         // Payables -> Setting Custom Field
         Route::resource('/payables/custom-field-api', PayableCustomFieldController::class);
