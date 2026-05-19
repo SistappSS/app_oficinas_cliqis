@@ -580,7 +580,7 @@ class PartOrderController extends Controller
             'items.*.qty' => ['nullable', 'integer', 'min:0'],
 
             // ✅ adiciona isso
-            'items.*.price_mode' => ['required_with:items', 'in:sale,markup'],
+            //'items.*.price_mode' => ['required_with:items', 'in:sale,markup'],
 
             'items.*.sale_price' => ['nullable', 'numeric', 'min:0'],
             'items.*.markup_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
