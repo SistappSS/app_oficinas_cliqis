@@ -573,22 +573,22 @@ class PartOrderController extends Controller
 
         $mode = (string) $request->input('mode', 'total');
 
-        $rules = [
-            'mode' => ['required', 'in:total,partial'],
-            'items' => ['nullable', 'array'],
-            'items.*.part_order_item_id' => ['required_with:items', 'string'],
-            'items.*.qty' => ['nullable', 'integer', 'min:0'],
+        // $rules = [
+        //     'mode' => ['required', 'in:total,partial'],
+        //     'items' => ['nullable', 'array'],
+        //     //'items.*.part_order_item_id' => ['required_with:items', 'string'],
+        //     'items.*.qty' => ['nullable', 'integer', 'min:0'],
 
-            // ✅ adiciona isso
-            'items.*.price_mode' => ['required_with:items', 'in:sale,markup'],
+        //     // ✅ adiciona isso
+        //     'items.*.price_mode' => ['required_with:items', 'in:sale,markup'],
 
-            'items.*.sale_price' => ['nullable', 'numeric', 'min:0'],
-            'items.*.markup_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+        //     'items.*.sale_price' => ['nullable', 'numeric', 'min:0'],
+        //     'items.*.markup_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
 
-            'items.*.locations' => ['nullable', 'array'],
-            'items.*.locations.*.location_id' => ['required_with:items.*.locations', 'string'],
-            'items.*.locations.*.qty' => ['required_with:items.*.locations', 'integer', 'min:0'],
-        ];
+        //     'items.*.locations' => ['nullable', 'array'],
+        //     'items.*.locations.*.location_id' => ['required_with:items.*.locations', 'string'],
+        //     'items.*.locations.*.qty' => ['required_with:items.*.locations', 'integer', 'min:0'],
+        // ];
 
         if ($mode === 'partial') {
             $rules['items'] = ['required', 'array', 'min:1'];
